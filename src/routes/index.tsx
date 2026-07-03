@@ -12,7 +12,7 @@ import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWith
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
-import { formatGram } from "@/lib/format";
+import { formatGram, formatReward } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { LanguageProvider, LanguageSwitcher, useT } from "@/i18n";
 
