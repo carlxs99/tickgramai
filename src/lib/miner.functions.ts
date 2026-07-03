@@ -143,8 +143,12 @@ export const listWithdrawals = createServerFn({ method: "GET" })
 
 export const getTopMiners = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.rpc("get_top_miners", { _limit: 30 });
+  .handler(async () => {
+    // Use service-role client to bypass RLS for the public leaderboard,
+    // exposing only the safe columns. Authenticated users cannot call the
+    // underlying SECURITY DEFINER function directly.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("get_top_miners", { _limit: 30 });
     if (error) throw error;
     return data ?? [];
   });
