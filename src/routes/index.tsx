@@ -12,7 +12,7 @@ import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWith
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
-import { formatGram } from "@/lib/format";
+import { formatGram, formatReward } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { LanguageProvider, LanguageSwitcher, useT } from "@/i18n";
 
@@ -440,7 +440,7 @@ function TasksTab() {
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   const mut = useMutation({
     mutationFn: (taskId: string) => doFn({ data: { taskId } }),
-    onSuccess: (r) => { toast.success(`+${formatGram(r.reward)} GRAM`); getTelegram()?.HapticFeedback?.impactOccurred("light"); qc.invalidateQueries(); },
+    onSuccess: (r) => { toast.success(`+${formatReward(r.reward)} GRAM`); getTelegram()?.HapticFeedback?.impactOccurred("light"); qc.invalidateQueries(); },
     onError: (e: any) => toast.error(e?.message ?? tr("common.failed")),
   });
   const isShareTask = (t: any) => {
@@ -468,7 +468,7 @@ function TasksTab() {
             <div className="flex-1 min-w-0">
               <p className="font-semibold">{t.title}</p>
               {t.description && <p className="text-xs text-muted-foreground">{t.description}</p>}
-              <p className="text-xs mt-1 text-[color:var(--success)]">+{formatGram(t.reward)} GRAM</p>
+              <p className="text-xs mt-1 text-[color:var(--success)]">+{formatReward(t.reward)} GRAM</p>
             </div>
             {t.completed ? (
               <div className="flex items-center gap-1 text-[color:var(--success)] text-sm"><CheckCircle2 className="w-4 h-4" />{tr("tasks.done")}</div>
@@ -987,7 +987,7 @@ function AdminTab() {
             <option value="group">{tr("admin.kind.group")}</option>
           </select>
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            type="number" step="0.01" placeholder={tr("admin.reward_ph")}
+            type="number" step="0.0001" placeholder={tr("admin.reward_ph")}
             value={form.reward} onChange={(e) => setForm({ ...form, reward: Number(e.target.value) })} />
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
             type="number" step="0.01" placeholder={tr("admin.min_deposit_ph")}
@@ -1039,7 +1039,7 @@ function AdminTab() {
                   {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{tr("common.off")}</span>}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  {t.kind} · +{formatGram(t.reward)} GRAM
+                  {t.kind} · +{formatReward(t.reward)} GRAM
                   {t.target_chat ? ` · ${t.target_chat}` : ""}
                 </p>
               </div>
