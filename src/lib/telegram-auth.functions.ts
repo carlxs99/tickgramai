@@ -42,12 +42,14 @@ export const authWithTelegram = createServerFn({ method: "POST" })
     } | null = null;
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
+    let startParam: string | null = null;
     if (data.initData && botToken) {
-      const { hash, dataCheckString, user } = parseInitData(data.initData);
-      if (!verifyTelegramHash(dataCheckString, hash, botToken)) {
+      const parsed = parseInitData(data.initData);
+      if (!verifyTelegramHash(parsed.dataCheckString, parsed.hash, botToken)) {
         throw new Error("Invalid Telegram initData signature");
       }
-      tgUser = user;
+      tgUser = parsed.user;
+      startParam = parsed.startParam;
     } else if (data.demoId) {
       // Demo mode (preview / no bot token yet)
       tgUser = { id: data.demoId, first_name: "Miner", username: `demo_${data.demoId}` };
