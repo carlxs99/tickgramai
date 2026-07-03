@@ -198,21 +198,27 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
   .inputValidator((d: { amount: number; address: string; memo?: string }) =>
     z.object({ amount: z.number().positive().min(1), address: z.string().min(10), memo: z.string().optional() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
-    const { data: profile } = await supabase.from("profiles").select("balance").eq("user_id", userId).maybeSingle();
-    if (!profile || Number(profile.balance) < data.amount) throw new Error("Insufficient balance");
-    const fee = data.amount * 0.10;
-    const net = data.amount - fee;
-    // Insert with admin client because RLS restricts users to inserting
-    // only safe initial values (status='pending', fee=0, net_amount=0).
-    // Server-side logic computes the trusted fee and net amount.
+    const { userId } = context;
+    // All economic mutations go through service_role. Also enforce a hard
+    // address length ceiling and basic character set to avoid downstream abuse.
+    if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
+      throw new Error("Invalid address format");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
+    if (!profile || Number(profile.balance) < data.amount) throw new Error("Insufficient balance");
+    // 5% network fee (must match UI copy in withdraw.subtitle / withdraw.fee_label).
+    const fee = data.amount * 0.05;
+    const net = data.amount - fee;
     const { error } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId, amount: data.amount, address: data.address, memo: data.memo ?? null,
       fee, net_amount: net, status: "pending",
     });
     if (error) throw error;
-    await supabase.from("profiles").update({ balance: Number(profile.balance) - data.amount }).eq("user_id", userId);
+    await supabaseAdmin.from("profiles")
+      .update({ balance: Number(profile.balance) - data.amount })
+      .eq("user_id", userId);
     return { ok: true, fee, net };
   });
 
