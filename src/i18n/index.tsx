@@ -513,8 +513,9 @@ function detectDefault(): Lang {
   if (typeof window === "undefined") return "en";
   const saved = window.localStorage.getItem("app-lang") as Lang | null;
   if (saved && DICTS[saved]) return saved;
-  const nav = (window.navigator?.language || "en").slice(0, 2).toLowerCase();
-  if (nav === "es" || nav === "ru" || nav === "hi") return nav;
+  // No saved preference → default to English. We don't auto-detect the
+  // browser language so users always start in a known language and pick
+  // theirs explicitly from the switcher.
   return "en";
 }
 
