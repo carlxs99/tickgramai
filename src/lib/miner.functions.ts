@@ -15,7 +15,8 @@ export const getMe = createServerFn({ method: "GET" })
     if (error) throw error;
     if (!profile) throw new Error("Profile not found");
 
-    const { data: isAdmin } = await supabase.rpc("has_role", {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
       _user_id: userId,
       _role: "admin",
     });

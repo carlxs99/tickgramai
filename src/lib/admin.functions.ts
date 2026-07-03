@@ -2,8 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase.rpc("has_role", {
+async function assertAdmin(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.rpc("has_role", {
     _user_id: userId,
     _role: "admin",
   });
@@ -14,7 +15,7 @@ async function assertAdmin(supabase: any, userId: string) {
 export const adminStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.supabase, context.userId);
+    await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const [
@@ -64,7 +65,7 @@ export const adminStats = createServerFn({ method: "GET" })
 export const adminListTasks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.supabase, context.userId);
+    await assertAdmin(context.userId);
     const { data, error } = await context.supabase
       .from("tasks").select("*").order("created_at", { ascending: false });
     if (error) throw error;
@@ -88,7 +89,7 @@ export const adminSaveTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: z.infer<typeof TaskInput>) => TaskInput.parse(d))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
+    await assertAdmin(context.userId);
     const { id, ...fields } = data;
     if ((fields.kind === "channel" || fields.kind === "group") && !fields.target_chat) {
       throw new Error("target_chat es obligatorio para tareas de canal/grupo");
@@ -108,7 +109,7 @@ export const adminDeleteTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
+    await assertAdmin(context.userId);
     const { error } = await context.supabase.from("tasks").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
