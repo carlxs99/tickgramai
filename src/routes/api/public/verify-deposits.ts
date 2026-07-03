@@ -81,6 +81,49 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               continue;
             }
 
+            const amountTon = amountNano / 1e9;
+
+            // Partner-task payment: memo starts with "PT". Activate the task
+            // if the payment covers cost_ton; otherwise skip.
+            if (comment.startsWith("PT")) {
+              const { data: ptask } = await supabaseAdmin
+                .from("partner_tasks")
+                .select("id, cost_ton, status")
+                .eq("memo_tag", comment)
+                .maybeSingle();
+              if (!ptask) {
+                results.push({ txHash, memo: comment, skipped: "no_partner_task" });
+                continue;
+              }
+              if (ptask.status !== "pending_payment") {
+                results.push({ txHash, memo: comment, skipped: "already_activated" });
+                continue;
+              }
+              if (amountTon + 1e-6 < Number(ptask.cost_ton)) {
+                results.push({ txHash, memo: comment, skipped: "insufficient_payment" });
+                continue;
+              }
+              // Record the tx as processed (prevents replays) and activate the task.
+              const { error: pErr } = await supabaseAdmin.from("processed_tx").insert({
+                tx_hash: txHash,
+                user_id: null,
+                memo: comment,
+                amount_ton: amountTon,
+                gram_credited: 0,
+              });
+              if (pErr) {
+                results.push({ txHash, error: pErr.message });
+                continue;
+              }
+              await supabaseAdmin
+                .from("partner_tasks")
+                .update({ status: "active", tx_hash: txHash })
+                .eq("id", ptask.id);
+              credited += 1;
+              results.push({ txHash, memo: comment, partnerTask: ptask.id, activated: true });
+              continue;
+            }
+
             const { data: profile } = await supabaseAdmin
               .from("profiles").select("user_id, mining_rate, memo_tag, referred_by, telegram_id, first_name")
               .eq("memo_tag", comment).maybeSingle();
@@ -88,6 +131,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               results.push({ txHash, memo: comment, skipped: "no_user" });
               continue;
             }
+
 
             const amountTon = amountNano / 1e9;
             // Deterministic ROI: 1 GRAM (= 1 TON) deposited yields exactly
