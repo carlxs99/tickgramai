@@ -511,6 +511,12 @@ function FriendsTab() {
   const { data: friends } = useQuery({ queryKey: ["friends"], queryFn: () => frFn() });
   const code = me.profile.referral_code as string;
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const list = friends ?? [];
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   return (
     <div className="space-y-3">
       <h2 className="text-2xl font-bold">{t("friends.title")}</h2>
@@ -524,14 +530,44 @@ function FriendsTab() {
         </div>
       </div>
       <div className="card-glass rounded-2xl p-4">
-        <p className="font-semibold mb-2">{t("friends.your_friends", { count: friends?.length ?? 0 })}</p>
-        {!friends?.length && <p className="text-sm text-muted-foreground">{t("friends.no_referrals")}</p>}
-        {friends?.map((f: any) => (
-          <div key={f.id} className="flex justify-between text-sm py-1.5">
-            <span className="text-muted-foreground truncate">{f.referred_id.slice(0, 8)}…</span>
-            <span className="text-[color:var(--success)]">+{formatGram(f.bonus_earned)}</span>
+        <p className="font-semibold mb-2">{t("friends.your_friends", { count: list.length })}</p>
+        {list.length === 0 && <p className="text-sm text-muted-foreground">{t("friends.no_referrals")}</p>}
+        <div className="space-y-2">
+          {pageItems.map((f: any) => {
+            const p = f.profile;
+            const name = p ? [p.first_name, p.last_name].filter(Boolean).join(" ") || p.username || `${String(f.referred_id).slice(0, 8)}…` : `${String(f.referred_id).slice(0, 8)}…`;
+            const initial = (name?.[0] ?? "?").toUpperCase();
+            return (
+              <div key={f.id} className="flex items-center gap-3 py-1.5">
+                {p?.avatar_url ? (
+                  <img src={p.avatar_url} alt={name} className="w-9 h-9 rounded-full object-cover" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-semibold">{initial}</div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm truncate">{name}</p>
+                  {p?.username && <p className="text-xs text-muted-foreground truncate">@{p.username}</p>}
+                </div>
+                <span className="text-sm text-[color:var(--success)]">+{formatGram(f.bonus_earned)}</span>
+              </div>
+            );
+          })}
+        </div>
+        {totalPages > 1 && (
+          <div className="mt-3 flex items-center justify-between">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg bg-primary/20 text-primary text-sm disabled:opacity-40"
+            >‹</button>
+            <span className="text-xs text-muted-foreground">{currentPage}/{totalPages}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg bg-primary/20 text-primary text-sm disabled:opacity-40"
+            >›</button>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
