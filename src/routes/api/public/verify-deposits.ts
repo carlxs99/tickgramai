@@ -9,6 +9,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
       POST: async () => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { Address } = await import("@ton/core");
+        const { sendTelegramMessage } = await import("@/lib/telegram-notify.server");
 
         // Canonical raw address of our receiving wallet ("0:abcd…")
         const oursRaw = Address.parse(RECEIVING_WALLET).toRawString().toLowerCase();
