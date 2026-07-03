@@ -314,3 +314,130 @@ export const getFriends = createServerFn({ method: "GET" })
       profile: map.get(r.referred_id) ?? null,
     }));
   });
+
+
+// ============= Partner Tasks =============
+// Users create promoted tasks (channel/group/bot/link) and pay via TON to
+// promote them. Cost: 0.001 TON per click, minimum 250 clicks (0.25 TON).
+// Reward per click: 0.001 GRAM. Auto-completes when target_clicks is reached.
+
+const PARTNER_COST_PER_CLICK = 0.001; // TON
+const PARTNER_MIN_CLICKS = 250;
+
+// Public list: active partner tasks the user has not completed and does not own.
+export const listPartnerTasks = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const [tasks, completed] = await Promise.all([
+      supabase
+        .from("partner_tasks")
+        .select("id, owner_id, title, link, kind, target_clicks, current_clicks, reward_per_click, status")
+        .eq("status", "active")
+        .neq("owner_id", userId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("partner_task_completions")
+        .select("partner_task_id")
+        .eq("user_id", userId),
+    ]);
+    if (tasks.error) throw tasks.error;
+    const done = new Set((completed.data ?? []).map((r: any) => r.partner_task_id));
+    return (tasks.data ?? []).filter((t: any) => !done.has(t.id));
+  });
+
+// Owner list: my partner tasks (any state).
+export const listMyPartnerTasks = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("partner_tasks")
+      .select("*")
+      .eq("owner_id", context.userId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  });
+
+// Create a partner task in pending_payment state. Returns the memo the user
+// must include in their TON payment; verify-deposits activates the task
+// once the on-chain payment matching cost_ton + memo is detected.
+export const createPartnerTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { title: string; link: string; kind: string; targetClicks: number }) =>
+    z.object({
+      title: z.string().trim().min(2).max(80),
+      link: z.string().trim().url().max(300),
+      kind: z.enum(["link", "channel", "group", "bot"]),
+      targetClicks: z.number().int().min(PARTNER_MIN_CLICKS).max(1_000_000),
+    }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { userId } = context;
+    const costTon = Number((data.targetClicks * PARTNER_COST_PER_CLICK).toFixed(6));
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: memoRow, error: mErr } = await supabaseAdmin
+      .rpc("generate_partner_memo" as never);
+    if (mErr) throw mErr;
+    const memo = String(memoRow);
+
+    const { data: inserted, error: iErr } = await supabaseAdmin
+      .from("partner_tasks")
+      .insert({
+        owner_id: userId,
+        title: data.title,
+        link: data.link,
+        kind: data.kind,
+        target_clicks: data.targetClicks,
+        reward_per_click: 0.001,
+        cost_ton: costTon,
+        memo_tag: memo,
+        status: "pending_payment",
+      })
+      .select()
+      .single();
+    if (iErr) throw iErr;
+    return inserted;
+  });
+
+// Called after the user visits the partner's link. Atomically records the
+// completion, credits +0.001 GRAM, and auto-completes the task when target
+// is reached. Enforces one completion per user and prevents owner self-claim.
+export const completePartnerTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { partnerTaskId: string }) =>
+    z.object({ partnerTaskId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .rpc("complete_partner_task" as never, {
+        _user_id: userId,
+        _partner_task_id: data.partnerTaskId,
+      } as never);
+    if (error) throw error;
+    const r: any = Array.isArray(row) ? row[0] : row;
+    return {
+      reward: Number(r?.reward ?? 0),
+      balance: Number(r?.new_balance ?? 0),
+      remainingClicks: Number(r?.remaining_clicks ?? 0),
+    };
+  });
+
+// Cancel a partner task that is still pending_payment (never paid).
+export const cancelPartnerTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { partnerTaskId: string }) =>
+    z.object({ partnerTaskId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("partner_tasks")
+      .update({ status: "cancelled" })
+      .eq("id", data.partnerTaskId)
+      .eq("owner_id", context.userId)
+      .eq("status", "pending_payment");
+    if (error) throw error;
+    return { ok: true };
+  });
+

@@ -47,6 +47,89 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_task_completions: {
+        Row: {
+          created_at: string
+          id: string
+          partner_task_id: string
+          reward: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          partner_task_id: string
+          reward: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          partner_task_id?: string
+          reward?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_task_completions_partner_task_id_fkey"
+            columns: ["partner_task_id"]
+            isOneToOne: false
+            referencedRelation: "partner_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_tasks: {
+        Row: {
+          cost_ton: number
+          created_at: string
+          current_clicks: number
+          id: string
+          kind: string
+          link: string
+          memo_tag: string
+          owner_id: string
+          reward_per_click: number
+          status: string
+          target_clicks: number
+          title: string
+          tx_hash: string | null
+          updated_at: string
+        }
+        Insert: {
+          cost_ton: number
+          created_at?: string
+          current_clicks?: number
+          id?: string
+          kind?: string
+          link: string
+          memo_tag: string
+          owner_id: string
+          reward_per_click?: number
+          status?: string
+          target_clicks: number
+          title: string
+          tx_hash?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cost_ton?: number
+          created_at?: string
+          current_clicks?: number
+          id?: string
+          kind?: string
+          link?: string
+          memo_tag?: string
+          owner_id?: string
+          reward_per_click?: number
+          status?: string
+          target_clicks?: number
+          title?: string
+          tx_hash?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       processed_tx: {
         Row: {
           amount_ton: number
@@ -350,7 +433,16 @@ export type Database = {
         Args: { _amount: number; _user_id: string }
         Returns: number
       }
+      complete_partner_task: {
+        Args: { _partner_task_id: string; _user_id: string }
+        Returns: {
+          new_balance: number
+          remaining_clicks: number
+          reward: number
+        }[]
+      }
       generate_memo_tag: { Args: never; Returns: string }
+      generate_partner_memo: { Args: never; Returns: string }
       get_top_miners: {
         Args: { _limit?: number }
         Returns: {
