@@ -89,16 +89,16 @@ function MinerAppInner() {
         await restoreSession(tokens);
         setReady(true);
       } catch (e: any) {
-        setError(e?.message ?? "Auth failed");
+        setError(e?.message ?? t("auth.failed"));
       }
     })();
-  }, [authFn]);
+  }, [authFn, t]);
 
   if (error) {
     return (
       <Center>
         <div className="text-center">
-          <p className="text-destructive font-medium">Auth error</p>
+          <p className="text-destructive font-medium">{t("auth.error")}</p>
           <p className="mt-2 text-sm text-muted-foreground max-w-xs">{error}</p>
         </div>
       </Center>
