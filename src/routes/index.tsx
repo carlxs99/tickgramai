@@ -14,6 +14,8 @@ import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
 import { formatGram } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
+import { LanguageProvider, LanguageSwitcher, useT } from "@/i18n";
+
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
 
