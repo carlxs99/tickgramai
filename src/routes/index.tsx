@@ -316,20 +316,6 @@ function FriendsTab() {
   );
 }
 
-type CalcMode = "earn" | "invest" | "balance" | "withdraw";
-type Period = { key: string; label: string; days: number };
-const PERIODS: Period[] = [
-  { key: "1d", label: "1 day", days: 1 },
-  { key: "1w", label: "Week", days: 7 },
-  { key: "1m", label: "Month", days: 30 },
-  { key: "3m", label: "3 months", days: 90 },
-  { key: "1y", label: "1 year", days: 365 },
-];
-
-// 1 TON deposited => +1 GRAM/day. 1 GRAM = 1 TON in USDT value.
-// ROI referencia: ~3.3% diario (1 TON depositado = 0.033 GRAM/día)
-const DAILY_RATE_GRAM_PER_TON = 0.033;
-
 function DepositTab() {
   const submitFn = useServerFn(submitDeposit);
   const listFn = useServerFn(listDeposits);
@@ -338,197 +324,68 @@ function DepositTab() {
   const price = useTonPrice();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
 
-  const [mode, setMode] = useState<CalcMode>("earn");
-  const [period, setPeriod] = useState<Period>(PERIODS[2]);
-  // Input semantics depend on mode: earn/withdraw use USDT; invest uses target USDT/day; balance is read-only
-  const [input, setInput] = useState<string>("100");
+  const [amount, setAmount] = useState("");
   const [hash, setHash] = useState("");
   const { data: deposits } = useQuery({ queryKey: ["deposits"], queryFn: () => listFn() });
 
-  const inputNum = Math.max(0, Number(input) || 0);
-  const balanceGram = Number(me.profile.balance);
-  const currentRateGram = Number(me.profile.mining_rate);
-
-  // Compute deposit-TON implied by the current mode
-  const impliedDepositTon = useMemo(() => {
-    if (mode === "earn") return price > 0 ? inputNum / price : 0; // input is USDT deposit
-    if (mode === "invest") {
-      // input is desired USDT per day → daily GRAM = input/price → tonNeeded = daily/DAILY_RATE
-      const dailyGram = price > 0 ? inputNum / price : 0;
-      return dailyGram / DAILY_RATE_GRAM_PER_TON;
-    }
-    if (mode === "balance") return 0;
-    return 0; // withdraw
-  }, [mode, inputNum, price]);
-
-  // Daily GRAM production for the deposit
-  const dailyGram = impliedDepositTon * DAILY_RATE_GRAM_PER_TON;
-  const daily = { gram: dailyGram, usdt: dailyGram * price };
-  const totalUsdt = daily.usdt * period.days;
-
-  // Withdraw preview: uses current balance as base
-  const withdrawAmountGram = Math.min(balanceGram, Math.max(0, inputNum / (price || 1)));
-  const withdrawFee = withdrawAmountGram * 0.05;
-  const withdrawNet = withdrawAmountGram - withdrawFee;
+  const amountNum = Math.max(0, Number(amount) || 0);
+  const usdtValue = amountNum * price;
 
   const submit = useMutation({
-    mutationFn: () => submitFn({ data: { amountTon: impliedDepositTon, txHash: hash || undefined } }),
-    onSuccess: () => { toast.success("Deposit submitted"); setHash(""); qc.invalidateQueries(); },
+    mutationFn: () => submitFn({ data: { amountTon: amountNum, txHash: hash || undefined } }),
+    onSuccess: () => { toast.success("Deposit submitted"); setAmount(""); setHash(""); qc.invalidateQueries(); },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
 
-  const modes: { id: CalcMode; label: string }[] = [
-    { id: "earn", label: "I'll earn" },
-    { id: "invest", label: "To invest" },
-    { id: "balance", label: "My balance" },
-    { id: "withdraw", label: "If I withdraw" },
-  ];
-
   return (
     <div className="space-y-3 pb-2">
-      <div className="flex items-center gap-2">
-        <Calculator className="w-5 h-5 text-primary" />
-        <h2 className="text-2xl font-bold">Earnings calculator</h2>
-      </div>
-      <p className="text-xs text-muted-foreground">1 TON price ≈ ${price.toFixed(4)} USDT · synced live</p>
+      <h2 className="text-2xl font-bold">Deposit</h2>
+      <p className="text-sm text-muted-foreground">
+        Send TON to your wallet and paste the transaction hash. 1 TON ≈ ${price.toFixed(2)} USDT.
+      </p>
 
-      {/* Mode tabs */}
-      <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none">
-        {modes.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => { setMode(m.id); if (m.id === "balance") setInput(String(balanceGram * price)); }}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition ${
-              mode === m.id ? "bg-primary text-primary-foreground shadow-lg glow-primary" : "card-glass text-muted-foreground"
-            }`}
-          >
-            {m.label}
-          </button>
-        ))}
+      <div className="card-glass rounded-2xl p-4 space-y-3">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Your balance</span>
+          <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Current rate</span>
+          <span className="font-semibold">{formatGram(me.profile.mining_rate)} GRAM/day</span>
+        </div>
       </div>
 
-      {/* Input */}
-      {mode !== "balance" && (
-        <div>
-          <p className="text-xs text-muted-foreground mb-1.5">
-            {mode === "earn" && "Deposit amount"}
-            {mode === "invest" && "Target earnings per day"}
-            {mode === "withdraw" && "Amount to withdraw"}
+      <Field label="Amount (TON)">
+        <div className="relative">
+          <input
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.0"
+            className="input pr-16 text-lg font-semibold"
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">TON</span>
+        </div>
+        {amountNum > 0 && (
+          <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+            ≈ ${usdtValue.toFixed(2)} USDT
           </p>
-          <div className="relative">
-            <input
-              inputMode="decimal"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="input pr-16 text-lg font-semibold"
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">USDT</span>
-          </div>
-          {mode === "earn" && (
-            <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-              ≈ {impliedDepositTon.toFixed(4)} TON
-            </p>
-          )}
-        </div>
-      )}
+        )}
+      </Field>
 
-      {/* Period selector — used by earn/invest/withdraw projections */}
-      {mode !== "balance" && (
-        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none">
-          {PERIODS.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setPeriod(p)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
-                period.key === p.key ? "bg-primary text-primary-foreground" : "card-glass text-muted-foreground"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      )}
+      <Field label="Transaction hash (optional)">
+        <input value={hash} onChange={(e) => setHash(e.target.value)} placeholder="EQ…" className="input" />
+      </Field>
 
-      {/* Result card */}
-      {mode === "earn" && (
-        <ResultCard title="You'll earn" totalUsdt={totalUsdt} periodLabel={period.label} price={price} dailyGram={daily.gram} />
-      )}
-      {mode === "invest" && (
-        <div className="rounded-2xl border-2 border-dashed border-[color:var(--success)]/40 bg-[color:var(--success)]/5 p-5 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">You need to deposit</p>
-          <p className="mt-1 text-4xl font-extrabold text-[color:var(--success)] tabular-nums">
-            {impliedDepositTon.toFixed(4)} <span className="text-lg text-muted-foreground">TON</span>
-          </p>
-          <p className="text-sm text-muted-foreground">≈ ${(impliedDepositTon * price).toFixed(2)} USDT</p>
-          <p className="mt-2 text-xs text-muted-foreground">to earn ${inputNum.toFixed(2)} USDT / day</p>
-        </div>
-      )}
-      {mode === "balance" && (
-        <div className="rounded-2xl border-2 border-dashed border-[color:var(--gold)]/40 bg-[color:var(--gold)]/5 p-5 text-center">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">My balance</p>
-          <p className="mt-1 text-4xl font-extrabold text-[color:var(--gold)] tabular-nums">
-            {formatGram(balanceGram)} <span className="text-lg text-muted-foreground">GRAM</span>
-          </p>
-          <p className="text-sm text-muted-foreground">≈ ${usdt(balanceGram, price)} USDT</p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Producing {formatGram(currentRateGram)} GRAM/day · ${usdt(currentRateGram, price)} /day
-          </p>
-        </div>
-      )}
-      {mode === "withdraw" && (
-        <div className="rounded-2xl card-glass p-5">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground text-center">You'll receive</p>
-          <p className="mt-1 text-4xl font-extrabold text-[color:var(--success)] tabular-nums text-center">
-            ${(withdrawNet * price).toFixed(4)} <span className="text-lg text-muted-foreground">USDT</span>
-          </p>
-          <p className="text-sm text-muted-foreground text-center">{withdrawNet.toFixed(4)} GRAM after 5% fee</p>
-          <div className="mt-3 border-t border-white/5 pt-3 space-y-1 text-sm">
-            <Row k="Requested" v={`${withdrawAmountGram.toFixed(4)} GRAM`} />
-            <Row k="Network fee (5%)" v={`-${withdrawFee.toFixed(4)} GRAM`} />
-            <Row k="Balance after" v={`${(balanceGram - withdrawAmountGram).toFixed(4)} GRAM`} />
-          </div>
-        </div>
-      )}
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        disabled={submit.isPending || amountNum <= 0}
+        onClick={() => submit.mutate()}
+        className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50 shadow-xl glow-primary"
+      >
+        {submit.isPending ? "Submitting…" : "Deposit & start earning"}
+      </motion.button>
 
-      {/* Breakdown */}
-      {(mode === "earn" || mode === "invest") && impliedDepositTon > 0 && (
-        <div className="card-glass rounded-2xl p-4 space-y-2 text-sm">
-          <Row k="Per day" v={`+${daily.usdt.toFixed(6)} USDT`} strong />
-          <Row k="Per week" v={`+${(daily.usdt * 7).toFixed(4)} USDT`} strong />
-          <Row k="Per month" v={`+${(daily.usdt * 30).toFixed(4)} USDT`} strong />
-          <Row k="Per year" v={`+${(daily.usdt * 365).toFixed(2)} USDT`} strong />
-          <div className="border-t border-white/5 pt-2 mt-2">
-            <Row k="Daily rate" v={`${((daily.usdt / Math.max(inputNum, 0.0001)) * 100).toFixed(2)}%`} muted />
-          </div>
-        </div>
-      )}
-
-      {/* Hint */}
-      <div className="rounded-2xl bg-[color:var(--gold)]/10 border border-[color:var(--gold)]/20 p-3 flex gap-2 items-start">
-        <Lightbulb className="w-4 h-4 text-[color:var(--gold)] shrink-0 mt-0.5" />
-        <p className="text-xs text-muted-foreground">
-          Calculation assumes daily withdrawal of earnings. Withdraw more often — earn even more 💰
-        </p>
-      </div>
-
-      {/* Deposit CTA (only for earn mode) */}
-      {(mode === "earn" || mode === "invest") && impliedDepositTon > 0 && (
-        <>
-          <Field label="Transaction hash (optional)">
-            <input value={hash} onChange={(e) => setHash(e.target.value)} placeholder="EQ…" className="input" />
-          </Field>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            disabled={submit.isPending}
-            onClick={() => submit.mutate()}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50 shadow-xl glow-primary"
-          >
-            {submit.isPending ? "Submitting…" : "💸 Deposit & start earning"}
-          </motion.button>
-        </>
-      )}
-
-      {/* History */}
       {!!deposits?.length && (
         <div className="card-glass rounded-2xl p-4">
           <p className="font-semibold mb-2">History</p>
@@ -541,24 +398,6 @@ function DepositTab() {
         </div>
       )}
     </div>
-  );
-}
-
-function ResultCard({ title, totalUsdt, periodLabel, price, dailyGram }: { title: string; totalUsdt: number; periodLabel: string; price: number; dailyGram: number }) {
-  return (
-    <motion.div
-      key={totalUsdt}
-      initial={{ scale: 0.96, opacity: 0.7 }} animate={{ scale: 1, opacity: 1 }}
-      className="rounded-2xl border-2 border-dashed border-[color:var(--success)]/40 bg-[color:var(--success)]/5 p-5 text-center"
-    >
-      <p className="text-xs uppercase tracking-widest text-muted-foreground">{title} · {periodLabel}</p>
-      <p className="mt-1 text-4xl font-extrabold text-[color:var(--success)] tabular-nums">
-        +{totalUsdt.toFixed(4)} <span className="text-lg">USDT</span>
-      </p>
-      <p className="text-xs text-muted-foreground mt-1">
-        {(dailyGram).toFixed(4)} GRAM/day · 1 TON ≈ ${price.toFixed(2)}
-      </p>
-    </motion.div>
   );
 }
 
