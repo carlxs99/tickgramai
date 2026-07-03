@@ -220,6 +220,9 @@ const es: Dict = {
   "withdraw.submitting": "Enviando…",
   "withdraw.none": "Sin retiros aún.",
   "withdraw.requested_net": "Solicitado. Neto {amount} GRAM",
+  "withdraw.min_label": "Retiro mínimo",
+  "withdraw.fee_label": "Comisión de red",
+  "withdraw.net_label": "Recibirás",
 
   "nav.mine": "Minar",
   "nav.tasks": "Tareas",
