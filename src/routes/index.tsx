@@ -14,6 +14,8 @@ import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
 import { formatGram } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
+import { LanguageProvider, LanguageSwitcher, useT } from "@/i18n";
+
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
 
@@ -25,6 +27,15 @@ export const Route = createFileRoute("/")({
 type Tab = "mine" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "admin";
 
 function MinerApp() {
+  return (
+    <LanguageProvider>
+      <MinerAppInner />
+    </LanguageProvider>
+  );
+}
+
+function MinerAppInner() {
+  const { t } = useT();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("mine");
@@ -69,9 +80,7 @@ function MinerApp() {
         // Outside Telegram (dev/browser) → demo. Inside Telegram without
         // initData → the Mini App was opened without a WebApp button.
         if (insideTelegram) {
-          setError(
-            "Telegram no envió tu identidad. Abre la Mini App desde el botón del menú del bot (@Tickgramaibot) o desde t.me/Tickgramaibot/app."
-          );
+          setError(t("auth.telegram_no_identity"));
           return;
         }
 
@@ -80,16 +89,16 @@ function MinerApp() {
         await restoreSession(tokens);
         setReady(true);
       } catch (e: any) {
-        setError(e?.message ?? "Auth failed");
+        setError(e?.message ?? t("auth.failed"));
       }
     })();
-  }, [authFn]);
+  }, [authFn, t]);
 
   if (error) {
     return (
       <Center>
         <div className="text-center">
-          <p className="text-destructive font-medium">Auth error</p>
+          <p className="text-destructive font-medium">{t("auth.error")}</p>
           <p className="mt-2 text-sm text-muted-foreground max-w-xs">{error}</p>
         </div>
       </Center>
@@ -166,6 +175,7 @@ function usdt(gram: number, price: number) {
 }
 
 function Header({ onAdminClick }: { onAdminClick: () => void }) {
+  const { t } = useT();
   const meFn = useServerFn(getMe);
   const { data } = useQuery({ queryKey: ["me-header"], queryFn: () => meFn(), refetchInterval: 15000 });
   const price = useTonPrice();
@@ -179,14 +189,15 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
           {initial}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground">Welcome</p>
+          <p className="text-xs text-muted-foreground">{t("header.welcome")}</p>
           <p className="font-semibold truncate">{name}</p>
         </div>
+        <LanguageSwitcher />
         {data?.isAdmin && (
           <button
             onClick={onAdminClick}
             className="p-2 rounded-xl card-glass text-primary"
-            aria-label="Admin panel"
+            aria-label={t("header.admin_panel")}
           >
             <Shield className="w-4 h-4" />
           </button>
@@ -207,12 +218,13 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
 const meQO = (fn: () => Promise<any>) => queryOptions({ queryKey: ["me"], queryFn: fn, refetchInterval: 30000 });
 
 function MineTab() {
+  const { t } = useT();
   const meFn = useServerFn(getMe);
   const collectFn = useServerFn(collectIncome);
   const qc = useQueryClient();
   const { data } = useSuspenseQuery(meQO(() => meFn()));
   const [tick, setTick] = useState(0);
-  useEffect(() => { const i = setInterval(() => setTick((t) => t + 1), 100); return () => clearInterval(i); }, []);
+  useEffect(() => { const i = setInterval(() => setTick((tk) => tk + 1), 100); return () => clearInterval(i); }, []);
 
   const live = useMemo(() => {
     const now = Date.now();
@@ -225,10 +237,10 @@ function MineTab() {
     mutationFn: () => collectFn(),
     onSuccess: (r) => {
       getTelegram()?.HapticFeedback?.impactOccurred("medium");
-      toast.success(`+${formatGram(r.gained, 4)} GRAM collected`);
+      toast.success(`+${formatGram(r.gained, 4)} GRAM ${t("mine.collected_toast")}`);
       qc.invalidateQueries();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
   });
 
   const rate = Number(data.profile.mining_rate);
@@ -243,7 +255,7 @@ function MineTab() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/10 pointer-events-none" />
         <div className="relative">
           <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs uppercase tracking-widest">
-            <Sparkles className="w-3.5 h-3.5" /> Uncollected
+            <Sparkles className="w-3.5 h-3.5" /> {t("mine.uncollected")}
           </div>
           <div className="mt-2 text-5xl font-extrabold tabular-nums">
             {formatGram(live, 6)}
@@ -253,8 +265,8 @@ function MineTab() {
           </div>
           <div className="mt-2 text-sm text-muted-foreground">
             {rate > 0
-              ? <>{formatGram(rate, 2)} GRAM/day <span className="text-[color:var(--success)]">(≈ ${usdt(rate, price)} /day)</span></>
-              : "Deposit GRAM to start mining"}
+              ? <>{formatGram(rate, 2)} {t("mine.per_day")} <span className="text-[color:var(--success)]">(≈ ${usdt(rate, price)} {t("mine.per_day_suffix")})</span></>
+              : t("mine.deposit_to_start")}
           </div>
           <motion.button
             whileTap={{ scale: 0.96 }}
@@ -262,20 +274,21 @@ function MineTab() {
             disabled={collect.isPending || live < 0.0001}
             className="mt-5 w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-accent font-bold text-primary-foreground disabled:opacity-50 shadow-lg"
           >
-            {collect.isPending ? "Collecting…" : "Collect Gram"}
+            {collect.isPending ? t("mine.collecting") : t("mine.collect")}
           </motion.button>
         </div>
       </motion.div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Balance" value={formatGram(data.profile.balance)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
-        <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " GRAM"} sub={`1 GRAM ≈ $${price.toFixed(2)}`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
+        <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
+        <StatCard label={t("mine.deposits")} value={formatGram(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
       
     </div>
   );
 }
+
 
 function StatCard({ label, value, sub, icon }: { label: string; value: string; sub?: string; icon: React.ReactNode }) {
   return (
@@ -321,7 +334,8 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
       crown: false,
     },
   }[rank];
-  const name = miner ? (miner.first_name || miner.username || "Anon") : "—";
+  const { t } = useT();
+  const name = miner ? (miner.first_name || miner.username || t("leaderboard.anon")) : "—";
   const rate = miner ? formatGram(miner.mining_rate) : "—";
   return (
     <div className={`flex-1 flex flex-col items-center ${styles.order}`}>
@@ -353,6 +367,7 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
 }
 
 function LeaderboardTab() {
+  const { t } = useT();
   const fn = useServerFn(getTopMiners);
   const price = useTonPrice();
   const { data } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
@@ -362,8 +377,8 @@ function LeaderboardTab() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-bold">Leaderboard</h2>
-        <p className="text-xs text-muted-foreground">Top miners by GRAM mined per day.</p>
+        <h2 className="text-2xl font-bold">{t("leaderboard.title")}</h2>
+        <p className="text-xs text-muted-foreground">{t("leaderboard.subtitle")}</p>
       </div>
 
       <div className="card-glass rounded-3xl p-4 overflow-hidden relative">
@@ -371,9 +386,9 @@ function LeaderboardTab() {
         <div className="flex items-center justify-between mb-4 relative">
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-[color:var(--gold)]" />
-            <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Live ranking</span>
+            <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">{t("leaderboard.live_ranking")}</span>
           </div>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[color:var(--success)]/15 text-[color:var(--success)] font-semibold">ACTIVE</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[color:var(--success)]/15 text-[color:var(--success)] font-semibold">{t("leaderboard.active")}</span>
         </div>
         <div className="flex items-end gap-2 relative">
           <PodiumSlot miner={top3[1]} rank={2} />
@@ -384,12 +399,12 @@ function LeaderboardTab() {
 
       <div className="card-glass rounded-2xl p-2">
         {rest.length === 0 && list.length <= 3 ? (
-          <p className="p-4 text-sm text-muted-foreground text-center">Only the podium is set — invite miners to fill the ranks.</p>
+          <p className="p-4 text-sm text-muted-foreground text-center">{t("leaderboard.only_podium")}</p>
         ) : (
           <div className="divide-y divide-white/5">
             {rest.map((m, i) => {
               const rank = i + 4;
-              const name = m.first_name || m.username || "Anon";
+              const name = m.first_name || m.username || t("leaderboard.anon");
               return (
                 <div key={rank} className="flex items-center gap-3 px-3 py-2.5">
                   <span className="w-6 text-center text-xs font-bold text-muted-foreground">#{rank}</span>
@@ -411,7 +426,9 @@ function LeaderboardTab() {
   );
 }
 
+
 function TasksTab() {
+  const { t: tr } = useT();
   const listFn = useServerFn(listTasks);
   const doFn = useServerFn(completeTask);
   const meFn = useServerFn(getMe);
@@ -424,14 +441,14 @@ function TasksTab() {
   const mut = useMutation({
     mutationFn: (taskId: string) => doFn({ data: { taskId } }),
     onSuccess: (r) => { toast.success(`+${formatGram(r.reward)} GRAM`); getTelegram()?.HapticFeedback?.impactOccurred("light"); qc.invalidateQueries(); },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(e?.message ?? tr("common.failed")),
   });
   const isShareTask = (t: any) => {
     const s = `${t.title ?? ""} ${t.description ?? ""}`.toLowerCase();
     return /share|invita|invite|friend|amig|refer/.test(s);
   };
   const openShare = (t: any) => {
-    const text = t.description || "Join me on Tickgram AI and start mining GRAM!";
+    const text = t.description || tr("tasks.share_default");
     const url = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(text)}`;
     const tg: any = getTelegram();
     if (tg?.openTelegramLink) tg.openTelegramLink(url);
@@ -440,8 +457,8 @@ function TasksTab() {
   };
   return (
     <div className="space-y-3">
-      <h2 className="text-2xl font-bold">Tasks</h2>
-      <p className="text-sm text-muted-foreground">Complete tasks to earn GRAM.</p>
+      <h2 className="text-2xl font-bold">{tr("tasks.title")}</h2>
+      <p className="text-sm text-muted-foreground">{tr("tasks.subtitle")}</p>
       <div className="space-y-2 mt-3">
         {data.map((t: any) => {
           const share = isShareTask(t);
@@ -454,25 +471,25 @@ function TasksTab() {
               <p className="text-xs mt-1 text-[color:var(--success)]">+{formatGram(t.reward)} GRAM</p>
             </div>
             {t.completed ? (
-              <div className="flex items-center gap-1 text-[color:var(--success)] text-sm"><CheckCircle2 className="w-4 h-4" />Done</div>
+              <div className="flex items-center gap-1 text-[color:var(--success)] text-sm"><CheckCircle2 className="w-4 h-4" />{tr("tasks.done")}</div>
             ) : (
               <div className="flex flex-col gap-1">
                 {(t.kind === "channel" || t.kind === "group") && t.link && (
                   <a href={t.link} target="_blank" rel="noreferrer"
                     className="px-3 py-1.5 rounded-xl card-glass text-xs font-semibold text-center">
-                    Join
+                    {tr("tasks.join")}
                   </a>
                 )}
                 {share && !hasShared ? (
                   <button onClick={() => openShare(t)}
                     className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
-                    Share
+                    {tr("tasks.share")}
                   </button>
                 ) : (
                   <button onClick={() => mut.mutate(t.id)}
                     disabled={mut.isPending || (share && !hasShared)}
                     className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
-                    {t.kind === "channel" || t.kind === "group" ? "Verify" : "Claim"}
+                    {t.kind === "channel" || t.kind === "group" ? tr("tasks.verify") : tr("tasks.claim")}
                   </button>
                 )}
               </div>
@@ -485,7 +502,9 @@ function TasksTab() {
   );
 }
 
+
 function FriendsTab() {
+  const { t } = useT();
   const meFn = useServerFn(getMe);
   const frFn = useServerFn(getFriends);
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
@@ -494,19 +513,19 @@ function FriendsTab() {
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   return (
     <div className="space-y-3">
-      <h2 className="text-2xl font-bold">Friends</h2>
-      <p className="text-sm text-muted-foreground">Invite friends and earn 10% of their mining forever.</p>
+      <h2 className="text-2xl font-bold">{t("friends.title")}</h2>
+      <p className="text-sm text-muted-foreground">{t("friends.subtitle")}</p>
       <div className="card-glass rounded-2xl p-4">
-        <p className="text-xs text-muted-foreground">Your invite link</p>
+        <p className="text-xs text-muted-foreground">{t("friends.your_invite")}</p>
         <div className="mt-2 flex items-center gap-2">
           <code className="text-xs flex-1 truncate">{inviteUrl}</code>
-          <button onClick={() => { navigator.clipboard.writeText(inviteUrl); toast.success("Copied"); }}
+          <button onClick={() => { navigator.clipboard.writeText(inviteUrl); toast.success(t("common.copied")); }}
             className="p-2 rounded-lg bg-primary/20 text-primary"><Copy className="w-4 h-4" /></button>
         </div>
       </div>
       <div className="card-glass rounded-2xl p-4">
-        <p className="font-semibold mb-2">Your friends ({friends?.length ?? 0})</p>
-        {!friends?.length && <p className="text-sm text-muted-foreground">No referrals yet.</p>}
+        <p className="font-semibold mb-2">{t("friends.your_friends", { count: friends?.length ?? 0 })}</p>
+        {!friends?.length && <p className="text-sm text-muted-foreground">{t("friends.no_referrals")}</p>}
         {friends?.map((f: any) => (
           <div key={f.id} className="flex justify-between text-sm py-1.5">
             <span className="text-muted-foreground truncate">{f.referred_id.slice(0, 8)}…</span>
@@ -519,6 +538,7 @@ function FriendsTab() {
 }
 
 function DepositTab() {
+  const { t } = useT();
   const listFn = useServerFn(listDeposits);
   const meFn = useServerFn(getMe);
   const saveWalletFn = useServerFn(saveWallet);
@@ -535,7 +555,6 @@ function DepositTab() {
   const usdtValue = amountNum * price;
   const memoTag: string = (me.profile as any).memo_tag ?? "";
 
-  // Persist wallet address whenever it changes
   useEffect(() => {
     const addr = wallet?.account?.address ?? null;
     const saved = (me.profile as any).wallet_address ?? null;
@@ -546,13 +565,10 @@ function DepositTab() {
 
   const pay = useMutation({
     mutationFn: async () => {
-      if (!wallet) throw new Error("Connect your wallet first");
-      if (amountNum <= 0) throw new Error("Enter an amount");
-      if (!memoTag) throw new Error("Missing memo");
+      if (!wallet) throw new Error(t("deposit.err_connect"));
+      if (amountNum <= 0) throw new Error(t("deposit.err_amount"));
+      if (!memoTag) throw new Error(t("deposit.err_memo"));
 
-      // Build a text-comment payload (op=0, memo string) as base64 BOC-like cell.
-      // TonConnect accepts the classic { address, amount, payload? } shape.
-      // A memo/comment payload is a cell: 32-bit op=0 + utf-8 string, serialized.
       const memoPayload = buildCommentPayload(memoTag);
       const nano = Math.floor(amountNum * 1e9).toString();
 
@@ -562,33 +578,31 @@ function DepositTab() {
       });
     },
     onSuccess: () => {
-      toast.success("Transaction sent. It will be credited automatically once confirmed on-chain.");
+      toast.success(t("deposit.tx_sent"));
       setAmount("");
       qc.invalidateQueries();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Transaction failed"),
+    onError: (e: any) => toast.error(e?.message ?? t("deposit.err_failed")),
   });
 
   return (
     <div className="space-y-3 pb-2">
-      <h2 className="text-2xl font-bold">Deposit</h2>
-      <p className="text-sm text-muted-foreground">
-        Connect your GRAM wallet and pay directly. Your unique memo is added automatically so we can detect your deposit.
-      </p>
+      <h2 className="text-2xl font-bold">{t("deposit.title")}</h2>
+      <p className="text-sm text-muted-foreground">{t("deposit.subtitle")}</p>
 
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Your balance</span>
+          <span className="text-muted-foreground">{t("deposit.your_balance")}</span>
           <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Current rate</span>
-          <span className="font-semibold">{formatGram(me.profile.mining_rate)} GRAM/day</span>
+          <span className="text-muted-foreground">{t("deposit.current_rate")}</span>
+          <span className="font-semibold">{formatGram(me.profile.mining_rate)} {t("mine.per_day")}</span>
         </div>
         <div className="flex justify-between text-sm items-center">
-          <span className="text-muted-foreground">Your memo</span>
+          <span className="text-muted-foreground">{t("deposit.your_memo")}</span>
           <button
-            onClick={() => { navigator.clipboard.writeText(memoTag); toast.success("Memo copied"); }}
+            onClick={() => { navigator.clipboard.writeText(memoTag); toast.success(t("deposit.memo_copied")); }}
             className="flex items-center gap-1.5 font-mono font-semibold text-primary"
           >
             {memoTag} <Copy className="w-3.5 h-3.5" />
@@ -600,14 +614,14 @@ function DepositTab() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wallet className="w-4 h-4 text-primary" />
-            <span className="font-semibold text-sm">GRAM Wallet</span>
+            <span className="font-semibold text-sm">{t("deposit.wallet")}</span>
           </div>
           {wallet ? (
             <button
               onClick={() => tonConnectUI.disconnect()}
               className="text-xs text-muted-foreground underline"
             >
-              Disconnect
+              {t("common.disconnect")}
             </button>
           ) : null}
         </div>
@@ -621,12 +635,12 @@ function DepositTab() {
             onClick={() => tonConnectUI.openModal()}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground"
           >
-            Connect Wallet
+            {t("deposit.connect_wallet")}
           </motion.button>
         )}
       </div>
 
-      <Field label="Amount (GRAM)">
+      <Field label={t("deposit.amount")}>
         <div className="relative">
           <input
             inputMode="decimal"
@@ -639,7 +653,7 @@ function DepositTab() {
         </div>
         {amountNum > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-            ≈ ${usdtValue.toFixed(2)} USDT · earns {(amountNum * 0.033).toFixed(4)} GRAM/day
+            {t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: (amountNum * 0.033).toFixed(4) })}
           </p>
         )}
       </Field>
@@ -650,12 +664,12 @@ function DepositTab() {
         onClick={() => pay.mutate()}
         className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50 shadow-xl glow-primary"
       >
-        {pay.isPending ? "Waiting for wallet…" : wallet ? "Pay & start earning" : "Connect wallet to deposit"}
+        {pay.isPending ? t("deposit.waiting") : wallet ? t("deposit.pay") : t("deposit.connect_to_deposit")}
       </motion.button>
 
       {!!deposits?.length && (
         <div className="card-glass rounded-2xl p-4">
-          <p className="font-semibold mb-2">History</p>
+          <p className="font-semibold mb-2">{t("common.history")}</p>
           {deposits.map((d: any) => (
             <div key={d.id} className="flex justify-between text-sm py-1.5">
               <span>{Number(d.amount_ton).toFixed(4)} GRAM</span>
@@ -667,6 +681,7 @@ function DepositTab() {
     </div>
   );
 }
+
 
 // Build a TonConnect payload cell containing a text comment (op=0 + utf-8 memo).
 // Uses @ton/core-style CRC serialization via a minimal handcrafted BOC.
@@ -738,6 +753,7 @@ function Row({ k, v, strong, muted }: { k: string; v: string; strong?: boolean; 
 
 
 function WithdrawTab() {
+  const { t } = useT();
   const meFn = useServerFn(getMe);
   const wFn = useServerFn(submitWithdrawal);
   const lFn = useServerFn(listWithdrawals);
@@ -748,28 +764,28 @@ function WithdrawTab() {
   const { data: hist } = useQuery({ queryKey: ["withdrawals"], queryFn: () => lFn() });
   const mut = useMutation({
     mutationFn: () => wFn({ data: { amount: Number(amount), address } }),
-    onSuccess: (r) => { toast.success(`Requested. Net ${formatGram(r.net)} GRAM`); qc.invalidateQueries(); },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onSuccess: (r) => { toast.success(t("withdraw.requested_net", { amount: formatGram(r.net) })); qc.invalidateQueries(); },
+    onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
   });
   return (
     <div className="space-y-3">
-      <h2 className="text-2xl font-bold">Withdraw</h2>
-      <p className="text-sm text-muted-foreground">Min 100 GRAM. 5% network fee.</p>
+      <h2 className="text-2xl font-bold">{t("withdraw.title")}</h2>
+      <p className="text-sm text-muted-foreground">{t("withdraw.subtitle")}</p>
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Available</span>
+          <span className="text-muted-foreground">{t("withdraw.available")}</span>
           <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
         </div>
-        <Field label="Amount (GRAM)"><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" /></Field>
-        <Field label="GRAM address"><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
+        <Field label={t("withdraw.amount")}><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" /></Field>
+        <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
         <button disabled={mut.isPending} onClick={() => mut.mutate()}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
-          {mut.isPending ? "Submitting…" : "Request withdrawal"}
+          {mut.isPending ? t("withdraw.submitting") : t("withdraw.request")}
         </button>
       </div>
       <div className="card-glass rounded-2xl p-4">
-        <p className="font-semibold mb-2">History</p>
-        {!hist?.length && <p className="text-sm text-muted-foreground">No withdrawals yet.</p>}
+        <p className="font-semibold mb-2">{t("common.history")}</p>
+        {!hist?.length && <p className="text-sm text-muted-foreground">{t("withdraw.none")}</p>}
         {hist?.map((w: any) => (
           <div key={w.id} className="flex justify-between text-sm py-1.5">
             <span>{formatGram(w.amount)} GRAM</span>
@@ -791,13 +807,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
+  const { t } = useT();
   const items: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "mine", label: "Mine", icon: <Pickaxe className="w-5 h-5" /> },
-    { id: "tasks", label: "Tasks", icon: <ListChecks className="w-5 h-5" /> },
-    { id: "top", label: "Top", icon: <Trophy className="w-5 h-5" /> },
-    { id: "friends", label: "Friends", icon: <Users className="w-5 h-5" /> },
-    { id: "deposit", label: "Deposit", icon: <ArrowDownToLine className="w-5 h-5" /> },
-    { id: "withdraw", label: "Cash", icon: <ArrowUpFromLine className="w-5 h-5" /> },
+    { id: "mine", label: t("nav.mine"), icon: <Pickaxe className="w-5 h-5" /> },
+    { id: "tasks", label: t("nav.tasks"), icon: <ListChecks className="w-5 h-5" /> },
+    { id: "top", label: t("nav.top"), icon: <Trophy className="w-5 h-5" /> },
+    { id: "friends", label: t("nav.friends"), icon: <Users className="w-5 h-5" /> },
+    { id: "deposit", label: t("nav.deposit"), icon: <ArrowDownToLine className="w-5 h-5" /> },
+    { id: "withdraw", label: t("nav.cash"), icon: <ArrowUpFromLine className="w-5 h-5" /> },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40">
@@ -819,7 +836,9 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   );
 }
 
+
 function AdminTab() {
+  const { t: tr } = useT();
   const statsFn = useServerFn(adminStats);
   const listFn = useServerFn(adminListTasks);
   const saveFn = useServerFn(adminSaveTask);
@@ -860,81 +879,79 @@ function AdminTab() {
       },
     }),
     onSuccess: () => {
-      toast.success(editing ? "Tarea actualizada" : "Tarea creada");
+      toast.success(editing ? tr("admin.task_updated") : tr("admin.task_created"));
       setForm(empty);
       qc.invalidateQueries({ queryKey: ["admin-tasks"] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Error"),
+    onError: (e: any) => toast.error(e?.message ?? tr("common.error")),
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => {
-      toast.success("Eliminada");
+      toast.success(tr("admin.deleted"));
       qc.invalidateQueries({ queryKey: ["admin-tasks"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Error"),
+    onError: (e: any) => toast.error(e?.message ?? tr("common.error")),
   });
 
   return (
     <div className="space-y-4 pb-4">
       <div className="flex items-center gap-2">
         <Shield className="w-5 h-5 text-primary" />
-        <h2 className="text-2xl font-bold">Admin</h2>
+        <h2 className="text-2xl font-bold">{tr("admin.title")}</h2>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Users" value={String(stats?.users ?? 0)} sub={`${stats?.completedToday ?? 0} tasks today`} icon={<Users className="w-4 h-4 text-primary" />} />
-        <StatCard label="Deposits" value={`${(stats?.deposits.totalTon ?? 0).toFixed(2)} TON`} sub={`${stats?.deposits.confirmed ?? 0} confirmed`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
-        <StatCard label="Withdrawals" value={`${formatGram(stats?.withdrawals.totalGram ?? 0)}`} sub={`${stats?.withdrawals.pending ?? 0} pending`} icon={<ArrowUpFromLine className="w-4 h-4 text-[color:var(--gold)]" />} />
-        <StatCard label="Mining rate" value={`${formatGram(stats?.totals.miningRate ?? 0)}/d`} sub={`${formatGram(stats?.totals.balance ?? 0)} balances`} icon={<Sparkles className="w-4 h-4 text-accent" />} />
+        <StatCard label={tr("admin.users")} value={String(stats?.users ?? 0)} sub={tr("admin.tasks_today", { n: stats?.completedToday ?? 0 })} icon={<Users className="w-4 h-4 text-primary" />} />
+        <StatCard label={tr("admin.deposits")} value={`${(stats?.deposits.totalTon ?? 0).toFixed(2)} TON`} sub={tr("admin.confirmed", { n: stats?.deposits.confirmed ?? 0 })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
+        <StatCard label={tr("admin.withdrawals")} value={`${formatGram(stats?.withdrawals.totalGram ?? 0)}`} sub={tr("admin.pending", { n: stats?.withdrawals.pending ?? 0 })} icon={<ArrowUpFromLine className="w-4 h-4 text-[color:var(--gold)]" />} />
+        <StatCard label={tr("admin.mining_rate")} value={`${formatGram(stats?.totals.miningRate ?? 0)}/d`} sub={tr("admin.balances", { n: formatGram(stats?.totals.balance ?? 0) })} icon={<Sparkles className="w-4 h-4 text-accent" />} />
       </div>
 
       <div className="card-glass rounded-2xl p-4 space-y-2">
         <p className="font-semibold flex items-center gap-2">
           {editing ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {editing ? "Editar tarea" : "Nueva tarea"}
+          {editing ? tr("admin.edit_task") : tr("admin.new_task")}
         </p>
         <div className="grid grid-cols-2 gap-2">
           <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            placeholder="Título" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            placeholder={tr("admin.title_ph")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            placeholder="Código único (ej: sub_canal_1)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+            placeholder={tr("admin.code_ph")} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
           <select className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
             value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as any })}>
-            <option value="daily">Daily</option>
-            <option value="once">Once</option>
-            <option value="channel">Channel (verificar suscripción)</option>
-            <option value="group">Group (verificar miembro)</option>
+            <option value="daily">{tr("admin.kind.daily")}</option>
+            <option value="once">{tr("admin.kind.once")}</option>
+            <option value="channel">{tr("admin.kind.channel")}</option>
+            <option value="group">{tr("admin.kind.group")}</option>
           </select>
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            type="number" step="0.01" placeholder="Recompensa GRAM"
+            type="number" step="0.01" placeholder={tr("admin.reward_ph")}
             value={form.reward} onChange={(e) => setForm({ ...form, reward: Number(e.target.value) })} />
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            type="number" step="0.01" placeholder="Depósito mínimo"
+            type="number" step="0.01" placeholder={tr("admin.min_deposit_ph")}
             value={form.min_deposit} onChange={(e) => setForm({ ...form, min_deposit: Number(e.target.value) })} />
           <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            placeholder="Descripción (opcional)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            placeholder={tr("admin.desc_ph")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           {(form.kind === "channel" || form.kind === "group") && (
             <>
               <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-                placeholder="@canal_o_grupo (chat_id)"
+                placeholder={tr("admin.target_chat_ph")}
                 value={form.target_chat} onChange={(e) => setForm({ ...form, target_chat: e.target.value })} />
               <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-                placeholder="https://t.me/... (link para el usuario)"
+                placeholder={tr("admin.link_ph")}
                 value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} />
             </>
           )}
           <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground">
             <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
-            Activa
+            {tr("admin.active")}
           </label>
         </div>
         {(form.kind === "channel" || form.kind === "group") && (
-          <p className="text-[11px] text-muted-foreground">
-            El bot <b>@Tickgramaibot</b> debe ser administrador del canal/grupo para verificar la suscripción del usuario.
-          </p>
+          <p className="text-[11px] text-muted-foreground">{tr("admin.bot_note")}</p>
         )}
         <div className="flex gap-2 pt-1">
           <button
@@ -942,25 +959,25 @@ function AdminTab() {
             disabled={save.isPending || !form.title || !form.code}
             className="flex-1 py-2 rounded-xl bg-gradient-to-r from-primary to-accent font-semibold text-primary-foreground text-sm disabled:opacity-50"
           >
-            {save.isPending ? "Guardando…" : editing ? "Guardar cambios" : "Crear tarea"}
+            {save.isPending ? tr("admin.saving") : editing ? tr("admin.save_changes") : tr("admin.create_task")}
           </button>
           {editing && (
             <button onClick={() => setForm(empty)} className="px-3 py-2 rounded-xl card-glass text-sm">
-              Cancelar
+              {tr("common.cancel")}
             </button>
           )}
         </div>
       </div>
 
       <div className="card-glass rounded-2xl p-4">
-        <p className="font-semibold mb-2">Tareas ({tasks?.length ?? 0})</p>
+        <p className="font-semibold mb-2">{tr("admin.tasks_count", { count: tasks?.length ?? 0 })}</p>
         <div className="space-y-2">
           {tasks?.map((t: any) => (
             <div key={t.id} className="rounded-xl bg-background/40 p-3 flex items-start gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-sm truncate">{t.title}</p>
-                  {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">off</span>}
+                  {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{tr("common.off")}</span>}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   {t.kind} · +{formatGram(t.reward)} GRAM
@@ -975,12 +992,12 @@ function AdminTab() {
                 <Pencil className="w-3.5 h-3.5" />
               </button>
               <button className="p-2 rounded-lg card-glass text-destructive"
-                onClick={() => { if (confirm("¿Eliminar tarea?")) remove.mutate(t.id); }}>
+                onClick={() => { if (confirm(tr("admin.delete_confirm"))) remove.mutate(t.id); }}>
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
-          {!tasks?.length && <p className="text-xs text-muted-foreground">Sin tareas todavía.</p>}
+          {!tasks?.length && <p className="text-xs text-muted-foreground">{tr("admin.no_tasks")}</p>}
         </div>
       </div>
     </div>
