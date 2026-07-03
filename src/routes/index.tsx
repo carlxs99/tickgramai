@@ -648,7 +648,7 @@ function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
   const wallet = useTonWallet();
 
   const clicksNum = Math.max(0, Math.floor(Number(clicks) || 0));
-  const costGram = clicksNum * 0.001;
+  const costTon = clicksNum * 0.001;
   const canSubmit = title.trim().length >= 2 && /^https?:\/\//i.test(link.trim()) && clicksNum >= 250;
 
   const submit = useMutation({
@@ -723,7 +723,7 @@ function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
 
         <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
           <p className="text-sm">
-            {tr("partner.cost_label")} <span className="font-bold tabular-nums">{costGram.toFixed(4)} GRAM</span>
+            {tr("partner.cost_label")} <span className="font-bold tabular-nums">{costTon.toFixed(4)} TON</span>
           </p>
         </div>
 
