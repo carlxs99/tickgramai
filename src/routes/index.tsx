@@ -218,12 +218,13 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
 const meQO = (fn: () => Promise<any>) => queryOptions({ queryKey: ["me"], queryFn: fn, refetchInterval: 30000 });
 
 function MineTab() {
+  const { t } = useT();
   const meFn = useServerFn(getMe);
   const collectFn = useServerFn(collectIncome);
   const qc = useQueryClient();
   const { data } = useSuspenseQuery(meQO(() => meFn()));
   const [tick, setTick] = useState(0);
-  useEffect(() => { const i = setInterval(() => setTick((t) => t + 1), 100); return () => clearInterval(i); }, []);
+  useEffect(() => { const i = setInterval(() => setTick((tk) => tk + 1), 100); return () => clearInterval(i); }, []);
 
   const live = useMemo(() => {
     const now = Date.now();
@@ -236,10 +237,10 @@ function MineTab() {
     mutationFn: () => collectFn(),
     onSuccess: (r) => {
       getTelegram()?.HapticFeedback?.impactOccurred("medium");
-      toast.success(`+${formatGram(r.gained, 4)} GRAM collected`);
+      toast.success(`+${formatGram(r.gained, 4)} GRAM ${t("mine.collected_toast")}`);
       qc.invalidateQueries();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
   });
 
   const rate = Number(data.profile.mining_rate);
@@ -254,7 +255,7 @@ function MineTab() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/10 pointer-events-none" />
         <div className="relative">
           <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs uppercase tracking-widest">
-            <Sparkles className="w-3.5 h-3.5" /> Uncollected
+            <Sparkles className="w-3.5 h-3.5" /> {t("mine.uncollected")}
           </div>
           <div className="mt-2 text-5xl font-extrabold tabular-nums">
             {formatGram(live, 6)}
@@ -264,8 +265,8 @@ function MineTab() {
           </div>
           <div className="mt-2 text-sm text-muted-foreground">
             {rate > 0
-              ? <>{formatGram(rate, 2)} GRAM/day <span className="text-[color:var(--success)]">(≈ ${usdt(rate, price)} /day)</span></>
-              : "Deposit GRAM to start mining"}
+              ? <>{formatGram(rate, 2)} {t("mine.per_day")} <span className="text-[color:var(--success)]">(≈ ${usdt(rate, price)} {t("mine.per_day_suffix")})</span></>
+              : t("mine.deposit_to_start")}
           </div>
           <motion.button
             whileTap={{ scale: 0.96 }}
@@ -273,20 +274,21 @@ function MineTab() {
             disabled={collect.isPending || live < 0.0001}
             className="mt-5 w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-accent font-bold text-primary-foreground disabled:opacity-50 shadow-lg"
           >
-            {collect.isPending ? "Collecting…" : "Collect Gram"}
+            {collect.isPending ? t("mine.collecting") : t("mine.collect")}
           </motion.button>
         </div>
       </motion.div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Balance" value={formatGram(data.profile.balance)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
-        <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " GRAM"} sub={`1 GRAM ≈ $${price.toFixed(2)}`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
+        <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
+        <StatCard label={t("mine.deposits")} value={formatGram(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
       
     </div>
   );
 }
+
 
 function StatCard({ label, value, sub, icon }: { label: string; value: string; sub?: string; icon: React.ReactNode }) {
   return (
