@@ -102,7 +102,7 @@ export const authWithTelegram = createServerFn({ method: "POST" })
 
     const { error: upsertErr } = await supabaseAdmin
       .from("profiles")
-      .upsert(profilePatch, { onConflict: "user_id" });
+      .upsert(profilePatch as never, { onConflict: "user_id" });
     if (upsertErr) {
       console.error("[telegram-auth] profile upsert failed:", upsertErr);
       throw new Error(`Profile upsert failed: ${upsertErr.message}`);
