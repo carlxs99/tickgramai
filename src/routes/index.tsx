@@ -714,6 +714,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const items: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "mine", label: "Mine", icon: <Pickaxe className="w-5 h-5" /> },
     { id: "tasks", label: "Tasks", icon: <ListChecks className="w-5 h-5" /> },
+    { id: "top", label: "Top", icon: <Trophy className="w-5 h-5" /> },
     { id: "friends", label: "Friends", icon: <Users className="w-5 h-5" /> },
     { id: "deposit", label: "Deposit", icon: <ArrowDownToLine className="w-5 h-5" /> },
     { id: "withdraw", label: "Cash", icon: <ArrowUpFromLine className="w-5 h-5" /> },
