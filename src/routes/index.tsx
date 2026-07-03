@@ -426,7 +426,7 @@ function TasksTab() {
       <div className="space-y-2 mt-3">
         {data.map((t: any) => (
           <div key={t.id} className="card-glass rounded-2xl p-4 flex items-center gap-3">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <p className="font-semibold">{t.title}</p>
               {t.description && <p className="text-xs text-muted-foreground">{t.description}</p>}
               <p className="text-xs mt-1 text-[color:var(--success)]">+{formatGram(t.reward)} GRAM</p>
@@ -434,10 +434,18 @@ function TasksTab() {
             {t.completed ? (
               <div className="flex items-center gap-1 text-[color:var(--success)] text-sm"><CheckCircle2 className="w-4 h-4" />Done</div>
             ) : (
-              <button onClick={() => mut.mutate(t.id)} disabled={mut.isPending}
-                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
-                Claim
-              </button>
+              <div className="flex flex-col gap-1">
+                {(t.kind === "channel" || t.kind === "group") && t.link && (
+                  <a href={t.link} target="_blank" rel="noreferrer"
+                    className="px-3 py-1.5 rounded-xl card-glass text-xs font-semibold text-center">
+                    Join
+                  </a>
+                )}
+                <button onClick={() => mut.mutate(t.id)} disabled={mut.isPending}
+                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+                  {t.kind === "channel" || t.kind === "group" ? "Verify" : "Claim"}
+                </button>
+              </div>
             )}
           </div>
         ))}
