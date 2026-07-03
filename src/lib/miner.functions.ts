@@ -52,13 +52,18 @@ export const listTasks = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const today = new Date().toISOString().slice(0, 10);
-    const [tasks, done] = await Promise.all([
+    const [tasks, done, prof] = await Promise.all([
       supabase.from("tasks").select("*").eq("is_active", true).order("reward"),
       supabase.from("user_tasks").select("task_id").eq("user_id", userId).eq("completed_on", today),
+      supabase.from("profiles").select("deposit_total").eq("user_id", userId).maybeSingle(),
     ]);
     if (tasks.error) throw tasks.error;
     const completed = new Set((done.data ?? []).map((r) => r.task_id));
-    return (tasks.data ?? []).map((t) => ({ ...t, completed: completed.has(t.id) }));
+    const depositTotal = Number(prof.data?.deposit_total ?? 0);
+    // Hide tasks the user has not unlocked yet (e.g. "Deposit TON" until a deposit exists).
+    return (tasks.data ?? [])
+      .filter((t) => depositTotal >= Number(t.min_deposit ?? 0))
+      .map((t) => ({ ...t, completed: completed.has(t.id) }));
   });
 
 export const completeTask = createServerFn({ method: "POST" })
