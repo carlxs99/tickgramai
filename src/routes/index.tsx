@@ -241,7 +241,7 @@ function MineTab() {
           <div className="mt-2 text-sm text-muted-foreground">
             {rate > 0
               ? <>{formatGram(rate, 2)} GRAM/day <span className="text-[color:var(--success)]">(≈ ${usdt(rate, price)} /day)</span></>
-              : "Deposit TON to start mining"}
+              : "Deposit GRAM to start mining"}
           </div>
           <motion.button
             whileTap={{ scale: 0.96 }}
@@ -256,7 +256,7 @@ function MineTab() {
 
       <div className="grid grid-cols-2 gap-3">
         <StatCard label="Balance" value={formatGram(data.profile.balance)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
-        <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " TON"} sub={`1 TON ≈ $${price.toFixed(2)}`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
+        <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " GRAM"} sub={`1 GRAM ≈ $${price.toFixed(2)}`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
       
@@ -523,7 +523,7 @@ function DepositTab() {
     <div className="space-y-3 pb-2">
       <h2 className="text-2xl font-bold">Deposit</h2>
       <p className="text-sm text-muted-foreground">
-        Connect your TON wallet and pay directly. Your unique memo is added automatically so we can detect your deposit.
+        Connect your GRAM wallet and pay directly. Your unique memo is added automatically so we can detect your deposit.
       </p>
 
       <div className="card-glass rounded-2xl p-4 space-y-3">
@@ -550,7 +550,7 @@ function DepositTab() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wallet className="w-4 h-4 text-primary" />
-            <span className="font-semibold text-sm">TON Wallet</span>
+            <span className="font-semibold text-sm">GRAM Wallet</span>
           </div>
           {wallet ? (
             <button
@@ -576,7 +576,7 @@ function DepositTab() {
         )}
       </div>
 
-      <Field label="Amount (TON)">
+      <Field label="Amount (GRAM)">
         <div className="relative">
           <input
             inputMode="decimal"
@@ -585,7 +585,7 @@ function DepositTab() {
             placeholder="0.0"
             className="input pr-16 text-lg font-semibold"
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">TON</span>
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">GRAM</span>
         </div>
         {amountNum > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
@@ -608,7 +608,7 @@ function DepositTab() {
           <p className="font-semibold mb-2">History</p>
           {deposits.map((d: any) => (
             <div key={d.id} className="flex justify-between text-sm py-1.5">
-              <span>{Number(d.amount_ton).toFixed(4)} TON</span>
+              <span>{Number(d.amount_ton).toFixed(4)} GRAM</span>
               <span className="text-muted-foreground">{d.status}</span>
             </div>
           ))}
@@ -711,7 +711,7 @@ function WithdrawTab() {
           <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
         </div>
         <Field label="Amount (GRAM)"><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" /></Field>
-        <Field label="TON address"><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
+        <Field label="GRAM address"><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
         <button disabled={mut.isPending} onClick={() => mut.mutate()}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
           {mut.isPending ? "Submitting…" : "Request withdrawal"}

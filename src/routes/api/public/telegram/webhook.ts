@@ -46,17 +46,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const appUrl = `${new URL(request.url).origin}/`;
             await sendMessage(
               chatId,
-              `⛏️ <b>Ultra Gram Miner</b>\n\nMine GRAM inside Telegram. Complete tasks, invite friends, and deposit TON to earn passive income.\n\nTap the button below to open the app.`,
+              `🤖 <b>TICK GRAM AI</b>\n\nWelcome to <b>TICK GRAM AI</b> — the smartest way to mine <b>GRAM</b> right inside Telegram.\n\n• Complete tasks and earn GRAM\n• Invite friends for bonus rewards\n• Deposit to boost your mining rate and earn passive income daily\n\nTap the button below to launch the app.`,
               {
                 reply_markup: {
                   inline_keyboard: [[
-                    { text: "🚀 Open Ultra Gram Miner", web_app: { url: appUrl } },
+                    { text: "🚀 Open TICK GRAM AI", web_app: { url: appUrl } },
                   ]],
                 },
               },
             );
           } else if (text.startsWith("/help")) {
-            await sendMessage(chatId, "Use /start to open Ultra Gram Miner.");
+            await sendMessage(chatId, "Use /start to open TICK GRAM AI.");
           }
         }
 
