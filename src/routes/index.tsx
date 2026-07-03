@@ -116,8 +116,10 @@ function usdt(gram: number, price: number) {
 function Header() {
   const meFn = useServerFn(getMe);
   const { data } = useQuery({ queryKey: ["me-header"], queryFn: () => meFn(), refetchInterval: 15000 });
+  const price = useTonPrice();
   const name = data?.profile.first_name ?? data?.profile.username ?? "Miner";
   const initial = name.slice(0, 1).toUpperCase();
+  const bal = Number(data?.profile.balance ?? 0);
   return (
     <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-white/5">
       <div className="flex items-center gap-3 px-4 py-3">
@@ -128,10 +130,13 @@ function Header() {
           <p className="text-xs text-muted-foreground">Welcome</p>
           <p className="font-semibold truncate">{name}</p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full card-glass">
-          <Coins className="w-4 h-4 text-[color:var(--gold)]" />
-          <span className="font-semibold text-sm">{formatGram(data?.profile.balance ?? 0)}</span>
-          <span className="text-xs text-muted-foreground">GRAM</span>
+        <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 rounded-2xl card-glass">
+          <div className="flex items-center gap-1">
+            <Coins className="w-3.5 h-3.5 text-[color:var(--gold)]" />
+            <span className="font-semibold text-sm">{formatGram(bal)}</span>
+            <span className="text-[10px] text-muted-foreground">GRAM</span>
+          </div>
+          <span className="text-[10px] text-[color:var(--success)] tabular-nums">≈ ${usdt(bal, price)} USDT</span>
         </div>
       </div>
     </header>
