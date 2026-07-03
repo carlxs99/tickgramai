@@ -8,7 +8,7 @@ import { toast, Toaster } from "sonner";
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
-import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends, saveWallet } from "@/lib/miner.functions";
+import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends, saveWallet, reinvestBalance } from "@/lib/miner.functions";
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
@@ -587,6 +587,22 @@ function DepositTab() {
   const [amount, setAmount] = useState("");
   const { data: deposits } = useQuery({ queryKey: ["deposits"], queryFn: () => listFn() });
 
+  // Reinvest
+  const reinvestFn = useServerFn(reinvestBalance);
+  const [reinvestAmount, setReinvestAmount] = useState("");
+  const reinvestNum = Math.max(0, Number(reinvestAmount) || 0);
+  const balance = Number(me.profile.balance ?? 0);
+  const reinvest = useMutation({
+    mutationFn: (amt: number) => reinvestFn({ data: { amount: amt } }),
+    onSuccess: (r: any) => {
+      toast.success(`+${(r.gramPerDay ?? 0).toFixed(4)} GRAM/day`);
+      getTelegram()?.HapticFeedback?.impactOccurred("medium");
+      setReinvestAmount("");
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
+  });
+
   const amountNum = Math.max(0, Number(amount) || 0);
   const usdtValue = amountNum * price;
   const memoTag: string = (me.profile as any).memo_tag ?? "";
@@ -702,6 +718,56 @@ function DepositTab() {
       >
         {pay.isPending ? t("deposit.waiting") : wallet ? t("deposit.pay") : t("deposit.connect_to_deposit")}
       </motion.button>
+
+      {/* Reinvest section — reinvest available GRAM balance to increase mining rate */}
+      <div className="card-glass rounded-2xl p-4 space-y-3 mt-2">
+        <h3 className="text-lg font-bold">{t("deposit.reinvest_title")}</h3>
+        <p className="text-xs text-muted-foreground">{t("deposit.reinvest_subtitle")}</p>
+        <Field label={t("deposit.reinvest_amount")}>
+          <div className="relative">
+            <input
+              inputMode="decimal"
+              value={reinvestAmount}
+              onChange={(e) => setReinvestAmount(e.target.value)}
+              placeholder="0.1"
+              className="input pr-16 text-lg font-semibold"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">GRAM</span>
+          </div>
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              {t("deposit.balance_label", { n: formatGram(balance, 4) })}
+            </span>
+            <button
+              type="button"
+              onClick={() => setReinvestAmount(String(Math.max(0, Math.floor(balance * 10000) / 10000)))}
+              className="text-[11px] text-primary underline"
+            >
+              {t("deposit.max")}
+            </button>
+          </div>
+        </Field>
+        <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
+          <p className="text-sm font-semibold tabular-nums">
+            + {(reinvestNum * 0.033).toFixed(4)} GRAM {t("mine.per_day")}
+          </p>
+        </div>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          disabled={reinvest.isPending || reinvestNum < 0.1 || reinvestNum > balance}
+          onClick={() => reinvest.mutate(reinvestNum)}
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50 shadow-lg"
+        >
+          {reinvest.isPending ? t("deposit.waiting") : t("deposit.reinvest_cta")}
+        </motion.button>
+        {reinvestNum > 0 && reinvestNum < 0.1 && (
+          <p className="text-[11px] text-[color:var(--danger)] text-center">{t("deposit.reinvest_min")}</p>
+        )}
+        {reinvestNum > balance && (
+          <p className="text-[11px] text-[color:var(--danger)] text-center">{t("deposit.reinvest_insufficient")}</p>
+        )}
+      </div>
+
 
       {!!deposits?.length && (
         <div className="card-glass rounded-2xl p-4">

@@ -174,6 +174,60 @@ export const submitDeposit = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Reinvest GRAM from balance into mining_rate. Same ROI as an on-chain
+// deposit (3.3% daily), atomically debits balance and increases mining_rate.
+// Minimum reinvest amount is 0.1 GRAM.
+export const reinvestBalance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { amount: number }) =>
+    z.object({ amount: z.number().positive().min(0.1) }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Atomic decrement first — returns NULL if balance is insufficient.
+    const { data: newBalance, error: dErr } = await supabaseAdmin
+      .rpc("atomic_decrement_balance" as never, { _user_id: userId, _amount: data.amount } as never);
+    if (dErr) throw dErr;
+    if (newBalance === null || newBalance === undefined) {
+      throw new Error("Insufficient balance");
+    }
+    const gramPerDay = data.amount * 0.033;
+    // Increase mining_rate and deposit_total (which gates deposit-locked tasks).
+    // Read → write is safe here because mining_rate/deposit_total are only
+    // mutated by trusted server code (service_role), never by the user.
+    const { data: prof, error: pErr } = await supabaseAdmin
+      .from("profiles")
+      .select("mining_rate, deposit_total")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (pErr || !prof) {
+      // Refund on read failure so the user is never charged for a no-op.
+      await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: userId, _amount: data.amount } as never);
+      throw pErr ?? new Error("Profile not found");
+    }
+    const { error: uErr } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        mining_rate: Number(prof.mining_rate ?? 0) + gramPerDay,
+        deposit_total: Number(prof.deposit_total ?? 0) + data.amount,
+      })
+      .eq("user_id", userId);
+    if (uErr) {
+      await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: userId, _amount: data.amount } as never);
+      throw uErr;
+    }
+    // Log as a confirmed deposit so it shows in history.
+    await supabaseAdmin.from("deposits").insert({
+      user_id: userId,
+      amount_ton: data.amount,
+      gram_per_day: gramPerDay,
+      tx_hash: null,
+      status: "confirmed",
+    });
+    return { ok: true, balance: Number(newBalance), gramPerDay };
+  });
+
+
 
 export const listDeposits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
