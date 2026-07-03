@@ -67,8 +67,40 @@ export const completeTask = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: task, error: tErr } = await supabase
-      .from("tasks").select("id,reward,is_active").eq("id", data.taskId).maybeSingle();
+      .from("tasks").select("id,reward,is_active,kind,target_chat").eq("id", data.taskId).maybeSingle();
     if (tErr || !task?.is_active) throw new Error("Task not available");
+
+    // Channel/group tasks: verify the user is subscribed via getChatMember.
+    if ((task.kind === "channel" || task.kind === "group") && task.target_chat) {
+      const { data: profile } = await supabase
+        .from("profiles").select("telegram_id").eq("user_id", userId).maybeSingle();
+      const tgId = profile?.telegram_id;
+      if (!tgId) throw new Error("Cuenta de Telegram no vinculada");
+
+      const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
+      const TELEGRAM_API_KEY = process.env.TELEGRAM_API_KEY;
+      if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY) throw new Error("Telegram no configurado");
+
+      const resp = await fetch("https://connector-gateway.lovable.dev/telegram/getChatMember", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "X-Connection-Api-Key": TELEGRAM_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ chat_id: task.target_chat, user_id: tgId }),
+      });
+      const json: any = await resp.json().catch(() => ({}));
+      if (!resp.ok || !json?.ok) {
+        throw new Error(
+          "No se pudo verificar la suscripción. Asegúrate de que el bot es admin del canal/grupo."
+        );
+      }
+      const status = json.result?.status;
+      const isMember = ["creator", "administrator", "member", "restricted"].includes(status);
+      if (!isMember) throw new Error("Aún no estás suscrito al canal/grupo");
+    }
+
     const today = new Date().toISOString().slice(0, 10);
     const { error: iErr } = await supabase.from("user_tasks").insert({
       user_id: userId, task_id: task.id, completed_on: today, reward: task.reward,
