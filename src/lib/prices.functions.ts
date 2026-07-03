@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 // Simple in-memory cache. Worker instances may reset — that's fine, we just refetch.
 let cache: { price: number; at: number } | null = null;
-const TTL_MS = 60_000;
+const TTL_MS = 15_000;
 
 export const getTonPrice = createServerFn({ method: "GET" }).handler(async () => {
   if (cache && Date.now() - cache.at < TTL_MS) return { price: cache.price, cached: true };
