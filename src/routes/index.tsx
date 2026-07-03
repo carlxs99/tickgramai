@@ -3,15 +3,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2 } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
-import { getMe, collectIncome, listTasks, completeTask, submitDeposit, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends } from "@/lib/miner.functions";
+import { getMe, collectIncome, listTasks, completeTask, submitDeposit, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends, saveWallet } from "@/lib/miner.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
 import { formatGram } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
+
+const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
 
 export const Route = createFileRoute("/")({
   ssr: false,
