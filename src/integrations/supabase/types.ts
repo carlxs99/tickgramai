@@ -180,8 +180,10 @@ export type Database = {
           id: string
           is_active: boolean
           kind: string
+          link: string | null
           min_deposit: number
           reward: number
+          target_chat: string | null
           title: string
           updated_at: string
         }
@@ -192,8 +194,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           kind?: string
+          link?: string | null
           min_deposit?: number
           reward?: number
+          target_chat?: string | null
           title: string
           updated_at?: string
         }
@@ -204,8 +208,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           kind?: string
+          link?: string | null
           min_deposit?: number
           reward?: number
+          target_chat?: string | null
           title?: string
           updated_at?: string
         }
