@@ -83,7 +83,8 @@ export const completeTask = createServerFn({ method: "POST" })
         throw new Error("Debes hacer un depósito primero para desbloquear esta tarea");
       }
     }
-    if (tErr || !task?.is_active) throw new Error("Task not available");
+
+
 
     // Channel/group tasks: verify the user is subscribed via getChatMember.
     if ((task.kind === "channel" || task.kind === "group") && task.target_chat) {
