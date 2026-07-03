@@ -550,7 +550,7 @@ function DepositTab() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wallet className="w-4 h-4 text-primary" />
-            <span className="font-semibold text-sm">TON Wallet</span>
+            <span className="font-semibold text-sm">GRAM Wallet</span>
           </div>
           {wallet ? (
             <button
