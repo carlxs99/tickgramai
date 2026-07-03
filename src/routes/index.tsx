@@ -35,6 +35,7 @@ function MinerApp() {
 }
 
 function MinerAppInner() {
+  const { t } = useT();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("mine");
