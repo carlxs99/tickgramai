@@ -92,6 +92,27 @@ function Center({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex items-center justify-center">{children}</div>;
 }
 
+// TON price hook — 1 GRAM = 1 TON = price USDT
+function useTonPrice() {
+  const fn = useServerFn(getTonPrice);
+  const q = useQuery({
+    queryKey: ["ton-price"],
+    queryFn: () => fn(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  return q.data?.price ?? 5.5;
+}
+
+function usdt(gram: number, price: number) {
+  const v = gram * price;
+  if (!isFinite(v)) return "0.00";
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(2) + "M";
+  if (v >= 1000) return v.toFixed(2);
+  if (v >= 1) return v.toFixed(4);
+  return v.toFixed(6);
+}
+
 function Header() {
   const meFn = useServerFn(getMe);
   const { data } = useQuery({ queryKey: ["me-header"], queryFn: () => meFn(), refetchInterval: 15000 });
