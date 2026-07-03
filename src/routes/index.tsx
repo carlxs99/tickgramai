@@ -3,15 +3,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2 } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
-import { getMe, collectIncome, listTasks, completeTask, submitDeposit, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends } from "@/lib/miner.functions";
+import { getMe, collectIncome, listTasks, completeTask, submitDeposit, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends, saveWallet } from "@/lib/miner.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
 import { formatGram } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
+
+const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -63,28 +66,34 @@ function MinerApp() {
   }
   if (!ready) return <Center><Loader2 className="w-8 h-8 animate-spin text-primary" /></Center>;
 
+  const manifestUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/tonconnect-manifest.json`
+    : "https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json";
+
   return (
-    <div className="min-h-screen pb-24 max-w-md mx-auto">
-      <Toaster theme="dark" position="top-center" richColors />
-      <Header />
-      <AnimatePresence mode="wait">
-        <motion.main
-          key={tab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.18 }}
-          className="px-4 pt-4"
-        >
-          {tab === "mine" && <MineTab />}
-          {tab === "tasks" && <TasksTab />}
-          {tab === "friends" && <FriendsTab />}
-          {tab === "deposit" && <DepositTab />}
-          {tab === "withdraw" && <WithdrawTab />}
-        </motion.main>
-      </AnimatePresence>
-      <BottomNav tab={tab} setTab={setTab} />
-    </div>
+    <TonConnectUIProvider manifestUrl={manifestUrl}>
+      <div className="min-h-screen pb-24 max-w-md mx-auto">
+        <Toaster theme="dark" position="top-center" richColors />
+        <Header />
+        <AnimatePresence mode="wait">
+          <motion.main
+            key={tab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.18 }}
+            className="px-4 pt-4"
+          >
+            {tab === "mine" && <MineTab />}
+            {tab === "tasks" && <TasksTab />}
+            {tab === "friends" && <FriendsTab />}
+            {tab === "deposit" && <DepositTab />}
+            {tab === "withdraw" && <WithdrawTab />}
+          </motion.main>
+        </AnimatePresence>
+        <BottomNav tab={tab} setTab={setTab} />
+      </div>
+    </TonConnectUIProvider>
   );
 }
 
@@ -317,31 +326,61 @@ function FriendsTab() {
 }
 
 function DepositTab() {
-  const submitFn = useServerFn(submitDeposit);
   const listFn = useServerFn(listDeposits);
   const meFn = useServerFn(getMe);
+  const saveWalletFn = useServerFn(saveWallet);
   const qc = useQueryClient();
   const price = useTonPrice();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
 
+  const [tonConnectUI] = useTonConnectUI();
+  const wallet = useTonWallet();
   const [amount, setAmount] = useState("");
-  const [hash, setHash] = useState("");
   const { data: deposits } = useQuery({ queryKey: ["deposits"], queryFn: () => listFn() });
 
   const amountNum = Math.max(0, Number(amount) || 0);
   const usdtValue = amountNum * price;
+  const memoTag: string = (me.profile as any).memo_tag ?? "";
 
-  const submit = useMutation({
-    mutationFn: () => submitFn({ data: { amountTon: amountNum, txHash: hash || undefined } }),
-    onSuccess: () => { toast.success("Deposit submitted"); setAmount(""); setHash(""); qc.invalidateQueries(); },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+  // Persist wallet address whenever it changes
+  useEffect(() => {
+    const addr = wallet?.account?.address ?? null;
+    const saved = (me.profile as any).wallet_address ?? null;
+    if (addr !== saved) {
+      saveWalletFn({ data: { address: addr } }).catch(() => {});
+    }
+  }, [wallet?.account?.address]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pay = useMutation({
+    mutationFn: async () => {
+      if (!wallet) throw new Error("Connect your wallet first");
+      if (amountNum <= 0) throw new Error("Enter an amount");
+      if (!memoTag) throw new Error("Missing memo");
+
+      // Build a text-comment payload (op=0, memo string) as base64 BOC-like cell.
+      // TonConnect accepts the classic { address, amount, payload? } shape.
+      // A memo/comment payload is a cell: 32-bit op=0 + utf-8 string, serialized.
+      const memoPayload = buildCommentPayload(memoTag);
+      const nano = Math.floor(amountNum * 1e9).toString();
+
+      await tonConnectUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [{ address: RECEIVING_WALLET, amount: nano, payload: memoPayload }],
+      });
+    },
+    onSuccess: () => {
+      toast.success("Transaction sent. It will be credited automatically once confirmed on-chain.");
+      setAmount("");
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Transaction failed"),
   });
 
   return (
     <div className="space-y-3 pb-2">
       <h2 className="text-2xl font-bold">Deposit</h2>
       <p className="text-sm text-muted-foreground">
-        Send TON to your wallet and paste the transaction hash. 1 TON ≈ ${price.toFixed(2)} USDT.
+        Connect your TON wallet and pay directly. Your unique memo is added automatically so we can detect your deposit.
       </p>
 
       <div className="card-glass rounded-2xl p-4 space-y-3">
@@ -353,6 +392,45 @@ function DepositTab() {
           <span className="text-muted-foreground">Current rate</span>
           <span className="font-semibold">{formatGram(me.profile.mining_rate)} GRAM/day</span>
         </div>
+        <div className="flex justify-between text-sm items-center">
+          <span className="text-muted-foreground">Your memo</span>
+          <button
+            onClick={() => { navigator.clipboard.writeText(memoTag); toast.success("Memo copied"); }}
+            className="flex items-center gap-1.5 font-mono font-semibold text-primary"
+          >
+            {memoTag} <Copy className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="card-glass rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-primary" />
+            <span className="font-semibold text-sm">TON Wallet</span>
+          </div>
+          {wallet ? (
+            <button
+              onClick={() => tonConnectUI.disconnect()}
+              className="text-xs text-muted-foreground underline"
+            >
+              Disconnect
+            </button>
+          ) : null}
+        </div>
+        {wallet ? (
+          <p className="text-xs text-muted-foreground font-mono break-all">
+            {wallet.account.address}
+          </p>
+        ) : (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => tonConnectUI.openModal()}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground"
+          >
+            Connect Wallet
+          </motion.button>
+        )}
       </div>
 
       <Field label="Amount (TON)">
@@ -368,22 +446,18 @@ function DepositTab() {
         </div>
         {amountNum > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-            ≈ ${usdtValue.toFixed(2)} USDT
+            ≈ ${usdtValue.toFixed(2)} USDT · earns {(amountNum * 0.033).toFixed(4)} GRAM/day
           </p>
         )}
       </Field>
 
-      <Field label="Transaction hash (optional)">
-        <input value={hash} onChange={(e) => setHash(e.target.value)} placeholder="EQ…" className="input" />
-      </Field>
-
       <motion.button
         whileTap={{ scale: 0.97 }}
-        disabled={submit.isPending || amountNum <= 0}
-        onClick={() => submit.mutate()}
+        disabled={pay.isPending || amountNum <= 0 || !wallet}
+        onClick={() => pay.mutate()}
         className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50 shadow-xl glow-primary"
       >
-        {submit.isPending ? "Submitting…" : "Deposit & start earning"}
+        {pay.isPending ? "Waiting for wallet…" : wallet ? "Pay & start earning" : "Connect wallet to deposit"}
       </motion.button>
 
       {!!deposits?.length && (
@@ -400,6 +474,64 @@ function DepositTab() {
     </div>
   );
 }
+
+// Build a TonConnect payload cell containing a text comment (op=0 + utf-8 memo).
+// Uses @ton/core-style CRC serialization via a minimal handcrafted BOC.
+// For text comments TonConnect requires a base64 BOC of a Cell with:
+//   [uint32 op=0][string bytes...]
+function buildCommentPayload(memo: string): string {
+  // op=0 (4 bytes) + utf-8 memo
+  const memoBytes = new TextEncoder().encode(memo);
+  const data = new Uint8Array(4 + memoBytes.length);
+  // op = 0 already zero
+  data.set(memoBytes, 4);
+
+  // Minimal BOC with a single cell containing `data` bits.
+  const bits = data.length * 8;
+  const dataLen = data.length;
+
+  // Cell descriptor
+  const d1 = 0; // refs=0, no exotic
+  // d2: floor(bits/8)*2 + ceil(bits/8) but for full bytes it's dataLen*2
+  const fullBytes = Math.floor(bits / 8);
+  const rem = bits % 8;
+  const d2 = fullBytes * 2 + (rem > 0 ? 1 : 0);
+
+  const cell = new Uint8Array(2 + dataLen);
+  cell[0] = d1;
+  cell[1] = d2;
+  cell.set(data, 2);
+
+  // BOC header (single root, no index, no crc)
+  //   magic (4)  = b5ee9c72
+  //   flags (1)  = 0 (has_idx=0, has_crc=0, has_cache_bits=0, flags=0, size_bytes=1)
+  //   off_bytes  = 1
+  //   cells (1)  = 1
+  //   roots (1)  = 1
+  //   absent (1) = 0
+  //   tot_cells_size (1) = cell.length
+  //   root_list (1 byte) = 0
+  //   cells data
+  const header = new Uint8Array([
+    0xb5, 0xee, 0x9c, 0x72,
+    0x01, // has_idx=0, has_crc=0, size_bytes=1
+    0x01, // off_bytes=1
+    0x01, // cells=1
+    0x01, // roots=1
+    0x00, // absent=0
+    cell.length & 0xff,
+    0x00, // root index
+  ]);
+  const boc = new Uint8Array(header.length + cell.length);
+  boc.set(header, 0);
+  boc.set(cell, header.length);
+
+  // base64
+  let bin = "";
+  for (let i = 0; i < boc.length; i++) bin += String.fromCharCode(boc[i]);
+  return btoa(bin);
+}
+
 
 function Row({ k, v, strong, muted }: { k: string; v: string; strong?: boolean; muted?: boolean }) {
   return (

@@ -9,12 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TonconnectManifestDotjsonRouteImport } from './routes/tonconnect-manifest[.]json'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicVerifyDepositsRouteImport } from './routes/api/public/verify-deposits'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
+const TonconnectManifestDotjsonRoute =
+  TonconnectManifestDotjsonRouteImport.update({
+    id: '/tonconnect-manifest.json',
+    path: '/tonconnect-manifest.json',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicVerifyDepositsRoute = ApiPublicVerifyDepositsRouteImport.update({
+  id: '/api/public/verify-deposits',
+  path: '/api/public/verify-deposits',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicTelegramWebhookRoute =
@@ -26,37 +39,72 @@ const ApiPublicTelegramWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
+  '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
+  '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
+  '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/telegram/webhook'
+  fullPaths:
+    | '/'
+    | '/tonconnect-manifest.json'
+    | '/api/public/verify-deposits'
+    | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/telegram/webhook'
-  id: '__root__' | '/' | '/api/public/telegram/webhook'
+  to:
+    | '/'
+    | '/tonconnect-manifest.json'
+    | '/api/public/verify-deposits'
+    | '/api/public/telegram/webhook'
+  id:
+    | '__root__'
+    | '/'
+    | '/tonconnect-manifest.json'
+    | '/api/public/verify-deposits'
+    | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  TonconnectManifestDotjsonRoute: typeof TonconnectManifestDotjsonRoute
+  ApiPublicVerifyDepositsRoute: typeof ApiPublicVerifyDepositsRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tonconnect-manifest.json': {
+      id: '/tonconnect-manifest.json'
+      path: '/tonconnect-manifest.json'
+      fullPath: '/tonconnect-manifest.json'
+      preLoaderRoute: typeof TonconnectManifestDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/verify-deposits': {
+      id: '/api/public/verify-deposits'
+      path: '/api/public/verify-deposits'
+      fullPath: '/api/public/verify-deposits'
+      preLoaderRoute: typeof ApiPublicVerifyDepositsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/telegram/webhook': {
@@ -71,6 +119,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  TonconnectManifestDotjsonRoute: TonconnectManifestDotjsonRoute,
+  ApiPublicVerifyDepositsRoute: ApiPublicVerifyDepositsRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport

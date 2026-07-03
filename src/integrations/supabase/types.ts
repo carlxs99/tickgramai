@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_tx: {
+        Row: {
+          amount_ton: number
+          gram_credited: number
+          memo: string | null
+          processed_at: string
+          tx_hash: string
+          user_id: string | null
+        }
+        Insert: {
+          amount_ton: number
+          gram_credited: number
+          memo?: string | null
+          processed_at?: string
+          tx_hash: string
+          user_id?: string | null
+        }
+        Update: {
+          amount_ton?: number
+          gram_credited?: number
+          memo?: string | null
+          processed_at?: string
+          tx_hash?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -57,6 +84,7 @@ export type Database = {
           id: string
           last_collect_at: string
           last_name: string | null
+          memo_tag: string
           mining_rate: number
           referral_code: string | null
           referred_by: string | null
@@ -64,6 +92,7 @@ export type Database = {
           updated_at: string
           user_id: string
           username: string | null
+          wallet_address: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -74,6 +103,7 @@ export type Database = {
           id?: string
           last_collect_at?: string
           last_name?: string | null
+          memo_tag?: string
           mining_rate?: number
           referral_code?: string | null
           referred_by?: string | null
@@ -81,6 +111,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           username?: string | null
+          wallet_address?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -91,6 +122,7 @@ export type Database = {
           id?: string
           last_collect_at?: string
           last_name?: string | null
+          memo_tag?: string
           mining_rate?: number
           referral_code?: string | null
           referred_by?: string | null
@@ -98,6 +130,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string | null
+          wallet_address?: string | null
         }
         Relationships: [
           {
@@ -272,6 +305,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_memo_tag: { Args: never; Returns: string }
       get_top_miners: {
         Args: { _limit?: number }
         Returns: {
