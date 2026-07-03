@@ -113,7 +113,7 @@ function MinerApp() {
     >
       <div className="min-h-screen pb-24 max-w-md mx-auto">
         <Toaster theme="dark" position="top-center" richColors />
-        <Header />
+        <Header onAdminClick={() => setTab("admin")} />
         <AnimatePresence mode="wait">
           <motion.main
             key={tab}
