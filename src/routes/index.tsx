@@ -367,6 +367,7 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
 }
 
 function LeaderboardTab() {
+  const { t } = useT();
   const fn = useServerFn(getTopMiners);
   const price = useTonPrice();
   const { data } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
@@ -376,8 +377,8 @@ function LeaderboardTab() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-bold">Leaderboard</h2>
-        <p className="text-xs text-muted-foreground">Top miners by GRAM mined per day.</p>
+        <h2 className="text-2xl font-bold">{t("leaderboard.title")}</h2>
+        <p className="text-xs text-muted-foreground">{t("leaderboard.subtitle")}</p>
       </div>
 
       <div className="card-glass rounded-3xl p-4 overflow-hidden relative">
@@ -385,9 +386,9 @@ function LeaderboardTab() {
         <div className="flex items-center justify-between mb-4 relative">
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-[color:var(--gold)]" />
-            <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Live ranking</span>
+            <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">{t("leaderboard.live_ranking")}</span>
           </div>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[color:var(--success)]/15 text-[color:var(--success)] font-semibold">ACTIVE</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[color:var(--success)]/15 text-[color:var(--success)] font-semibold">{t("leaderboard.active")}</span>
         </div>
         <div className="flex items-end gap-2 relative">
           <PodiumSlot miner={top3[1]} rank={2} />
@@ -398,12 +399,12 @@ function LeaderboardTab() {
 
       <div className="card-glass rounded-2xl p-2">
         {rest.length === 0 && list.length <= 3 ? (
-          <p className="p-4 text-sm text-muted-foreground text-center">Only the podium is set — invite miners to fill the ranks.</p>
+          <p className="p-4 text-sm text-muted-foreground text-center">{t("leaderboard.only_podium")}</p>
         ) : (
           <div className="divide-y divide-white/5">
             {rest.map((m, i) => {
               const rank = i + 4;
-              const name = m.first_name || m.username || "Anon";
+              const name = m.first_name || m.username || t("leaderboard.anon");
               return (
                 <div key={rank} className="flex items-center gap-3 px-3 py-2.5">
                   <span className="w-6 text-center text-xs font-bold text-muted-foreground">#{rank}</span>
@@ -424,6 +425,7 @@ function LeaderboardTab() {
     </div>
   );
 }
+
 
 function TasksTab() {
   const listFn = useServerFn(listTasks);
