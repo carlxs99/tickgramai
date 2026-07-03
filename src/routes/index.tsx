@@ -3,11 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2 } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Calculator, Lightbulb } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
 import { getMe, collectIncome, listTasks, completeTask, submitDeposit, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends } from "@/lib/miner.functions";
+import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
 import { formatGram } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,11 +92,34 @@ function Center({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex items-center justify-center">{children}</div>;
 }
 
+// TON price hook — 1 GRAM = 1 TON = price USDT
+function useTonPrice() {
+  const fn = useServerFn(getTonPrice);
+  const q = useQuery({
+    queryKey: ["ton-price"],
+    queryFn: () => fn(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  return q.data?.price ?? 5.5;
+}
+
+function usdt(gram: number, price: number) {
+  const v = gram * price;
+  if (!isFinite(v)) return "0.00";
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(2) + "M";
+  if (v >= 1000) return v.toFixed(2);
+  if (v >= 1) return v.toFixed(4);
+  return v.toFixed(6);
+}
+
 function Header() {
   const meFn = useServerFn(getMe);
   const { data } = useQuery({ queryKey: ["me-header"], queryFn: () => meFn(), refetchInterval: 15000 });
+  const price = useTonPrice();
   const name = data?.profile.first_name ?? data?.profile.username ?? "Miner";
   const initial = name.slice(0, 1).toUpperCase();
+  const bal = Number(data?.profile.balance ?? 0);
   return (
     <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-white/5">
       <div className="flex items-center gap-3 px-4 py-3">
@@ -106,10 +130,13 @@ function Header() {
           <p className="text-xs text-muted-foreground">Welcome</p>
           <p className="font-semibold truncate">{name}</p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full card-glass">
-          <Coins className="w-4 h-4 text-[color:var(--gold)]" />
-          <span className="font-semibold text-sm">{formatGram(data?.profile.balance ?? 0)}</span>
-          <span className="text-xs text-muted-foreground">GRAM</span>
+        <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 rounded-2xl card-glass">
+          <div className="flex items-center gap-1">
+            <Coins className="w-3.5 h-3.5 text-[color:var(--gold)]" />
+            <span className="font-semibold text-sm">{formatGram(bal)}</span>
+            <span className="text-[10px] text-muted-foreground">GRAM</span>
+          </div>
+          <span className="text-[10px] text-[color:var(--success)] tabular-nums">≈ ${usdt(bal, price)} USDT</span>
         </div>
       </div>
     </header>
@@ -144,6 +171,7 @@ function MineTab() {
   });
 
   const rate = Number(data.profile.mining_rate);
+  const price = useTonPrice();
 
   return (
     <div className="space-y-4">
@@ -159,8 +187,13 @@ function MineTab() {
           <div className="mt-2 text-5xl font-extrabold tabular-nums">
             {formatGram(live, 4)}
           </div>
-          <div className="mt-1 text-sm text-muted-foreground">
-            {rate > 0 ? `${formatGram(rate, 2)} GRAM / day` : "Deposit TON to start mining"}
+          <div className="text-xs text-[color:var(--success)] tabular-nums mt-0.5">
+            ≈ ${usdt(live, price)} USDT
+          </div>
+          <div className="mt-2 text-sm text-muted-foreground">
+            {rate > 0
+              ? <>{formatGram(rate, 2)} GRAM/day <span className="text-[color:var(--success)]">(≈ ${usdt(rate, price)} /day)</span></>
+              : "Deposit TON to start mining"}
           </div>
           <motion.button
             whileTap={{ scale: 0.96 }}
@@ -174,8 +207,8 @@ function MineTab() {
       </motion.div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Balance" value={formatGram(data.profile.balance)} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
-        <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " TON"} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
+        <StatCard label="Balance" value={formatGram(data.profile.balance)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
+        <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " TON"} sub={`1 TON ≈ $${price.toFixed(2)}`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
       <TopMinersCard />
@@ -183,11 +216,12 @@ function MineTab() {
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function StatCard({ label, value, sub, icon }: { label: string; value: string; sub?: string; icon: React.ReactNode }) {
   return (
     <div className="card-glass rounded-2xl p-4">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">{icon}{label}</div>
       <div className="mt-1 text-lg font-bold">{value}</div>
+      {sub && <div className="text-[10px] text-[color:var(--success)] tabular-nums">{sub}</div>}
     </div>
   );
 }
@@ -282,43 +316,261 @@ function FriendsTab() {
   );
 }
 
+type CalcMode = "earn" | "invest" | "balance" | "withdraw";
+type Period = { key: string; label: string; days: number };
+const PERIODS: Period[] = [
+  { key: "1d", label: "1 day", days: 1 },
+  { key: "1w", label: "Week", days: 7 },
+  { key: "1m", label: "Month", days: 30 },
+  { key: "3m", label: "3 months", days: 90 },
+  { key: "1y", label: "1 year", days: 365 },
+];
+
+// 1 TON deposited => +1 GRAM/day. 1 GRAM = 1 TON in USDT value.
+const DAILY_RATE_GRAM_PER_TON = 1;
+
 function DepositTab() {
-  const fn = useServerFn(submitDeposit);
+  const submitFn = useServerFn(submitDeposit);
   const listFn = useServerFn(listDeposits);
+  const meFn = useServerFn(getMe);
   const qc = useQueryClient();
-  const [amount, setAmount] = useState("1");
+  const price = useTonPrice();
+  const { data: me } = useSuspenseQuery(meQO(() => meFn()));
+
+  const [mode, setMode] = useState<CalcMode>("earn");
+  const [period, setPeriod] = useState<Period>(PERIODS[2]);
+  // Input semantics depend on mode: earn/withdraw use USDT; invest uses target USDT/day; balance is read-only
+  const [input, setInput] = useState<string>("100");
   const [hash, setHash] = useState("");
   const { data: deposits } = useQuery({ queryKey: ["deposits"], queryFn: () => listFn() });
-  const mut = useMutation({
-    mutationFn: () => fn({ data: { amountTon: Number(amount), txHash: hash || undefined } }),
+
+  const inputNum = Math.max(0, Number(input) || 0);
+  const balanceGram = Number(me.profile.balance);
+  const currentRateGram = Number(me.profile.mining_rate);
+
+  // Compute deposit-TON implied by the current mode
+  const impliedDepositTon = useMemo(() => {
+    if (mode === "earn") return price > 0 ? inputNum / price : 0; // input is USDT deposit
+    if (mode === "invest") {
+      // input is desired USDT per day → daily GRAM = input/price → tonNeeded = daily/DAILY_RATE
+      const dailyGram = price > 0 ? inputNum / price : 0;
+      return dailyGram / DAILY_RATE_GRAM_PER_TON;
+    }
+    if (mode === "balance") return 0;
+    return 0; // withdraw
+  }, [mode, inputNum, price]);
+
+  // Daily GRAM production for the deposit
+  const dailyGram = impliedDepositTon * DAILY_RATE_GRAM_PER_TON;
+  const daily = { gram: dailyGram, usdt: dailyGram * price };
+  const totalUsdt = daily.usdt * period.days;
+
+  // Withdraw preview: uses current balance as base
+  const withdrawAmountGram = Math.min(balanceGram, Math.max(0, inputNum / (price || 1)));
+  const withdrawFee = withdrawAmountGram * 0.05;
+  const withdrawNet = withdrawAmountGram - withdrawFee;
+
+  const submit = useMutation({
+    mutationFn: () => submitFn({ data: { amountTon: impliedDepositTon, txHash: hash || undefined } }),
     onSuccess: () => { toast.success("Deposit submitted"); setHash(""); qc.invalidateQueries(); },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
+
+  const modes: { id: CalcMode; label: string }[] = [
+    { id: "earn", label: "I'll earn" },
+    { id: "invest", label: "To invest" },
+    { id: "balance", label: "My balance" },
+    { id: "withdraw", label: "If I withdraw" },
+  ];
+
   return (
-    <div className="space-y-3">
-      <h2 className="text-2xl font-bold">Deposit TON</h2>
-      <p className="text-sm text-muted-foreground">1 TON = +1 GRAM/day mining rate.</p>
-      <div className="card-glass rounded-2xl p-4 space-y-3">
-        <Field label="Amount (TON)"><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" /></Field>
-        <Field label="Transaction hash (optional)"><input value={hash} onChange={(e) => setHash(e.target.value)} placeholder="EQ…" className="input" /></Field>
-        <button disabled={mut.isPending} onClick={() => mut.mutate()}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent font-semibold text-primary-foreground disabled:opacity-50">
-          {mut.isPending ? "Submitting…" : "Submit deposit"}
-        </button>
+    <div className="space-y-3 pb-2">
+      <div className="flex items-center gap-2">
+        <Calculator className="w-5 h-5 text-primary" />
+        <h2 className="text-2xl font-bold">Earnings calculator</h2>
       </div>
-      <div className="card-glass rounded-2xl p-4">
-        <p className="font-semibold mb-2">History</p>
-        {!deposits?.length && <p className="text-sm text-muted-foreground">No deposits yet.</p>}
-        {deposits?.map((d: any) => (
-          <div key={d.id} className="flex justify-between text-sm py-1.5">
-            <span>{formatGram(d.amount_ton)} TON</span>
-            <span className="text-muted-foreground">{d.status}</span>
-          </div>
+      <p className="text-xs text-muted-foreground">1 TON price ≈ ${price.toFixed(4)} USDT · synced live</p>
+
+      {/* Mode tabs */}
+      <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none">
+        {modes.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => { setMode(m.id); if (m.id === "balance") setInput(String(balanceGram * price)); }}
+            className={`px-3.5 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition ${
+              mode === m.id ? "bg-primary text-primary-foreground shadow-lg glow-primary" : "card-glass text-muted-foreground"
+            }`}
+          >
+            {m.label}
+          </button>
         ))}
       </div>
+
+      {/* Input */}
+      {mode !== "balance" && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-1.5">
+            {mode === "earn" && "Deposit amount"}
+            {mode === "invest" && "Target earnings per day"}
+            {mode === "withdraw" && "Amount to withdraw"}
+          </p>
+          <div className="relative">
+            <input
+              inputMode="decimal"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              className="input pr-16 text-lg font-semibold"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">USDT</span>
+          </div>
+          {mode === "earn" && (
+            <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+              ≈ {impliedDepositTon.toFixed(4)} TON
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Period selector — used by earn/invest/withdraw projections */}
+      {mode !== "balance" && (
+        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none">
+          {PERIODS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+                period.key === p.key ? "bg-primary text-primary-foreground" : "card-glass text-muted-foreground"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Result card */}
+      {mode === "earn" && (
+        <ResultCard title="You'll earn" totalUsdt={totalUsdt} periodLabel={period.label} price={price} dailyGram={daily.gram} />
+      )}
+      {mode === "invest" && (
+        <div className="rounded-2xl border-2 border-dashed border-[color:var(--success)]/40 bg-[color:var(--success)]/5 p-5 text-center">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">You need to deposit</p>
+          <p className="mt-1 text-4xl font-extrabold text-[color:var(--success)] tabular-nums">
+            {impliedDepositTon.toFixed(4)} <span className="text-lg text-muted-foreground">TON</span>
+          </p>
+          <p className="text-sm text-muted-foreground">≈ ${(impliedDepositTon * price).toFixed(2)} USDT</p>
+          <p className="mt-2 text-xs text-muted-foreground">to earn ${inputNum.toFixed(2)} USDT / day</p>
+        </div>
+      )}
+      {mode === "balance" && (
+        <div className="rounded-2xl border-2 border-dashed border-[color:var(--gold)]/40 bg-[color:var(--gold)]/5 p-5 text-center">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">My balance</p>
+          <p className="mt-1 text-4xl font-extrabold text-[color:var(--gold)] tabular-nums">
+            {formatGram(balanceGram)} <span className="text-lg text-muted-foreground">GRAM</span>
+          </p>
+          <p className="text-sm text-muted-foreground">≈ ${usdt(balanceGram, price)} USDT</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Producing {formatGram(currentRateGram)} GRAM/day · ${usdt(currentRateGram, price)} /day
+          </p>
+        </div>
+      )}
+      {mode === "withdraw" && (
+        <div className="rounded-2xl card-glass p-5">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground text-center">You'll receive</p>
+          <p className="mt-1 text-4xl font-extrabold text-[color:var(--success)] tabular-nums text-center">
+            ${(withdrawNet * price).toFixed(4)} <span className="text-lg text-muted-foreground">USDT</span>
+          </p>
+          <p className="text-sm text-muted-foreground text-center">{withdrawNet.toFixed(4)} GRAM after 5% fee</p>
+          <div className="mt-3 border-t border-white/5 pt-3 space-y-1 text-sm">
+            <Row k="Requested" v={`${withdrawAmountGram.toFixed(4)} GRAM`} />
+            <Row k="Network fee (5%)" v={`-${withdrawFee.toFixed(4)} GRAM`} />
+            <Row k="Balance after" v={`${(balanceGram - withdrawAmountGram).toFixed(4)} GRAM`} />
+          </div>
+        </div>
+      )}
+
+      {/* Breakdown */}
+      {(mode === "earn" || mode === "invest") && impliedDepositTon > 0 && (
+        <div className="card-glass rounded-2xl p-4 space-y-2 text-sm">
+          <Row k="Per day" v={`+${daily.usdt.toFixed(6)} USDT`} strong />
+          <Row k="Per week" v={`+${(daily.usdt * 7).toFixed(4)} USDT`} strong />
+          <Row k="Per month" v={`+${(daily.usdt * 30).toFixed(4)} USDT`} strong />
+          <Row k="Per year" v={`+${(daily.usdt * 365).toFixed(2)} USDT`} strong />
+          <div className="border-t border-white/5 pt-2 mt-2">
+            <Row k="Daily rate" v={`${((daily.usdt / Math.max(inputNum, 0.0001)) * 100).toFixed(2)}%`} muted />
+          </div>
+        </div>
+      )}
+
+      {/* Hint */}
+      <div className="rounded-2xl bg-[color:var(--gold)]/10 border border-[color:var(--gold)]/20 p-3 flex gap-2 items-start">
+        <Lightbulb className="w-4 h-4 text-[color:var(--gold)] shrink-0 mt-0.5" />
+        <p className="text-xs text-muted-foreground">
+          Calculation assumes daily withdrawal of earnings. Withdraw more often — earn even more 💰
+        </p>
+      </div>
+
+      {/* Deposit CTA (only for earn mode) */}
+      {(mode === "earn" || mode === "invest") && impliedDepositTon > 0 && (
+        <>
+          <Field label="Transaction hash (optional)">
+            <input value={hash} onChange={(e) => setHash(e.target.value)} placeholder="EQ…" className="input" />
+          </Field>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            disabled={submit.isPending}
+            onClick={() => submit.mutate()}
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50 shadow-xl glow-primary"
+          >
+            {submit.isPending ? "Submitting…" : "💸 Deposit & start earning"}
+          </motion.button>
+        </>
+      )}
+
+      {/* History */}
+      {!!deposits?.length && (
+        <div className="card-glass rounded-2xl p-4">
+          <p className="font-semibold mb-2">History</p>
+          {deposits.map((d: any) => (
+            <div key={d.id} className="flex justify-between text-sm py-1.5">
+              <span>{Number(d.amount_ton).toFixed(4)} TON</span>
+              <span className="text-muted-foreground">{d.status}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
+function ResultCard({ title, totalUsdt, periodLabel, price, dailyGram }: { title: string; totalUsdt: number; periodLabel: string; price: number; dailyGram: number }) {
+  return (
+    <motion.div
+      key={totalUsdt}
+      initial={{ scale: 0.96, opacity: 0.7 }} animate={{ scale: 1, opacity: 1 }}
+      className="rounded-2xl border-2 border-dashed border-[color:var(--success)]/40 bg-[color:var(--success)]/5 p-5 text-center"
+    >
+      <p className="text-xs uppercase tracking-widest text-muted-foreground">{title} · {periodLabel}</p>
+      <p className="mt-1 text-4xl font-extrabold text-[color:var(--success)] tabular-nums">
+        +{totalUsdt.toFixed(4)} <span className="text-lg">USDT</span>
+      </p>
+      <p className="text-xs text-muted-foreground mt-1">
+        {(dailyGram).toFixed(4)} GRAM/day · 1 TON ≈ ${price.toFixed(2)}
+      </p>
+    </motion.div>
+  );
+}
+
+function Row({ k, v, strong, muted }: { k: string; v: string; strong?: boolean; muted?: boolean }) {
+  return (
+    <div className="flex justify-between items-baseline">
+      <span className={muted ? "text-muted-foreground text-xs" : "text-muted-foreground"}>{k}</span>
+      <span className={`tabular-nums ${strong ? "font-bold" : ""} ${muted ? "text-muted-foreground text-xs" : ""}`}>{v}</span>
+    </div>
+  );
+}
+
+
 
 function WithdrawTab() {
   const meFn = useServerFn(getMe);
