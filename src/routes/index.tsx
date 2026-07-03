@@ -428,6 +428,7 @@ function LeaderboardTab() {
 
 
 function TasksTab() {
+  const { t: tr } = useT();
   const listFn = useServerFn(listTasks);
   const doFn = useServerFn(completeTask);
   const meFn = useServerFn(getMe);
@@ -440,14 +441,14 @@ function TasksTab() {
   const mut = useMutation({
     mutationFn: (taskId: string) => doFn({ data: { taskId } }),
     onSuccess: (r) => { toast.success(`+${formatGram(r.reward)} GRAM`); getTelegram()?.HapticFeedback?.impactOccurred("light"); qc.invalidateQueries(); },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(e?.message ?? tr("common.failed")),
   });
   const isShareTask = (t: any) => {
     const s = `${t.title ?? ""} ${t.description ?? ""}`.toLowerCase();
     return /share|invita|invite|friend|amig|refer/.test(s);
   };
   const openShare = (t: any) => {
-    const text = t.description || "Join me on Tickgram AI and start mining GRAM!";
+    const text = t.description || tr("tasks.share_default");
     const url = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(text)}`;
     const tg: any = getTelegram();
     if (tg?.openTelegramLink) tg.openTelegramLink(url);
@@ -456,8 +457,8 @@ function TasksTab() {
   };
   return (
     <div className="space-y-3">
-      <h2 className="text-2xl font-bold">Tasks</h2>
-      <p className="text-sm text-muted-foreground">Complete tasks to earn GRAM.</p>
+      <h2 className="text-2xl font-bold">{tr("tasks.title")}</h2>
+      <p className="text-sm text-muted-foreground">{tr("tasks.subtitle")}</p>
       <div className="space-y-2 mt-3">
         {data.map((t: any) => {
           const share = isShareTask(t);
@@ -470,25 +471,25 @@ function TasksTab() {
               <p className="text-xs mt-1 text-[color:var(--success)]">+{formatGram(t.reward)} GRAM</p>
             </div>
             {t.completed ? (
-              <div className="flex items-center gap-1 text-[color:var(--success)] text-sm"><CheckCircle2 className="w-4 h-4" />Done</div>
+              <div className="flex items-center gap-1 text-[color:var(--success)] text-sm"><CheckCircle2 className="w-4 h-4" />{tr("tasks.done")}</div>
             ) : (
               <div className="flex flex-col gap-1">
                 {(t.kind === "channel" || t.kind === "group") && t.link && (
                   <a href={t.link} target="_blank" rel="noreferrer"
                     className="px-3 py-1.5 rounded-xl card-glass text-xs font-semibold text-center">
-                    Join
+                    {tr("tasks.join")}
                   </a>
                 )}
                 {share && !hasShared ? (
                   <button onClick={() => openShare(t)}
                     className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
-                    Share
+                    {tr("tasks.share")}
                   </button>
                 ) : (
                   <button onClick={() => mut.mutate(t.id)}
                     disabled={mut.isPending || (share && !hasShared)}
                     className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
-                    {t.kind === "channel" || t.kind === "group" ? "Verify" : "Claim"}
+                    {t.kind === "channel" || t.kind === "group" ? tr("tasks.verify") : tr("tasks.claim")}
                   </button>
                 )}
               </div>
@@ -500,6 +501,7 @@ function TasksTab() {
     </div>
   );
 }
+
 
 function FriendsTab() {
   const meFn = useServerFn(getMe);
