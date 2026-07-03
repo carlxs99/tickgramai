@@ -60,7 +60,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
             const { data: profile } = await supabaseAdmin
-              .from("profiles").select("user_id, mining_rate, memo_tag, referred_by")
+              .from("profiles").select("user_id, mining_rate, memo_tag, referred_by, telegram_id, first_name")
               .eq("memo_tag", comment).maybeSingle();
             if (!profile) {
               results.push({ txHash, memo: comment, skipped: "no_user" });
