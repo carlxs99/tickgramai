@@ -133,13 +133,13 @@ export const completeTask = createServerFn({ method: "POST" })
       user_id: userId, task_id: task.id, completed_on: today, reward: task.reward,
     });
     if (iErr) throw new Error("Already claimed today");
-    // Credit reward via service_role (authenticated cannot UPDATE balance directly).
+    // Atomic increment (RPC) — avoids lost-update when multiple tasks / rewards
+    // are claimed concurrently.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profile } = await supabaseAdmin
-      .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
-    const newBalance = Number(profile?.balance ?? 0) + Number(task.reward);
-    await supabaseAdmin.from("profiles").update({ balance: newBalance }).eq("user_id", userId);
-    return { reward: Number(task.reward), balance: newBalance };
+    const { data: newBalance, error: bErr } = await supabaseAdmin
+      .rpc("atomic_add_balance" as never, { _user_id: userId, _amount: Number(task.reward) } as never);
+    if (bErr) throw bErr;
+    return { reward: Number(task.reward), balance: Number(newBalance ?? 0) };
   });
 
 export const saveWallet = createServerFn({ method: "POST" })
