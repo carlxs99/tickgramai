@@ -8,8 +8,11 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
     handlers: {
       POST: async () => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { Address } = await import("@ton/core");
 
-        // Fetch recent events for our receiving wallet from tonapi.io (free tier)
+        // Canonical raw address of our receiving wallet ("0:abcd…")
+        const oursRaw = Address.parse(RECEIVING_WALLET).toRawString().toLowerCase();
+
         const url = `https://tonapi.io/v2/accounts/${encodeURIComponent(
           RECEIVING_WALLET
         )}/events?limit=50`;
@@ -27,33 +30,39 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
           const txHash: string = ev?.event_id ?? "";
           if (!txHash) continue;
 
-          // Skip if already processed
           const { data: existing } = await supabaseAdmin
             .from("processed_tx").select("tx_hash").eq("tx_hash", txHash).maybeSingle();
           if (existing) continue;
 
-          // Look for a TonTransfer action into our wallet
           const actions: any[] = Array.isArray(ev?.actions) ? ev.actions : [];
           for (const a of actions) {
             if (a?.type !== "TonTransfer" || a?.status !== "ok") continue;
             const t = a.TonTransfer ?? a.ton_transfer ?? {};
-            const recipient: string | undefined =
-              t?.recipient?.address ?? t?.recipient ?? t?.to;
+
+            // Recipient can be an object {address} or a raw string.
+            const recipientRaw: string | undefined =
+              (typeof t?.recipient === "string" ? t.recipient : t?.recipient?.address) ??
+              (typeof t?.to === "string" ? t.to : t?.to?.address);
+            if (!recipientRaw) continue;
+
+            // Normalise both sides to canonical raw form.
+            let recvRaw: string;
+            try { recvRaw = Address.parse(recipientRaw).toRawString().toLowerCase(); }
+            catch { continue; }
+            if (recvRaw !== oursRaw) continue;
+
             const comment: string = (t?.comment ?? "").toString().trim().toUpperCase();
             const amountNano: number = Number(t?.amount ?? 0);
-            if (!recipient || amountNano <= 0 || !comment) continue;
+            if (amountNano <= 0 || !comment) {
+              results.push({ txHash, skipped: "no_comment_or_amount" });
+              continue;
+            }
 
-            // Match receiver (raw or friendly). Simple normalization: last 40 chars.
-            const normRecv = recipient.replace(/[^a-zA-Z0-9]/g, "").slice(-40);
-            const normOurs = RECEIVING_WALLET.replace(/[^a-zA-Z0-9]/g, "").slice(-40);
-            if (normRecv !== normOurs) continue;
-
-            // Find user by memo
             const { data: profile } = await supabaseAdmin
               .from("profiles").select("user_id, mining_rate, memo_tag")
               .eq("memo_tag", comment).maybeSingle();
             if (!profile) {
-              results.push({ txHash, memo: comment, skipped: "no user" });
+              results.push({ txHash, memo: comment, skipped: "no_user" });
               continue;
             }
 
@@ -97,3 +106,4 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
     },
   },
 });
+
