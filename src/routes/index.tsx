@@ -27,6 +27,14 @@ export const Route = createFileRoute("/")({
 type Tab = "mine" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "admin";
 
 function MinerApp() {
+  return (
+    <LanguageProvider>
+      <MinerAppInner />
+    </LanguageProvider>
+  );
+}
+
+function MinerAppInner() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("mine");
