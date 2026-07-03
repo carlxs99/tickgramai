@@ -46,7 +46,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const appUrl = `${new URL(request.url).origin}/`;
             await sendMessage(
               chatId,
-              `⛏️ <b>Ultra Gram Miner</b>\n\nMine GRAM inside Telegram. Complete tasks, invite friends, cash out.\n\nOpen the Mini App: ${appUrl}`,
+              `⛏️ <b>Ultra Gram Miner</b>\n\nMine GRAM inside Telegram. Complete tasks, invite friends, and deposit TON to earn passive income.\n\nTap the button below to open the app.`,
+              {
+                reply_markup: {
+                  inline_keyboard: [[
+                    { text: "🚀 Open Ultra Gram Miner", web_app: { url: appUrl } },
+                  ]],
+                },
+              },
             );
           } else if (text.startsWith("/help")) {
             await sendMessage(chatId, "Use /start to open Ultra Gram Miner.");
