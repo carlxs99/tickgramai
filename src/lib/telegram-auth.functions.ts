@@ -15,7 +15,8 @@ function parseInitData(initData: string) {
   const dataCheckString = entries.map(([k, v]) => `${k}=${v}`).join("\n");
   const userJson = params.get("user");
   const user = userJson ? JSON.parse(userJson) : null;
-  return { hash, dataCheckString, user };
+  const startParam = params.get("start_param") ?? null;
+  return { hash, dataCheckString, user, startParam };
 }
 
 function verifyTelegramHash(dataCheckString: string, hash: string, botToken: string) {
