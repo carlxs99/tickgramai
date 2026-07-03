@@ -205,7 +205,7 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
         <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 rounded-2xl card-glass">
           <div className="flex items-center gap-1">
             <Coins className="w-3.5 h-3.5 text-[color:var(--gold)]" />
-            <span className="font-semibold text-sm">{formatGram(bal)}</span>
+            <span className="font-semibold text-sm tabular-nums">{formatGram(bal, 6)}</span>
             <span className="text-[10px] text-muted-foreground">GRAM</span>
           </div>
           <span className="text-[10px] text-[color:var(--success)] tabular-nums">≈ ${usdt(bal, price)} USDT</span>
