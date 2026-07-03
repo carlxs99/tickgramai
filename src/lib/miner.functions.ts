@@ -116,12 +116,12 @@ export const listDeposits = createServerFn({ method: "GET" })
 export const submitWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { amount: number; address: string; memo?: string }) =>
-    z.object({ amount: z.number().positive().min(100), address: z.string().min(10), memo: z.string().optional() }).parse(d))
+    z.object({ amount: z.number().positive().min(1), address: z.string().min(10), memo: z.string().optional() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: profile } = await supabase.from("profiles").select("balance").eq("user_id", userId).maybeSingle();
     if (!profile || Number(profile.balance) < data.amount) throw new Error("Insufficient balance");
-    const fee = data.amount * 0.05;
+    const fee = data.amount * 0.10;
     const net = data.amount - fee;
     const { error } = await supabase.from("withdrawals").insert({
       user_id: userId, amount: data.amount, address: data.address, memo: data.memo ?? null,
