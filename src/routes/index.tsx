@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
   component: MinerApp,
 });
 
-type Tab = "mine" | "tasks" | "top" | "friends" | "deposit" | "withdraw";
+type Tab = "mine" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "admin";
 
 function MinerApp() {
   const [ready, setReady] = useState(false);
