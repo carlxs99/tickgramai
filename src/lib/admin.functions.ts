@@ -66,7 +66,8 @@ export const adminListTasks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
-    const { data, error } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("tasks").select("*").order("created_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -90,16 +91,17 @@ export const adminSaveTask = createServerFn({ method: "POST" })
   .inputValidator((d: z.infer<typeof TaskInput>) => TaskInput.parse(d))
   .handler(async ({ context, data }) => {
     await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { id, ...fields } = data;
     if ((fields.kind === "channel" || fields.kind === "group") && !fields.target_chat) {
       throw new Error("target_chat es obligatorio para tareas de canal/grupo");
     }
     if (id) {
-      const { error } = await context.supabase.from("tasks").update(fields).eq("id", id);
+      const { error } = await supabaseAdmin.from("tasks").update(fields).eq("id", id);
       if (error) throw error;
       return { ok: true, id };
     }
-    const { data: inserted, error } = await context.supabase
+    const { data: inserted, error } = await supabaseAdmin
       .from("tasks").insert(fields).select("id").maybeSingle();
     if (error) throw error;
     return { ok: true, id: inserted?.id };
@@ -110,7 +112,8 @@ export const adminDeleteTask = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     await assertAdmin(context.userId);
-    const { error } = await context.supabase.from("tasks").delete().eq("id", data.id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("tasks").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
