@@ -441,7 +441,7 @@ function FriendsTab() {
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
   const { data: friends } = useQuery({ queryKey: ["friends"], queryFn: () => frFn() });
   const code = me.profile.referral_code as string;
-  const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}?ref=${code}` : "";
+  const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   return (
     <div className="space-y-3">
       <h2 className="text-2xl font-bold">Friends</h2>
