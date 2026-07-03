@@ -142,9 +142,12 @@ export const completeTask = createServerFn({ method: "POST" })
       user_id: userId, task_id: task.id, completed_on: today, reward: task.reward,
     });
     if (iErr) throw new Error("Already claimed today");
-    const { data: profile } = await supabase.from("profiles").select("balance").eq("user_id", userId).maybeSingle();
+    // Credit reward via service_role (authenticated cannot UPDATE balance directly).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
     const newBalance = Number(profile?.balance ?? 0) + Number(task.reward);
-    await supabase.from("profiles").update({ balance: newBalance }).eq("user_id", userId);
+    await supabaseAdmin.from("profiles").update({ balance: newBalance }).eq("user_id", userId);
     return { reward: Number(task.reward), balance: newBalance };
   });
 
