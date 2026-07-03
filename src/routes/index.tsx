@@ -629,7 +629,7 @@ function DepositTab() {
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("deposit.your_balance")}</span>
-          <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
+          <span className="font-semibold tabular-nums">{formatGram(me.profile.balance, 6)} GRAM</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("deposit.current_rate")}</span>
