@@ -172,12 +172,16 @@ export const submitDeposit = createServerFn({ method: "POST" })
   .inputValidator((d: { amountTon: number; txHash?: string }) =>
     z.object({ amountTon: z.number().positive(), txHash: z.string().optional() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
     // Daily ROI 3.3% in USDT value. Since 1 TON = 1 GRAM (same USD price),
     // 1 TON deposited yields 0.033 GRAM/day (= 3.3% USDT/day).
     const DAILY_ROI = 0.033;
     const gramPerDay = data.amountTon * DAILY_ROI;
-    const { error } = await supabase.from("deposits").insert({
+    // Insert with admin client because RLS restricts users to inserting
+    // only safe initial values (status='pending', gram_per_day=0, tx_hash=null).
+    // Server-side logic is trusted to set the reward and tx hash correctly.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("deposits").insert({
       user_id: userId, amount_ton: data.amountTon, gram_per_day: gramPerDay,
       tx_hash: data.txHash ?? null, status: "pending",
     });
@@ -204,7 +208,11 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     if (!profile || Number(profile.balance) < data.amount) throw new Error("Insufficient balance");
     const fee = data.amount * 0.10;
     const net = data.amount - fee;
-    const { error } = await supabase.from("withdrawals").insert({
+    // Insert with admin client because RLS restricts users to inserting
+    // only safe initial values (status='pending', fee=0, net_amount=0).
+    // Server-side logic computes the trusted fee and net amount.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId, amount: data.amount, address: data.address, memo: data.memo ?? null,
       fee, net_amount: net, status: "pending",
     });
