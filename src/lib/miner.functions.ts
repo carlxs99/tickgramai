@@ -210,8 +210,20 @@ export const getTopMiners = createServerFn({ method: "GET" })
 export const getFriends = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const { data: refs, error } = await context.supabase
       .from("referrals").select("*").eq("referrer_id", context.userId).order("created_at", { ascending: false });
     if (error) throw error;
-    return data ?? [];
+    const rows = refs ?? [];
+    if (rows.length === 0) return [];
+    const ids = rows.map((r: any) => r.referred_id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profs } = await supabaseAdmin
+      .from("profiles")
+      .select("user_id, username, first_name, last_name, avatar_url")
+      .in("user_id", ids);
+    const map = new Map((profs ?? []).map((p: any) => [p.user_id, p]));
+    return rows.map((r: any) => ({
+      ...r,
+      profile: map.get(r.referred_id) ?? null,
+    }));
   });
