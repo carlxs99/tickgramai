@@ -30,7 +30,15 @@ export const authWithTelegram = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { createClient } = await import("@supabase/supabase-js");
 
-    let tgUser: { id: number; username?: string; first_name?: string; last_name?: string; photo_url?: string } | null = null;
+    let tgUser: {
+      id: number;
+      username?: string;
+      first_name?: string;
+      last_name?: string;
+      photo_url?: string;
+      language_code?: string;
+      is_premium?: boolean;
+    } | null = null;
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
     if (data.initData && botToken) {
@@ -79,18 +87,26 @@ export const authWithTelegram = createServerFn({ method: "POST" })
     }
     if (!userId) throw new Error("Failed to resolve user id");
 
-    // Upsert profile
-    await supabaseAdmin.from("profiles").upsert(
-      {
-        user_id: userId,
-        telegram_id: tgUser.id,
-        username: tgUser.username ?? null,
-        first_name: tgUser.first_name ?? null,
-        last_name: tgUser.last_name ?? null,
-        avatar_url: tgUser.photo_url ?? null,
-      },
-      { onConflict: "user_id" },
-    );
+    // Upsert profile — only set fields that are actually provided so we
+    // never wipe existing data with nulls on re-auth.
+    const profilePatch: Record<string, unknown> = {
+      user_id: userId,
+      telegram_id: tgUser.id,
+    };
+    if (tgUser.username) profilePatch.username = tgUser.username;
+    if (tgUser.first_name) profilePatch.first_name = tgUser.first_name;
+    if (tgUser.last_name) profilePatch.last_name = tgUser.last_name;
+    if (tgUser.photo_url) profilePatch.avatar_url = tgUser.photo_url;
+    if (tgUser.language_code) profilePatch.language_code = tgUser.language_code;
+    if (typeof tgUser.is_premium === "boolean") profilePatch.is_premium = tgUser.is_premium;
+
+    const { error: upsertErr } = await supabaseAdmin
+      .from("profiles")
+      .upsert(profilePatch as never, { onConflict: "user_id" });
+    if (upsertErr) {
+      console.error("[telegram-auth] profile upsert failed:", upsertErr);
+      throw new Error(`Profile upsert failed: ${upsertErr.message}`);
+    }
 
     // Sign in with password using publishable client (returns tokens)
     const pub = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
