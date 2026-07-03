@@ -576,7 +576,7 @@ function DepositTab() {
         )}
       </div>
 
-      <Field label="Amount (TON)">
+      <Field label="Amount (GRAM)">
         <div className="relative">
           <input
             inputMode="decimal"
@@ -585,7 +585,7 @@ function DepositTab() {
             placeholder="0.0"
             className="input pr-16 text-lg font-semibold"
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">TON</span>
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">GRAM</span>
         </div>
         {amountNum > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
