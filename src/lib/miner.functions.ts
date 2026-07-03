@@ -15,12 +15,17 @@ export const getMe = createServerFn({ method: "GET" })
     if (error) throw error;
     if (!profile) throw new Error("Profile not found");
 
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+
     const now = Date.now();
     const last = new Date(profile.last_collect_at as string).getTime();
     const seconds = Math.max(0, (now - last) / 1000);
     const perSecond = Number(profile.mining_rate) / 86400;
     const pending = perSecond * seconds;
-    return { profile, pending, perSecond };
+    return { profile, pending, perSecond, isAdmin: !!isAdmin };
   });
 
 export const collectIncome = createServerFn({ method: "POST" })
