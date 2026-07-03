@@ -59,7 +59,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
             const { data: profile } = await supabaseAdmin
-              .from("profiles").select("user_id, mining_rate, memo_tag")
+              .from("profiles").select("user_id, mining_rate, memo_tag, referred_by")
               .eq("memo_tag", comment).maybeSingle();
             if (!profile) {
               results.push({ txHash, memo: comment, skipped: "no_user" });
@@ -93,6 +93,42 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             await supabaseAdmin.from("profiles")
               .update({ mining_rate: newRate })
               .eq("user_id", profile.user_id);
+
+            // Referral bonus: 10% of deposit (in GRAM) credited from the
+            // system to the referrer. The referred user is untouched.
+            if (profile.referred_by) {
+              const { data: refProfile } = await supabaseAdmin
+                .from("profiles")
+                .select("user_id, balance")
+                .eq("id", profile.referred_by)
+                .maybeSingle();
+              if (refProfile) {
+                const bonus = amountTon * 0.10;
+                await supabaseAdmin
+                  .from("profiles")
+                  .update({ balance: Number(refProfile.balance ?? 0) + bonus })
+                  .eq("user_id", refProfile.user_id);
+                // Increment bonus_earned on the referral row (if any)
+                const { data: refRow } = await supabaseAdmin
+                  .from("referrals")
+                  .select("id, bonus_earned")
+                  .eq("referrer_id", refProfile.user_id)
+                  .eq("referred_id", profile.user_id)
+                  .maybeSingle();
+                if (refRow) {
+                  await supabaseAdmin
+                    .from("referrals")
+                    .update({ bonus_earned: Number(refRow.bonus_earned ?? 0) + bonus })
+                    .eq("id", refRow.id);
+                } else {
+                  await supabaseAdmin.from("referrals").insert({
+                    referrer_id: refProfile.user_id,
+                    referred_id: profile.user_id,
+                    bonus_earned: bonus,
+                  });
+                }
+              }
+            }
 
             credited += 1;
             results.push({ txHash, user: profile.user_id, amountTon, gramPerDay });
