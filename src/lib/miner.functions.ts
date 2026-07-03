@@ -52,13 +52,18 @@ export const listTasks = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const today = new Date().toISOString().slice(0, 10);
-    const [tasks, done] = await Promise.all([
+    const [tasks, done, prof] = await Promise.all([
       supabase.from("tasks").select("*").eq("is_active", true).order("reward"),
       supabase.from("user_tasks").select("task_id").eq("user_id", userId).eq("completed_on", today),
+      supabase.from("profiles").select("deposit_total").eq("user_id", userId).maybeSingle(),
     ]);
     if (tasks.error) throw tasks.error;
     const completed = new Set((done.data ?? []).map((r) => r.task_id));
-    return (tasks.data ?? []).map((t) => ({ ...t, completed: completed.has(t.id) }));
+    const depositTotal = Number(prof.data?.deposit_total ?? 0);
+    // Hide tasks the user has not unlocked yet (e.g. "Deposit TON" until a deposit exists).
+    return (tasks.data ?? [])
+      .filter((t) => depositTotal >= Number(t.min_deposit ?? 0))
+      .map((t) => ({ ...t, completed: completed.has(t.id) }));
   });
 
 export const completeTask = createServerFn({ method: "POST" })
@@ -67,8 +72,19 @@ export const completeTask = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: task, error: tErr } = await supabase
-      .from("tasks").select("id,reward,is_active,kind,target_chat").eq("id", data.taskId).maybeSingle();
+      .from("tasks").select("id,reward,is_active,kind,target_chat,min_deposit").eq("id", data.taskId).maybeSingle();
     if (tErr || !task?.is_active) throw new Error("Task not available");
+
+    // Deposit-gated tasks: require the user's cumulative deposits to reach min_deposit.
+    if (Number(task.min_deposit ?? 0) > 0) {
+      const { data: prof } = await supabase
+        .from("profiles").select("deposit_total").eq("user_id", userId).maybeSingle();
+      if (Number(prof?.deposit_total ?? 0) < Number(task.min_deposit)) {
+        throw new Error("Debes hacer un depósito primero para desbloquear esta tarea");
+      }
+    }
+
+
 
     // Channel/group tasks: verify the user is subscribed via getChatMember.
     if ((task.kind === "channel" || task.kind === "group") && task.target_chat) {
