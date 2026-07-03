@@ -327,7 +327,8 @@ const PERIODS: Period[] = [
 ];
 
 // 1 TON deposited => +1 GRAM/day. 1 GRAM = 1 TON in USDT value.
-const DAILY_RATE_GRAM_PER_TON = 1;
+// ROI referencia: ~3.3% diario (1 TON depositado = 0.033 GRAM/día)
+const DAILY_RATE_GRAM_PER_TON = 0.033;
 
 function DepositTab() {
   const submitFn = useServerFn(submitDeposit);
