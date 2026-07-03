@@ -43,8 +43,12 @@ export const getMe = createServerFn({ method: "GET" })
 export const collectIncome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { data: profile } = await supabase
+    const { userId } = context;
+    // balance/mining_rate/last_collect_at are economically sensitive columns.
+    // authenticated role has no direct UPDATE grant on them (RLS-hardened);
+    // all mutations go through service_role.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
       .from("profiles").select("balance,mining_rate,last_collect_at").eq("user_id", userId).maybeSingle();
     if (!profile) throw new Error("No profile");
     const rateGramPerDay = Number(profile.mining_rate ?? 0);
@@ -52,13 +56,14 @@ export const collectIncome = createServerFn({ method: "POST" })
     const seconds = Math.max(0, (now.getTime() - new Date(profile.last_collect_at as string).getTime()) / 1000);
     const gained = (rateGramPerDay / 86400) * seconds;
     const newBalance = Number(profile.balance) + gained;
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("profiles")
       .update({ balance: newBalance, last_collect_at: now.toISOString() })
       .eq("user_id", userId);
     if (error) throw error;
     return { gained, balance: newBalance };
   });
+
 
 
 
@@ -137,9 +142,12 @@ export const completeTask = createServerFn({ method: "POST" })
       user_id: userId, task_id: task.id, completed_on: today, reward: task.reward,
     });
     if (iErr) throw new Error("Already claimed today");
-    const { data: profile } = await supabase.from("profiles").select("balance").eq("user_id", userId).maybeSingle();
+    // Credit reward via service_role (authenticated cannot UPDATE balance directly).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
     const newBalance = Number(profile?.balance ?? 0) + Number(task.reward);
-    await supabase.from("profiles").update({ balance: newBalance }).eq("user_id", userId);
+    await supabaseAdmin.from("profiles").update({ balance: newBalance }).eq("user_id", userId);
     return { reward: Number(task.reward), balance: newBalance };
   });
 
@@ -190,21 +198,27 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
   .inputValidator((d: { amount: number; address: string; memo?: string }) =>
     z.object({ amount: z.number().positive().min(1), address: z.string().min(10), memo: z.string().optional() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
-    const { data: profile } = await supabase.from("profiles").select("balance").eq("user_id", userId).maybeSingle();
-    if (!profile || Number(profile.balance) < data.amount) throw new Error("Insufficient balance");
-    const fee = data.amount * 0.10;
-    const net = data.amount - fee;
-    // Insert with admin client because RLS restricts users to inserting
-    // only safe initial values (status='pending', fee=0, net_amount=0).
-    // Server-side logic computes the trusted fee and net amount.
+    const { userId } = context;
+    // All economic mutations go through service_role. Also enforce a hard
+    // address length ceiling and basic character set to avoid downstream abuse.
+    if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
+      throw new Error("Invalid address format");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
+    if (!profile || Number(profile.balance) < data.amount) throw new Error("Insufficient balance");
+    // 5% network fee (must match UI copy in withdraw.subtitle / withdraw.fee_label).
+    const fee = data.amount * 0.05;
+    const net = data.amount - fee;
     const { error } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId, amount: data.amount, address: data.address, memo: data.memo ?? null,
       fee, net_amount: net, status: "pending",
     });
     if (error) throw error;
-    await supabase.from("profiles").update({ balance: Number(profile.balance) - data.amount }).eq("user_id", userId);
+    await supabaseAdmin.from("profiles")
+      .update({ balance: Number(profile.balance) - data.amount })
+      .eq("user_id", userId);
     return { ok: true, fee, net };
   });
 
