@@ -414,19 +414,39 @@ function LeaderboardTab() {
 function TasksTab() {
   const listFn = useServerFn(listTasks);
   const doFn = useServerFn(completeTask);
+  const meFn = useServerFn(getMe);
   const qc = useQueryClient();
   const { data } = useSuspenseQuery(queryOptions({ queryKey: ["tasks"], queryFn: () => listFn() }));
+  const { data: me } = useSuspenseQuery(meQO(() => meFn()));
+  const [shared, setShared] = useState<Record<string, boolean>>({});
+  const code = me.profile.referral_code as string;
+  const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   const mut = useMutation({
     mutationFn: (taskId: string) => doFn({ data: { taskId } }),
     onSuccess: (r) => { toast.success(`+${formatGram(r.reward)} GRAM`); getTelegram()?.HapticFeedback?.impactOccurred("light"); qc.invalidateQueries(); },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
+  const isShareTask = (t: any) => {
+    const s = `${t.title ?? ""} ${t.description ?? ""}`.toLowerCase();
+    return /share|invita|invite|friend|amig|refer/.test(s);
+  };
+  const openShare = (t: any) => {
+    const text = t.description || "Join me on Tickgram AI and start mining GRAM!";
+    const url = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(text)}`;
+    const tg: any = getTelegram();
+    if (tg?.openTelegramLink) tg.openTelegramLink(url);
+    else window.open(url, "_blank");
+    setShared((s) => ({ ...s, [t.id]: true }));
+  };
   return (
     <div className="space-y-3">
       <h2 className="text-2xl font-bold">Tasks</h2>
       <p className="text-sm text-muted-foreground">Complete tasks to earn GRAM.</p>
       <div className="space-y-2 mt-3">
-        {data.map((t: any) => (
+        {data.map((t: any) => {
+          const share = isShareTask(t);
+          const hasShared = shared[t.id];
+          return (
           <div key={t.id} className="card-glass rounded-2xl p-4 flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <p className="font-semibold">{t.title}</p>
@@ -443,14 +463,23 @@ function TasksTab() {
                     Join
                   </a>
                 )}
-                <button onClick={() => mut.mutate(t.id)} disabled={mut.isPending}
-                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
-                  {t.kind === "channel" || t.kind === "group" ? "Verify" : "Claim"}
-                </button>
+                {share && !hasShared ? (
+                  <button onClick={() => openShare(t)}
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
+                    Share
+                  </button>
+                ) : (
+                  <button onClick={() => mut.mutate(t.id)}
+                    disabled={mut.isPending || (share && !hasShared)}
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+                    {t.kind === "channel" || t.kind === "group" ? "Verify" : "Claim"}
+                  </button>
+                )}
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
