@@ -648,7 +648,7 @@ function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
   const wallet = useTonWallet();
 
   const clicksNum = Math.max(0, Math.floor(Number(clicks) || 0));
-  const costTon = clicksNum * 0.001;
+  const costGram = clicksNum * 0.001;
   const canSubmit = title.trim().length >= 2 && /^https?:\/\//i.test(link.trim()) && clicksNum >= 250;
 
   const submit = useMutation({
