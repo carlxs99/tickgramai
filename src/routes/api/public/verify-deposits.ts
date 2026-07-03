@@ -133,7 +133,6 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
 
-            const amountTon = amountNano / 1e9;
             // Deterministic ROI: 1 GRAM (= 1 TON) deposited yields exactly
             // amountTon * 0.033 GRAM/day, independent of TON price movements.
             const gramPerDay = amountTon * DAILY_ROI;
