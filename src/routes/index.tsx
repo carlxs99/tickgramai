@@ -538,6 +538,7 @@ function FriendsTab() {
 }
 
 function DepositTab() {
+  const { t } = useT();
   const listFn = useServerFn(listDeposits);
   const meFn = useServerFn(getMe);
   const saveWalletFn = useServerFn(saveWallet);
@@ -554,7 +555,6 @@ function DepositTab() {
   const usdtValue = amountNum * price;
   const memoTag: string = (me.profile as any).memo_tag ?? "";
 
-  // Persist wallet address whenever it changes
   useEffect(() => {
     const addr = wallet?.account?.address ?? null;
     const saved = (me.profile as any).wallet_address ?? null;
@@ -565,13 +565,10 @@ function DepositTab() {
 
   const pay = useMutation({
     mutationFn: async () => {
-      if (!wallet) throw new Error("Connect your wallet first");
-      if (amountNum <= 0) throw new Error("Enter an amount");
-      if (!memoTag) throw new Error("Missing memo");
+      if (!wallet) throw new Error(t("deposit.err_connect"));
+      if (amountNum <= 0) throw new Error(t("deposit.err_amount"));
+      if (!memoTag) throw new Error(t("deposit.err_memo"));
 
-      // Build a text-comment payload (op=0, memo string) as base64 BOC-like cell.
-      // TonConnect accepts the classic { address, amount, payload? } shape.
-      // A memo/comment payload is a cell: 32-bit op=0 + utf-8 string, serialized.
       const memoPayload = buildCommentPayload(memoTag);
       const nano = Math.floor(amountNum * 1e9).toString();
 
@@ -581,33 +578,31 @@ function DepositTab() {
       });
     },
     onSuccess: () => {
-      toast.success("Transaction sent. It will be credited automatically once confirmed on-chain.");
+      toast.success(t("deposit.tx_sent"));
       setAmount("");
       qc.invalidateQueries();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Transaction failed"),
+    onError: (e: any) => toast.error(e?.message ?? t("deposit.err_failed")),
   });
 
   return (
     <div className="space-y-3 pb-2">
-      <h2 className="text-2xl font-bold">Deposit</h2>
-      <p className="text-sm text-muted-foreground">
-        Connect your GRAM wallet and pay directly. Your unique memo is added automatically so we can detect your deposit.
-      </p>
+      <h2 className="text-2xl font-bold">{t("deposit.title")}</h2>
+      <p className="text-sm text-muted-foreground">{t("deposit.subtitle")}</p>
 
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Your balance</span>
+          <span className="text-muted-foreground">{t("deposit.your_balance")}</span>
           <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Current rate</span>
-          <span className="font-semibold">{formatGram(me.profile.mining_rate)} GRAM/day</span>
+          <span className="text-muted-foreground">{t("deposit.current_rate")}</span>
+          <span className="font-semibold">{formatGram(me.profile.mining_rate)} {t("mine.per_day")}</span>
         </div>
         <div className="flex justify-between text-sm items-center">
-          <span className="text-muted-foreground">Your memo</span>
+          <span className="text-muted-foreground">{t("deposit.your_memo")}</span>
           <button
-            onClick={() => { navigator.clipboard.writeText(memoTag); toast.success("Memo copied"); }}
+            onClick={() => { navigator.clipboard.writeText(memoTag); toast.success(t("deposit.memo_copied")); }}
             className="flex items-center gap-1.5 font-mono font-semibold text-primary"
           >
             {memoTag} <Copy className="w-3.5 h-3.5" />
@@ -619,14 +614,14 @@ function DepositTab() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wallet className="w-4 h-4 text-primary" />
-            <span className="font-semibold text-sm">GRAM Wallet</span>
+            <span className="font-semibold text-sm">{t("deposit.wallet")}</span>
           </div>
           {wallet ? (
             <button
               onClick={() => tonConnectUI.disconnect()}
               className="text-xs text-muted-foreground underline"
             >
-              Disconnect
+              {t("common.disconnect")}
             </button>
           ) : null}
         </div>
@@ -640,12 +635,12 @@ function DepositTab() {
             onClick={() => tonConnectUI.openModal()}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground"
           >
-            Connect Wallet
+            {t("deposit.connect_wallet")}
           </motion.button>
         )}
       </div>
 
-      <Field label="Amount (GRAM)">
+      <Field label={t("deposit.amount")}>
         <div className="relative">
           <input
             inputMode="decimal"
@@ -658,7 +653,7 @@ function DepositTab() {
         </div>
         {amountNum > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-            ≈ ${usdtValue.toFixed(2)} USDT · earns {(amountNum * 0.033).toFixed(4)} GRAM/day
+            {t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: (amountNum * 0.033).toFixed(4) })}
           </p>
         )}
       </Field>
@@ -669,12 +664,12 @@ function DepositTab() {
         onClick={() => pay.mutate()}
         className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50 shadow-xl glow-primary"
       >
-        {pay.isPending ? "Waiting for wallet…" : wallet ? "Pay & start earning" : "Connect wallet to deposit"}
+        {pay.isPending ? t("deposit.waiting") : wallet ? t("deposit.pay") : t("deposit.connect_to_deposit")}
       </motion.button>
 
       {!!deposits?.length && (
         <div className="card-glass rounded-2xl p-4">
-          <p className="font-semibold mb-2">History</p>
+          <p className="font-semibold mb-2">{t("common.history")}</p>
           {deposits.map((d: any) => (
             <div key={d.id} className="flex justify-between text-sm py-1.5">
               <span>{Number(d.amount_ton).toFixed(4)} GRAM</span>
@@ -686,6 +681,7 @@ function DepositTab() {
     </div>
   );
 }
+
 
 // Build a TonConnect payload cell containing a text comment (op=0 + utf-8 memo).
 // Uses @ton/core-style CRC serialization via a minimal handcrafted BOC.
