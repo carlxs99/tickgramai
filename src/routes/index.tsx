@@ -246,7 +246,7 @@ function MineTab() {
             <Sparkles className="w-3.5 h-3.5" /> Uncollected
           </div>
           <div className="mt-2 text-5xl font-extrabold tabular-nums">
-            {formatGram(live, 4)}
+            {formatGram(live, 6)}
           </div>
           <div className="text-xs text-[color:var(--success)] tabular-nums mt-0.5">
             ≈ ${usdt(live, price)} USDT
