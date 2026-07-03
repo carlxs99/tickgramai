@@ -39,7 +39,8 @@ async function processOne(row: any, supabaseAdmin: any) {
   const wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
 
   const endpoint = "https://toncenter.com/api/v2/jsonRPC";
-  const client = new TonClient({ endpoint });
+  const apiKey = process.env.TONCENTER_API_KEY;
+  const client = new TonClient({ endpoint, apiKey });
   const contract = client.open(wallet);
 
   const seqno = await contract.getSeqno();
