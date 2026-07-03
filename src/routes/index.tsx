@@ -241,7 +241,7 @@ function MineTab() {
           <div className="mt-2 text-sm text-muted-foreground">
             {rate > 0
               ? <>{formatGram(rate, 2)} GRAM/day <span className="text-[color:var(--success)]">(≈ ${usdt(rate, price)} /day)</span></>
-              : "Deposit TON to start mining"}
+              : "Deposit GRAM to start mining"}
           </div>
           <motion.button
             whileTap={{ scale: 0.96 }}
