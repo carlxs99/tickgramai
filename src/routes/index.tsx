@@ -129,6 +129,7 @@ function MinerApp() {
             {tab === "friends" && <FriendsTab />}
             {tab === "deposit" && <DepositTab />}
             {tab === "withdraw" && <WithdrawTab />}
+            {tab === "admin" && <AdminTab />}
           </motion.main>
         </AnimatePresence>
         <BottomNav tab={tab} setTab={setTab} />
