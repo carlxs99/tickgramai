@@ -498,9 +498,253 @@ function TasksTab() {
           );
         })}
       </div>
+      <PartnerTasksSection />
     </div>
   );
 }
+
+
+function PartnerTasksSection() {
+  const { t: tr } = useT();
+  const qc = useQueryClient();
+  const listFn = useServerFn(listPartnerTasks);
+  const myListFn = useServerFn(listMyPartnerTasks);
+  const createFn = useServerFn(createPartnerTask);
+  const completeFn = useServerFn(completePartnerTask);
+  const cancelFn = useServerFn(cancelPartnerTask);
+
+  const { data: partners } = useQuery({ queryKey: ["partner-tasks"], queryFn: () => listFn(), refetchInterval: 30000 });
+  const { data: mine } = useQuery({ queryKey: ["my-partner-tasks"], queryFn: () => myListFn(), refetchInterval: 20000 });
+
+  const [showAdd, setShowAdd] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [visited, setVisited] = useState<Record<string, boolean>>({});
+
+  const complete = useMutation({
+    mutationFn: (partnerTaskId: string) => completeFn({ data: { partnerTaskId } }),
+    onSuccess: (r) => {
+      toast.success(`+${formatReward(r.reward)} GRAM`);
+      getTelegram()?.HapticFeedback?.impactOccurred("light");
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? tr("common.failed")),
+  });
+
+  const openLink = (pt: any) => {
+    const tg: any = getTelegram();
+    if (tg?.openTelegramLink && /t\.me/.test(pt.link)) tg.openTelegramLink(pt.link);
+    else if (tg?.openLink) tg.openLink(pt.link);
+    else window.open(pt.link, "_blank");
+    setVisited((v) => ({ ...v, [pt.id]: true }));
+  };
+
+  return (
+    <div className="space-y-3 mt-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-xl font-bold">{tr("partner.title")}</h3>
+          <button onClick={() => setShowHelp(true)} className="text-muted-foreground">
+            <HelpCircle className="w-4 h-4" />
+          </button>
+        </div>
+        <button
+          onClick={() => setShowAdd(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl card-glass text-sm font-semibold"
+        >
+          <Plus className="w-4 h-4 text-primary" /> {tr("partner.add")}
+        </button>
+      </div>
+
+      {(!partners || partners.length === 0) ? (
+        <div className="card-glass rounded-2xl p-6 text-center text-sm text-muted-foreground">
+          {tr("partner.empty")}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {partners.map((pt: any) => (
+            <div key={pt.id} className="card-glass rounded-2xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Megaphone className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{pt.title}</p>
+                <p className="text-xs mt-0.5 text-[color:var(--success)]">+{formatReward(pt.reward_per_click)} GRAM</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                  {pt.current_clicks}/{pt.target_clicks} {tr("partner.clicks")}
+                </p>
+              </div>
+              {visited[pt.id] ? (
+                <button
+                  onClick={() => complete.mutate(pt.id)}
+                  disabled={complete.isPending}
+                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                >
+                  {tr("tasks.claim")}
+                </button>
+              ) : (
+                <button
+                  onClick={() => openLink(pt)}
+                  className="px-3 py-2 rounded-xl card-glass text-sm font-semibold flex items-center gap-1"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> {tr("partner.open")}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {mine && mine.length > 0 && (
+        <div className="card-glass rounded-2xl p-4 mt-3">
+          <p className="font-semibold text-sm mb-2">{tr("partner.my_tasks")}</p>
+          <div className="space-y-2">
+            {mine.map((pt: any) => (
+              <div key={pt.id} className="flex justify-between items-center text-xs">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold truncate">{pt.title}</p>
+                  <p className="text-[10px] text-muted-foreground tabular-nums">
+                    {pt.current_clicks}/{pt.target_clicks} · {pt.status}
+                  </p>
+                </div>
+                {pt.status === "pending_payment" && (
+                  <button
+                    onClick={() => {
+                      cancelFn({ data: { partnerTaskId: pt.id } }).then(() => qc.invalidateQueries());
+                    }}
+                    className="px-2 py-1 rounded-lg text-[10px] text-[color:var(--danger)]"
+                  >
+                    {tr("common.cancel")}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showAdd && <AddPartnerTaskModal onClose={() => setShowAdd(false)} createFn={createFn} qc={qc} />}
+      {showHelp && (
+        <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4" onClick={() => setShowHelp(false)}>
+          <div className="card-glass rounded-2xl p-5 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-bold">{tr("partner.help_title")}</h4>
+              <button onClick={() => setShowHelp(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-sm text-muted-foreground whitespace-pre-line">{tr("partner.help_body")}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
+  const { t: tr } = useT();
+  const [title, setTitle] = useState("");
+  const [link, setLink] = useState("");
+  const [kind, setKind] = useState<"link" | "channel" | "group" | "bot">("channel");
+  const [clicks, setClicks] = useState(500);
+  const [tonConnectUI] = useTonConnectUI();
+  const wallet = useTonWallet();
+
+  const clicksNum = Math.max(0, Math.floor(Number(clicks) || 0));
+  const costTon = clicksNum * 0.001;
+  const canSubmit = title.trim().length >= 2 && /^https?:\/\//i.test(link.trim()) && clicksNum >= 250;
+
+  const submit = useMutation({
+    mutationFn: async () => {
+      if (!wallet) throw new Error(tr("deposit.err_connect"));
+      // 1) Create pending partner task → get memo + cost_ton.
+      const created: any = await createFn({
+        data: { title: title.trim(), link: link.trim(), kind, targetClicks: clicksNum },
+      });
+      // 2) Send TON payment with the memo.
+      const payload = buildCommentPayload(created.memo_tag);
+      const nano = Math.floor(Number(created.cost_ton) * 1e9).toString();
+      await tonConnectUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [{ address: RECEIVING_WALLET, amount: nano, payload }],
+      });
+      return created;
+    },
+    onSuccess: () => {
+      toast.success(tr("partner.created"));
+      qc.invalidateQueries();
+      onClose();
+    },
+    onError: (e: any) => toast.error(e?.message ?? tr("common.failed")),
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="card-glass rounded-2xl p-5 max-w-md w-full space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Plus className="w-5 h-5 text-primary" />
+            <h4 className="font-bold text-lg">{tr("partner.modal_title")}</h4>
+          </div>
+          <button onClick={onClose}><X className="w-5 h-5" /></button>
+        </div>
+
+        <Field label={tr("partner.form_title")}>
+          <input value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} placeholder={tr("partner.form_title_ph")} className="input" />
+        </Field>
+
+        <Field label={tr("partner.form_link")}>
+          <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://t.me/..." className="input" />
+        </Field>
+
+        <Field label={tr("partner.form_kind")}>
+          <div className="grid grid-cols-4 gap-2">
+            {(["channel", "group", "bot", "link"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setKind(k)}
+                className={`px-2 py-2 rounded-xl text-xs font-semibold ${kind === k ? "bg-primary text-primary-foreground" : "card-glass"}`}
+              >
+                {tr(`partner.kind_${k}`)}
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        <Field label={tr("partner.form_clicks")}>
+          <input
+            type="number"
+            min={250}
+            step={50}
+            value={clicks}
+            onChange={(e) => setClicks(Number(e.target.value))}
+            className="input"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">{tr("partner.form_clicks_help")}</p>
+        </Field>
+
+        <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
+          <p className="text-sm">
+            {tr("partner.cost_label")} <span className="font-bold tabular-nums">{costTon.toFixed(4)} TON</span>
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={onClose} className="flex-1 py-3 rounded-2xl card-glass font-semibold">
+            {tr("common.cancel")}
+          </button>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            disabled={!canSubmit || submit.isPending}
+            onClick={() => submit.mutate()}
+            className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50"
+          >
+            {submit.isPending ? tr("deposit.waiting") : wallet ? tr("partner.pay_and_create") : tr("deposit.connect_wallet")}
+          </motion.button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 
 function FriendsTab() {
