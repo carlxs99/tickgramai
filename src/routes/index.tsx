@@ -148,8 +148,10 @@ function useTonPrice() {
   const q = useQuery({
     queryKey: ["ton-price"],
     queryFn: () => fn(),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    refetchInterval: 20_000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    staleTime: 10_000,
   });
   return q.data?.price ?? 5.5;
 }

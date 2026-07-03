@@ -87,11 +87,11 @@ async function processOne(row: any, supabaseAdmin: any) {
     tx_hash: txHashB64 || `seqno:${seqno}`,
   }).eq("id", row.id);
 
-  // Notify withdrawals group
+  // Notify withdrawals group + DM the user
   try {
     const { data: prof } = await supabaseAdmin
       .from("profiles")
-      .select("username, first_name")
+      .select("username, first_name, telegram_id")
       .eq("user_id", row.user_id)
       .maybeSingle();
     const handle = prof?.username ? `@${prof.username}` : (prof?.first_name || "user");
@@ -99,12 +99,21 @@ async function processOne(row: any, supabaseAdmin: any) {
     const explorerUrl = txHashB64
       ? `https://tonviewer.com/transaction/${encodeURIComponent(txHashB64)}`
       : `https://tonviewer.com/${wallet.address.toString()}`;
-    const text =
+    const groupText =
       `✅ <b>Withdraw Approved!</b>\n\n` +
       `👤 User: ${escapeHtml(handle)}\n\n` +
       `💰 Amount: ${amount} GRAM\n\n` +
       `🔗 <a href="${explorerUrl}">View on GRAM Explorer →</a>`;
-    await sendTelegramMessage(WITHDRAWALS_CHAT, text);
+    await sendTelegramMessage(WITHDRAWALS_CHAT, groupText);
+
+    if (prof?.telegram_id) {
+      const name = prof.first_name || "friend";
+      const userText =
+        `✅ <b>Withdrawal completed!</b>\n\n` +
+        `Hi ${escapeHtml(name)}, your withdrawal of <b>${amount} GRAM</b> has been sent to your wallet.\n\n` +
+        `🔗 <a href="${explorerUrl}">View transaction on GRAM Explorer →</a>`;
+      await sendTelegramMessage(Number(prof.telegram_id), userText);
+    }
   } catch (e) {
     console.error("telegram notify failed", e);
   }

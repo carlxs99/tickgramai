@@ -9,6 +9,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
       POST: async () => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { Address } = await import("@ton/core");
+        const { sendTelegramMessage } = await import("@/lib/telegram-notify.server");
 
         // Canonical raw address of our receiving wallet ("0:abcd…")
         const oursRaw = Address.parse(RECEIVING_WALLET).toRawString().toLowerCase();
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
             const { data: profile } = await supabaseAdmin
-              .from("profiles").select("user_id, mining_rate, memo_tag, referred_by")
+              .from("profiles").select("user_id, mining_rate, memo_tag, referred_by, telegram_id, first_name")
               .eq("memo_tag", comment).maybeSingle();
             if (!profile) {
               results.push({ txHash, memo: comment, skipped: "no_user" });
@@ -96,10 +97,11 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
 
             // Referral bonus: 10% of deposit (in GRAM) credited from the
             // system to the referrer. The referred user is untouched.
+            let referrerNotify: { telegram_id: number | null; first_name: string | null; bonus: number } | null = null;
             if (profile.referred_by) {
               const { data: refProfile } = await supabaseAdmin
                 .from("profiles")
-                .select("user_id, balance")
+                .select("user_id, balance, telegram_id, first_name")
                 .eq("id", profile.referred_by)
                 .maybeSingle();
               if (refProfile) {
@@ -108,7 +110,6 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                   .from("profiles")
                   .update({ balance: Number(refProfile.balance ?? 0) + bonus })
                   .eq("user_id", refProfile.user_id);
-                // Increment bonus_earned on the referral row (if any)
                 const { data: refRow } = await supabaseAdmin
                   .from("referrals")
                   .select("id, bonus_earned")
@@ -127,7 +128,39 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                     bonus_earned: bonus,
                   });
                 }
+                referrerNotify = {
+                  telegram_id: refProfile.telegram_id as number | null,
+                  first_name: (refProfile.first_name as string | null) ?? null,
+                  bonus,
+                };
               }
+            }
+
+            // Telegram DMs (best-effort)
+            try {
+              if (profile.telegram_id) {
+                const name = profile.first_name || "friend";
+                await sendTelegramMessage(
+                  Number(profile.telegram_id),
+                  `✅ <b>Deposit confirmed!</b>\n\n` +
+                    `Hi ${name}, we received your deposit of <b>${amountTon.toFixed(4)} TON</b>.\n\n` +
+                    `⚡ Mining rate added: <b>+${gramPerDay.toFixed(4)} GRAM/day</b>\n` +
+                    `📈 Daily ROI: 3.3%\n\n` +
+                    `Open TICK GRAM AI to check your balance.`,
+                );
+              }
+              if (referrerNotify?.telegram_id) {
+                const refName = referrerNotify.first_name || "friend";
+                await sendTelegramMessage(
+                  Number(referrerNotify.telegram_id),
+                  `🎉 <b>Referral commission earned!</b>\n\n` +
+                    `Hi ${refName}, one of your referrals just made a deposit of <b>${amountTon.toFixed(4)} TON</b>.\n\n` +
+                    `💰 Your 10% commission: <b>+${referrerNotify.bonus.toFixed(4)} GRAM</b>\n\n` +
+                    `Keep inviting friends to earn more!`,
+                );
+              }
+            } catch (e) {
+              console.error("telegram deposit notify failed", e);
             }
 
             credited += 1;
