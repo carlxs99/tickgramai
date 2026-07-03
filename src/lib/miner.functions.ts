@@ -72,7 +72,17 @@ export const completeTask = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: task, error: tErr } = await supabase
-      .from("tasks").select("id,reward,is_active,kind,target_chat").eq("id", data.taskId).maybeSingle();
+      .from("tasks").select("id,reward,is_active,kind,target_chat,min_deposit").eq("id", data.taskId).maybeSingle();
+    if (tErr || !task?.is_active) throw new Error("Task not available");
+
+    // Deposit-gated tasks: require the user's cumulative deposits to reach min_deposit.
+    if (Number(task.min_deposit ?? 0) > 0) {
+      const { data: prof } = await supabase
+        .from("profiles").select("deposit_total").eq("user_id", userId).maybeSingle();
+      if (Number(prof?.deposit_total ?? 0) < Number(task.min_deposit)) {
+        throw new Error("Debes hacer un depósito primero para desbloquear esta tarea");
+      }
+    }
     if (tErr || !task?.is_active) throw new Error("Task not available");
 
     // Channel/group tasks: verify the user is subscribed via getChatMember.
