@@ -61,7 +61,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
             const { data: profile } = await supabaseAdmin
-              .from("profiles").select("user_id, mining_rate, mining_rate_usdt, memo_tag, referred_by, telegram_id, first_name")
+              .from("profiles").select("user_id, mining_rate, memo_tag, referred_by, telegram_id, first_name")
               .eq("memo_tag", comment).maybeSingle();
             if (!profile) {
               results.push({ txHash, memo: comment, skipped: "no_user" });
@@ -69,14 +69,10 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
             const amountTon = amountNano / 1e9;
-            // ROI is defined in USDT. Snapshot the deposit's USDT value now,
-            // so the daily payout represents 3.3% USDT/day at the deposit
-            // price — regardless of future TON price moves.
-            const tonPrice = await fetchTonPriceUsdt();
-            const amountUsdt = amountTon * tonPrice;
-            const usdtPerDay = amountUsdt * DAILY_ROI;
-            const gramPerDay = tonPrice > 0 ? usdtPerDay / tonPrice : amountTon * DAILY_ROI;
-            const newRateUsdt = Number((profile as any).mining_rate_usdt ?? 0) + usdtPerDay;
+            // Deterministic ROI: 1 GRAM (= 1 TON) deposited yields exactly
+            // amountTon * 0.033 GRAM/day, independent of TON price movements.
+            const gramPerDay = amountTon * DAILY_ROI;
+            const newRate = Number((profile as any).mining_rate ?? 0) + gramPerDay;
 
             const { error: iErr } = await supabaseAdmin.from("processed_tx").insert({
               tx_hash: txHash,
@@ -99,8 +95,19 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             });
 
             await supabaseAdmin.from("profiles")
-              .update({ mining_rate_usdt: newRateUsdt })
+              .update({
+                mining_rate: newRate,
+                deposit_total: undefined, // handled below via RPC-free increment
+              })
               .eq("user_id", profile.user_id);
+
+            // Also bump deposit_total so task-unlock gating works.
+            const { data: cur } = await supabaseAdmin
+              .from("profiles").select("deposit_total").eq("user_id", profile.user_id).maybeSingle();
+            await supabaseAdmin.from("profiles")
+              .update({ deposit_total: Number(cur?.deposit_total ?? 0) + amountTon })
+              .eq("user_id", profile.user_id);
+
 
 
             // Referral bonus: 10% of deposit (in GRAM) credited from the
