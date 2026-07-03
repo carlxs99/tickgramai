@@ -13,6 +13,7 @@ import { formatGram } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   component: MinerApp,
 });
 

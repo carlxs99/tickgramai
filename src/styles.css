@@ -101,3 +101,14 @@
   backdrop-filter: blur(10px);
   border: 1px solid oklch(1 0 0 / 0.08);
 }
+@utility input {
+  width: 100%;
+  background: oklch(1 0 0 / 0.06);
+  border: 1px solid oklch(1 0 0 / 0.1);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  color: var(--color-foreground);
+  font-size: 0.95rem;
+  outline: none;
+}
+.input:focus { border-color: var(--color-primary); }
