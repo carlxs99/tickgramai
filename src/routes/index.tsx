@@ -36,12 +36,7 @@ function MinerApp() {
 
     (async () => {
       try {
-        const { data: existing } = await supabase.auth.getSession();
-        if (existing.session) { setReady(true); return; }
-
-        // Wait up to ~3s for the Telegram WebApp SDK to be injected by
-        // https://telegram.org/js/telegram-web-app.js — otherwise initData
-        // is empty and we would fall back to demo mode for real users.
+        // Wait up to ~3s for the Telegram WebApp SDK to be injected.
         let tg = getTelegram();
         const start = Date.now();
         while (!tg?.initData && Date.now() - start < 3000) {
@@ -52,18 +47,35 @@ function MinerApp() {
         tg?.expand();
 
         const initData = tg?.initData && tg.initData.length > 0 ? tg.initData : undefined;
-        // Only fall back to demo when clearly outside Telegram (dev/browser).
         const insideTelegram = typeof window !== "undefined" && !!window.Telegram?.WebApp;
-        const demoId = !initData && !insideTelegram
-          ? Math.floor(1_000_000 + Math.random() * 9_000_000)
-          : undefined;
 
-        if (!initData && !demoId) {
-          setError("No se pudo leer la sesión de Telegram. Abre la Mini App desde el bot.");
+        const { data: existing } = await supabase.auth.getSession();
+
+        // If we have real Telegram initData, ALWAYS re-authenticate so the
+        // profile gets refreshed with the real name/username/avatar — even
+        // if a stale (demo) session already exists in localStorage.
+        if (initData) {
+          if (existing.session) await supabase.auth.signOut();
+          const tokens = await authFn({ data: { initData } });
+          await restoreSession(tokens);
+          setReady(true);
           return;
         }
 
-        const tokens = await authFn({ data: { initData, demoId } });
+        // No real initData. Reuse existing session if present.
+        if (existing.session) { setReady(true); return; }
+
+        // Outside Telegram (dev/browser) → demo. Inside Telegram without
+        // initData → the Mini App was opened without a WebApp button.
+        if (insideTelegram) {
+          setError(
+            "Telegram no envió tu identidad. Abre la Mini App desde el botón del menú del bot (@Tickgramaibot) o desde t.me/Tickgramaibot/app."
+          );
+          return;
+        }
+
+        const demoId = Math.floor(1_000_000 + Math.random() * 9_000_000);
+        const tokens = await authFn({ data: { demoId } });
         await restoreSession(tokens);
         setReady(true);
       } catch (e: any) {
