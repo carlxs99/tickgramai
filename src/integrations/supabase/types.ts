@@ -88,6 +88,7 @@ export type Database = {
           last_name: string | null
           memo_tag: string
           mining_rate: number
+          mining_rate_usdt: number
           referral_code: string | null
           referred_by: string | null
           telegram_id: number | null
@@ -109,6 +110,7 @@ export type Database = {
           last_name?: string | null
           memo_tag?: string
           mining_rate?: number
+          mining_rate_usdt?: number
           referral_code?: string | null
           referred_by?: string | null
           telegram_id?: number | null
@@ -130,6 +132,7 @@ export type Database = {
           last_name?: string | null
           memo_tag?: string
           mining_rate?: number
+          mining_rate_usdt?: number
           referral_code?: string | null
           referred_by?: string | null
           telegram_id?: number | null
