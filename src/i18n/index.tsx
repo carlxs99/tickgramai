@@ -348,6 +348,9 @@ const ru: Dict = {
   "withdraw.submitting": "Отправляем…",
   "withdraw.none": "Выводов пока нет.",
   "withdraw.requested_net": "Запрошено. Нетто {amount} GRAM",
+  "withdraw.min_label": "Минимальный вывод",
+  "withdraw.fee_label": "Комиссия сети",
+  "withdraw.net_label": "Вы получите",
 
   "nav.mine": "Майнинг",
   "nav.tasks": "Задания",
