@@ -71,7 +71,8 @@ function MinerApp() {
     : "https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json";
 
   // Deep-link back to this Mini App after the wallet signs the tx.
-  const twaReturnUrl = "https://t.me/Tickgramaibot/app" as `${string}://${string}`;
+  // Bot has Main Mini App → t.me/<bot> opens it directly.
+  const twaReturnUrl = "https://t.me/Tickgramaibot" as `${string}://${string}`;
 
   return (
     <TonConnectUIProvider
