@@ -229,7 +229,7 @@ function MineTab() {
         <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " TON"} sub={`1 TON ≈ $${price.toFixed(2)}`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
-      <TopMinersCard />
+      
     </div>
   );
 }
