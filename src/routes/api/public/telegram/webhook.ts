@@ -11,7 +11,7 @@ function safeEqual(a: string, b: string) {
   return A.length === B.length && timingSafeEqual(A, B);
 }
 
-async function sendMessage(chatId: number, text: string) {
+async function sendMessage(chatId: number, text: string, extra: Record<string, unknown> = {}) {
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY!;
   const TELEGRAM_API_KEY = process.env.TELEGRAM_API_KEY!;
   await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
@@ -21,7 +21,7 @@ async function sendMessage(chatId: number, text: string) {
       "X-Connection-Api-Key": TELEGRAM_API_KEY,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", ...extra }),
   });
 }
 
