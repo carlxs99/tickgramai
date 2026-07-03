@@ -33,17 +33,35 @@ function MinerApp() {
   useEffect(() => {
     if (attempted.current) return;
     attempted.current = true;
-    const tg = getTelegram();
-    tg?.ready();
-    tg?.expand();
 
     (async () => {
       try {
         const { data: existing } = await supabase.auth.getSession();
         if (existing.session) { setReady(true); return; }
 
-        const initData = tg?.initData;
-        const demoId = !initData ? Math.floor(1_000_000 + Math.random() * 9_000_000) : undefined;
+        // Wait up to ~3s for the Telegram WebApp SDK to be injected by
+        // https://telegram.org/js/telegram-web-app.js — otherwise initData
+        // is empty and we would fall back to demo mode for real users.
+        let tg = getTelegram();
+        const start = Date.now();
+        while (!tg?.initData && Date.now() - start < 3000) {
+          await new Promise((r) => setTimeout(r, 100));
+          tg = getTelegram();
+        }
+        tg?.ready();
+        tg?.expand();
+
+        const initData = tg?.initData && tg.initData.length > 0 ? tg.initData : undefined;
+        // Only fall back to demo when clearly outside Telegram (dev/browser).
+        const insideTelegram = typeof window !== "undefined" && !!window.Telegram?.WebApp;
+        const demoId = !initData && !insideTelegram
+          ? Math.floor(1_000_000 + Math.random() * 9_000_000)
+          : undefined;
+
+        if (!initData && !demoId) {
+          setError("No se pudo leer la sesión de Telegram. Abre la Mini App desde el bot.");
+          return;
+        }
 
         const tokens = await authFn({ data: { initData, demoId } });
         await restoreSession(tokens);
