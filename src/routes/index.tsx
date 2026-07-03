@@ -753,6 +753,7 @@ function Row({ k, v, strong, muted }: { k: string; v: string; strong?: boolean; 
 
 
 function WithdrawTab() {
+  const { t } = useT();
   const meFn = useServerFn(getMe);
   const wFn = useServerFn(submitWithdrawal);
   const lFn = useServerFn(listWithdrawals);
@@ -763,28 +764,28 @@ function WithdrawTab() {
   const { data: hist } = useQuery({ queryKey: ["withdrawals"], queryFn: () => lFn() });
   const mut = useMutation({
     mutationFn: () => wFn({ data: { amount: Number(amount), address } }),
-    onSuccess: (r) => { toast.success(`Requested. Net ${formatGram(r.net)} GRAM`); qc.invalidateQueries(); },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onSuccess: (r) => { toast.success(t("withdraw.requested_net", { amount: formatGram(r.net) })); qc.invalidateQueries(); },
+    onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
   });
   return (
     <div className="space-y-3">
-      <h2 className="text-2xl font-bold">Withdraw</h2>
-      <p className="text-sm text-muted-foreground">Min 100 GRAM. 5% network fee.</p>
+      <h2 className="text-2xl font-bold">{t("withdraw.title")}</h2>
+      <p className="text-sm text-muted-foreground">{t("withdraw.subtitle")}</p>
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Available</span>
+          <span className="text-muted-foreground">{t("withdraw.available")}</span>
           <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
         </div>
-        <Field label="Amount (GRAM)"><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" /></Field>
-        <Field label="GRAM address"><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
+        <Field label={t("withdraw.amount")}><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" /></Field>
+        <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
         <button disabled={mut.isPending} onClick={() => mut.mutate()}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
-          {mut.isPending ? "Submitting…" : "Request withdrawal"}
+          {mut.isPending ? t("withdraw.submitting") : t("withdraw.request")}
         </button>
       </div>
       <div className="card-glass rounded-2xl p-4">
-        <p className="font-semibold mb-2">History</p>
-        {!hist?.length && <p className="text-sm text-muted-foreground">No withdrawals yet.</p>}
+        <p className="font-semibold mb-2">{t("common.history")}</p>
+        {!hist?.length && <p className="text-sm text-muted-foreground">{t("withdraw.none")}</p>}
         {hist?.map((w: any) => (
           <div key={w.id} className="flex justify-between text-sm py-1.5">
             <span>{formatGram(w.amount)} GRAM</span>
@@ -806,13 +807,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
+  const { t } = useT();
   const items: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "mine", label: "Mine", icon: <Pickaxe className="w-5 h-5" /> },
-    { id: "tasks", label: "Tasks", icon: <ListChecks className="w-5 h-5" /> },
-    { id: "top", label: "Top", icon: <Trophy className="w-5 h-5" /> },
-    { id: "friends", label: "Friends", icon: <Users className="w-5 h-5" /> },
-    { id: "deposit", label: "Deposit", icon: <ArrowDownToLine className="w-5 h-5" /> },
-    { id: "withdraw", label: "Cash", icon: <ArrowUpFromLine className="w-5 h-5" /> },
+    { id: "mine", label: t("nav.mine"), icon: <Pickaxe className="w-5 h-5" /> },
+    { id: "tasks", label: t("nav.tasks"), icon: <ListChecks className="w-5 h-5" /> },
+    { id: "top", label: t("nav.top"), icon: <Trophy className="w-5 h-5" /> },
+    { id: "friends", label: t("nav.friends"), icon: <Users className="w-5 h-5" /> },
+    { id: "deposit", label: t("nav.deposit"), icon: <ArrowDownToLine className="w-5 h-5" /> },
+    { id: "withdraw", label: t("nav.cash"), icon: <ArrowUpFromLine className="w-5 h-5" /> },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40">
@@ -833,6 +835,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
     </nav>
   );
 }
+
 
 function AdminTab() {
   const statsFn = useServerFn(adminStats);
