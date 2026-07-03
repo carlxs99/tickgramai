@@ -95,18 +95,9 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             });
 
             await supabaseAdmin.from("profiles")
-              .update({
-                mining_rate: newRate,
-                deposit_total: undefined, // handled below via RPC-free increment
-              })
+              .update({ mining_rate: newRate })
               .eq("user_id", profile.user_id);
 
-            // Also bump deposit_total so task-unlock gating works.
-            const { data: cur } = await supabaseAdmin
-              .from("profiles").select("deposit_total").eq("user_id", profile.user_id).maybeSingle();
-            await supabaseAdmin.from("profiles")
-              .update({ deposit_total: Number(cur?.deposit_total ?? 0) + amountTon })
-              .eq("user_id", profile.user_id);
 
 
 
