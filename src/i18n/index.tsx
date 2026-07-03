@@ -92,6 +92,9 @@ const en: Dict = {
   "withdraw.submitting": "Submitting…",
   "withdraw.none": "No withdrawals yet.",
   "withdraw.requested_net": "Requested. Net {amount} GRAM",
+  "withdraw.min_label": "Minimum withdrawal",
+  "withdraw.fee_label": "Network fee",
+  "withdraw.net_label": "You will receive",
 
   "nav.mine": "Mine",
   "nav.tasks": "Tasks",
@@ -217,6 +220,9 @@ const es: Dict = {
   "withdraw.submitting": "Enviando…",
   "withdraw.none": "Sin retiros aún.",
   "withdraw.requested_net": "Solicitado. Neto {amount} GRAM",
+  "withdraw.min_label": "Retiro mínimo",
+  "withdraw.fee_label": "Comisión de red",
+  "withdraw.net_label": "Recibirás",
 
   "nav.mine": "Minar",
   "nav.tasks": "Tareas",
@@ -342,6 +348,9 @@ const ru: Dict = {
   "withdraw.submitting": "Отправляем…",
   "withdraw.none": "Выводов пока нет.",
   "withdraw.requested_net": "Запрошено. Нетто {amount} GRAM",
+  "withdraw.min_label": "Минимальный вывод",
+  "withdraw.fee_label": "Комиссия сети",
+  "withdraw.net_label": "Вы получите",
 
   "nav.mine": "Майнинг",
   "nav.tasks": "Задания",
@@ -467,6 +476,9 @@ const hi: Dict = {
   "withdraw.submitting": "भेजा जा रहा है…",
   "withdraw.none": "अभी कोई निकासी नहीं।",
   "withdraw.requested_net": "अनुरोधित। नेट {amount} GRAM",
+  "withdraw.min_label": "न्यूनतम निकासी",
+  "withdraw.fee_label": "नेटवर्क शुल्क",
+  "withdraw.net_label": "आपको मिलेगा",
 
   "nav.mine": "माइन",
   "nav.tasks": "कार्य",
