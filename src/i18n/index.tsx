@@ -92,6 +92,9 @@ const en: Dict = {
   "withdraw.submitting": "Submitting…",
   "withdraw.none": "No withdrawals yet.",
   "withdraw.requested_net": "Requested. Net {amount} GRAM",
+  "withdraw.min_label": "Minimum withdrawal",
+  "withdraw.fee_label": "Network fee",
+  "withdraw.net_label": "You will receive",
 
   "nav.mine": "Mine",
   "nav.tasks": "Tasks",
