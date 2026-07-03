@@ -987,7 +987,7 @@ function AdminTab() {
             <option value="group">{tr("admin.kind.group")}</option>
           </select>
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            type="number" step="0.01" placeholder={tr("admin.reward_ph")}
+            type="number" step="0.0001" placeholder={tr("admin.reward_ph")}
             value={form.reward} onChange={(e) => setForm({ ...form, reward: Number(e.target.value) })} />
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
             type="number" step="0.01" placeholder={tr("admin.min_deposit_ph")}
