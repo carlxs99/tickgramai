@@ -97,9 +97,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
-    scripts: [
-      { src: "https://telegram.org/js/telegram-web-app.js", async: false },
-    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -111,6 +108,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <script src="https://telegram.org/js/telegram-web-app.js" />
         <HeadContent />
       </head>
       <body>
