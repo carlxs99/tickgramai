@@ -163,7 +163,7 @@ function usdt(gram: number, price: number) {
   return v.toFixed(6);
 }
 
-function Header() {
+function Header({ onAdminClick }: { onAdminClick: () => void }) {
   const meFn = useServerFn(getMe);
   const { data } = useQuery({ queryKey: ["me-header"], queryFn: () => meFn(), refetchInterval: 15000 });
   const price = useTonPrice();
@@ -180,6 +180,15 @@ function Header() {
           <p className="text-xs text-muted-foreground">Welcome</p>
           <p className="font-semibold truncate">{name}</p>
         </div>
+        {data?.isAdmin && (
+          <button
+            onClick={onAdminClick}
+            className="p-2 rounded-xl card-glass text-primary"
+            aria-label="Admin panel"
+          >
+            <Shield className="w-4 h-4" />
+          </button>
+        )}
         <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 rounded-2xl card-glass">
           <div className="flex items-center gap-1">
             <Coins className="w-3.5 h-3.5 text-[color:var(--gold)]" />
