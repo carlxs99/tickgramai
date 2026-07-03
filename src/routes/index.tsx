@@ -1039,7 +1039,7 @@ function AdminTab() {
                   {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{tr("common.off")}</span>}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  {t.kind} · +{formatGram(t.reward)} GRAM
+                  {t.kind} · +{formatReward(t.reward)} GRAM
                   {t.target_chat ? ` · ${t.target_chat}` : ""}
                 </p>
               </div>
