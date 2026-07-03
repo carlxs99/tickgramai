@@ -3,13 +3,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { fetchTonPriceUsdt } from "@/lib/prices.functions";
 
-// Effective TON/day mining rate = USDT/day rate ÷ current TON price.
-// This makes the ROI USDT-denominated: 1 USDT deposited → 0.033 USDT/day
-// regardless of how the TON price moves after the deposit.
-function effectiveTonRate(mining_rate_usdt: number, tonPrice: number, legacyTonRate: number) {
-  if (mining_rate_usdt > 0 && tonPrice > 0) return mining_rate_usdt / tonPrice;
-  return legacyTonRate; // fallback for edge cases where price fetch fails
-}
+// Mining rate is stored directly in GRAM/day on profiles.mining_rate.
+// 1 GRAM deposited → 0.033 GRAM/day (deterministic 3.3% daily, independent of
+// TON price fluctuations). GRAM is pegged 1:1 to TON in USD by design.
 
 // GET current user profile with accumulated (uncollected) income
 export const getMe = createServerFn({ method: "GET" })
@@ -30,19 +26,14 @@ export const getMe = createServerFn({ method: "GET" })
       _role: "admin",
     });
 
-    const tonPrice = await fetchTonPriceUsdt();
-    const rateTonPerDay = effectiveTonRate(
-      Number((profile as any).mining_rate_usdt ?? 0),
-      tonPrice,
-      Number(profile.mining_rate ?? 0),
-    );
+    const rateGramPerDay = Number(profile.mining_rate ?? 0);
     const now = Date.now();
     const last = new Date(profile.last_collect_at as string).getTime();
     const seconds = Math.max(0, (now - last) / 1000);
-    const perSecond = rateTonPerDay / 86400;
+    const perSecond = rateGramPerDay / 86400;
     const pending = perSecond * seconds;
     return {
-      profile: { ...profile, mining_rate: rateTonPerDay },
+      profile: { ...profile, mining_rate: rateGramPerDay },
       pending,
       perSecond,
       isAdmin: !!isAdmin,
@@ -54,17 +45,12 @@ export const collectIncome = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data: profile } = await supabase
-      .from("profiles").select("balance,mining_rate,mining_rate_usdt,last_collect_at").eq("user_id", userId).maybeSingle();
+      .from("profiles").select("balance,mining_rate,last_collect_at").eq("user_id", userId).maybeSingle();
     if (!profile) throw new Error("No profile");
-    const tonPrice = await fetchTonPriceUsdt();
-    const rateTonPerDay = effectiveTonRate(
-      Number((profile as any).mining_rate_usdt ?? 0),
-      tonPrice,
-      Number(profile.mining_rate ?? 0),
-    );
+    const rateGramPerDay = Number(profile.mining_rate ?? 0);
     const now = new Date();
     const seconds = Math.max(0, (now.getTime() - new Date(profile.last_collect_at as string).getTime()) / 1000);
-    const gained = (rateTonPerDay / 86400) * seconds;
+    const gained = (rateGramPerDay / 86400) * seconds;
     const newBalance = Number(profile.balance) + gained;
     const { error } = await supabase
       .from("profiles")
@@ -73,6 +59,7 @@ export const collectIncome = createServerFn({ method: "POST" })
     if (error) throw error;
     return { gained, balance: newBalance };
   });
+
 
 
 export const listTasks = createServerFn({ method: "GET" })
