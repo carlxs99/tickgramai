@@ -70,8 +70,16 @@ function MinerApp() {
     ? `${window.location.origin}/tonconnect-manifest.json`
     : "https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json";
 
+  // Deep-link back to this Mini App after the wallet signs the tx.
+  // Bot has Main Mini App → t.me/<bot> opens it directly.
+  const twaReturnUrl = "https://t.me/Tickgramaibot" as `${string}://${string}`;
+
   return (
-    <TonConnectUIProvider manifestUrl={manifestUrl}>
+    <TonConnectUIProvider
+      manifestUrl={manifestUrl}
+      actionsConfiguration={{ twaReturnUrl }}
+      uiPreferences={{ theme: "DARK" as any }}
+    >
       <div className="min-h-screen pb-24 max-w-md mx-auto">
         <Toaster theme="dark" position="top-center" richColors />
         <Header />
