@@ -458,9 +458,10 @@ const hi: Dict = {
   "deposit.err_failed": "लेनदेन विफल",
 
   "withdraw.title": "निकालें",
-  "withdraw.subtitle": "न्यूनतम 100 GRAM. 5% नेटवर्क शुल्क।",
+  "withdraw.subtitle": "न्यूनतम 1 GRAM. 5% नेटवर्क शुल्क।",
   "withdraw.available": "उपलब्ध",
   "withdraw.amount": "राशि (GRAM)",
+  "withdraw.min_error": "न्यूनतम निकासी 1 GRAM है",
   "withdraw.address": "GRAM पता",
   "withdraw.request": "निकासी अनुरोध",
   "withdraw.submitting": "भेजा जा रहा है…",
