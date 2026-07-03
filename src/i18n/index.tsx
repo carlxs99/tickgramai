@@ -476,6 +476,9 @@ const hi: Dict = {
   "withdraw.submitting": "भेजा जा रहा है…",
   "withdraw.none": "अभी कोई निकासी नहीं।",
   "withdraw.requested_net": "अनुरोधित। नेट {amount} GRAM",
+  "withdraw.min_label": "न्यूनतम निकासी",
+  "withdraw.fee_label": "नेटवर्क शुल्क",
+  "withdraw.net_label": "आपको मिलेगा",
 
   "nav.mine": "माइन",
   "nav.tasks": "कार्य",
