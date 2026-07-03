@@ -212,7 +212,7 @@ function MineTab() {
   const qc = useQueryClient();
   const { data } = useSuspenseQuery(meQO(() => meFn()));
   const [tick, setTick] = useState(0);
-  useEffect(() => { const i = setInterval(() => setTick((t) => t + 1), 1000); return () => clearInterval(i); }, []);
+  useEffect(() => { const i = setInterval(() => setTick((t) => t + 1), 100); return () => clearInterval(i); }, []);
 
   const live = useMemo(() => {
     const now = Date.now();
