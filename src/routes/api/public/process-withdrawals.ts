@@ -8,6 +8,10 @@ import { createFileRoute } from "@tanstack/react-router";
 async function processOne(row: any, supabaseAdmin: any) {
   const { mnemonicToPrivateKey } = await import("@ton/crypto");
   const { TonClient, WalletContractV4, internal, toNano, Address } = await import("@ton/ton");
+  const { beginCell, external, storeMessage } = await import("@ton/core");
+  const { sendTelegramMessage, WITHDRAWALS_CHAT, escapeHtml } = await import(
+    "@/lib/telegram-notify.server"
+  );
 
   // 1) Claim the row atomically: only proceed if we can flip status pending -> processing.
   const claim = await supabaseAdmin
@@ -21,8 +25,6 @@ async function processOne(row: any, supabaseAdmin: any) {
 
   const fail = async (msg: string) => {
     await supabaseAdmin.from("withdrawals").update({ status: "failed", error_message: msg.slice(0, 500) }).eq("id", row.id);
-    // Refund the user balance so they can retry
-    await supabaseAdmin.rpc("has_role", { _user_id: row.user_id, _role: "admin" }).catch(() => {});
     const { data: p } = await supabaseAdmin.from("profiles").select("balance").eq("user_id", row.user_id).maybeSingle();
     if (p) await supabaseAdmin.from("profiles").update({ balance: Number(p.balance) + Number(row.amount) }).eq("user_id", row.user_id);
   };
@@ -46,8 +48,9 @@ async function processOne(row: any, supabaseAdmin: any) {
   const seqno = await contract.getSeqno();
   const value = toNano(String(row.net_amount));
 
+  let txHashB64 = "";
   try {
-    await contract.sendTransfer({
+    const transfer = wallet.createTransfer({
       seqno,
       secretKey: keyPair.secretKey,
       messages: [
@@ -59,6 +62,20 @@ async function processOne(row: any, supabaseAdmin: any) {
         }),
       ],
     });
+    const neededInit = seqno === 0 ? wallet.init : undefined;
+    const extCell = beginCell()
+      .store(
+        storeMessage(
+          external({
+            to: wallet.address,
+            init: neededInit,
+            body: transfer,
+          }),
+        ),
+      )
+      .endCell();
+    txHashB64 = extCell.hash().toString("base64");
+    await client.sendFile(extCell.toBoc());
   } catch (e: any) {
     await fail(`send: ${e?.message ?? String(e)}`);
     return { id: row.id, error: "send_failed" };
@@ -67,11 +84,34 @@ async function processOne(row: any, supabaseAdmin: any) {
   await supabaseAdmin.from("withdrawals").update({
     status: "paid",
     paid_at: new Date().toISOString(),
-    tx_hash: `seqno:${seqno}`,
+    tx_hash: txHashB64 || `seqno:${seqno}`,
   }).eq("id", row.id);
 
-  return { id: row.id, ok: true, seqno };
+  // Notify withdrawals group
+  try {
+    const { data: prof } = await supabaseAdmin
+      .from("profiles")
+      .select("username, first_name")
+      .eq("user_id", row.user_id)
+      .maybeSingle();
+    const handle = prof?.username ? `@${prof.username}` : (prof?.first_name || "user");
+    const amount = Number(row.net_amount ?? row.amount).toFixed(2);
+    const explorerUrl = txHashB64
+      ? `https://tonviewer.com/transaction/${encodeURIComponent(txHashB64)}`
+      : `https://tonviewer.com/${wallet.address.toString()}`;
+    const text =
+      `✅ <b>Withdraw Approved!</b>\n\n` +
+      `👤 User: ${escapeHtml(handle)}\n\n` +
+      `💰 Amount: ${amount} GRAM\n\n` +
+      `🔗 <a href="${explorerUrl}">View on GRAM Explorer →</a>`;
+    await sendTelegramMessage(WITHDRAWALS_CHAT, text);
+  } catch (e) {
+    console.error("telegram notify failed", e);
+  }
+
+  return { id: row.id, ok: true, seqno, tx_hash: txHashB64 };
 }
+
 
 export const Route = createFileRoute("/api/public/process-withdrawals")({
   server: {
