@@ -21,7 +21,7 @@ export const Route = createFileRoute("/")({
   component: MinerApp,
 });
 
-type Tab = "mine" | "tasks" | "friends" | "deposit" | "withdraw";
+type Tab = "mine" | "tasks" | "top" | "friends" | "deposit" | "withdraw";
 
 function MinerApp() {
   const [ready, setReady] = useState(false);
@@ -94,6 +94,7 @@ function MinerApp() {
           >
             {tab === "mine" && <MineTab />}
             {tab === "tasks" && <TasksTab />}
+            {tab === "top" && <LeaderboardTab />}
             {tab === "friends" && <FriendsTab />}
             {tab === "deposit" && <DepositTab />}
             {tab === "withdraw" && <WithdrawTab />}
@@ -228,7 +229,7 @@ function MineTab() {
         <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " TON"} sub={`1 TON ≈ $${price.toFixed(2)}`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
-      <TopMinersCard />
+      
     </div>
   );
 }
@@ -243,21 +244,125 @@ function StatCard({ label, value, sub, icon }: { label: string; value: string; s
   );
 }
 
-function TopMinersCard() {
-  const fn = useServerFn(getTopMiners);
-  const { data } = useQuery({ queryKey: ["top"], queryFn: () => fn() });
+function podiumInitial(m: any) {
+  return (m?.first_name || m?.username || "A").slice(0, 1).toUpperCase();
+}
+
+function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }) {
+  const styles = {
+    1: {
+      order: "order-2",
+      ring: "ring-4 ring-[color:var(--gold)]",
+      badge: "bg-[color:var(--gold)] text-black",
+      bar: "bg-gradient-to-b from-[color:var(--gold)] to-amber-500",
+      height: "h-32",
+      avatar: "w-20 h-20 text-2xl",
+      crown: true,
+    },
+    2: {
+      order: "order-1",
+      ring: "ring-2 ring-slate-300/70",
+      badge: "bg-slate-300 text-black",
+      bar: "bg-gradient-to-b from-slate-300 to-slate-500",
+      height: "h-24",
+      avatar: "w-16 h-16 text-xl",
+      crown: false,
+    },
+    3: {
+      order: "order-3",
+      ring: "ring-2 ring-orange-400/80",
+      badge: "bg-orange-400 text-black",
+      bar: "bg-gradient-to-b from-orange-400 to-orange-600",
+      height: "h-20",
+      avatar: "w-16 h-16 text-xl",
+      crown: false,
+    },
+  }[rank];
+  const name = miner ? (miner.first_name || miner.username || "Anon") : "—";
+  const rate = miner ? formatGram(miner.mining_rate) : "—";
   return (
-    <div className="card-glass rounded-2xl p-4">
-      <div className="flex items-center gap-2 mb-3"><Trophy className="w-4 h-4 text-[color:var(--gold)]" /><h3 className="font-semibold">Top miners</h3></div>
-      <div className="space-y-2">
-        {(data ?? []).slice(0, 5).map((m: any, i: number) => (
-          <div key={i} className="flex items-center gap-2 text-sm">
-            <span className="w-5 text-xs text-muted-foreground">{i + 1}</span>
-            <span className="flex-1 truncate">{m.first_name || m.username || "Anon"}</span>
-            <span className="text-[color:var(--success)] tabular-nums">{formatGram(m.mining_rate)}/d</span>
+    <div className={`flex-1 flex flex-col items-center ${styles.order}`}>
+      <div className="relative">
+        {styles.crown && (
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl select-none">👑</div>
+        )}
+        <div className={`${styles.avatar} rounded-full bg-gradient-to-br from-primary/60 to-accent/60 ${styles.ring} flex items-center justify-center font-bold text-primary-foreground overflow-hidden`}>
+          {miner?.avatar_url ? (
+            <img src={miner.avatar_url} alt={name} className="w-full h-full object-cover" />
+          ) : (
+            <span>{podiumInitial(miner)}</span>
+          )}
+        </div>
+        <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full ${styles.badge} text-xs font-bold flex items-center justify-center ring-2 ring-background`}>
+          {rank}
+        </div>
+      </div>
+      <p className="mt-2 text-xs font-semibold text-center truncate max-w-[90%]">{name}</p>
+      <p className="text-[10px] text-muted-foreground">{rate}/d</p>
+      <div className={`mt-2 w-full ${styles.height} ${styles.bar} rounded-t-2xl relative overflow-hidden`}>
+        <div className="absolute inset-x-0 top-2 text-center">
+          <div className="text-base font-extrabold text-black/90 drop-shadow">{rate}</div>
+          <div className="text-[9px] font-semibold text-black/70 tracking-wider">GRAM/d</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeaderboardTab() {
+  const fn = useServerFn(getTopMiners);
+  const price = useTonPrice();
+  const { data } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
+  const list = (data ?? []) as any[];
+  const top3 = [list[0], list[1], list[2]];
+  const rest = list.slice(3, 10);
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold">Leaderboard</h2>
+        <p className="text-xs text-muted-foreground">Top miners by GRAM mined per day.</p>
+      </div>
+
+      <div className="card-glass rounded-3xl p-4 overflow-hidden relative">
+        <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ background: "radial-gradient(600px 200px at 50% -20%, color-mix(in oklab, var(--gold) 30%, transparent), transparent)" }} />
+        <div className="flex items-center justify-between mb-4 relative">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-[color:var(--gold)]" />
+            <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Live ranking</span>
           </div>
-        ))}
-        {!data?.length && <p className="text-sm text-muted-foreground">Be the first miner.</p>}
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[color:var(--success)]/15 text-[color:var(--success)] font-semibold">ACTIVE</span>
+        </div>
+        <div className="flex items-end gap-2 relative">
+          <PodiumSlot miner={top3[1]} rank={2} />
+          <PodiumSlot miner={top3[0]} rank={1} />
+          <PodiumSlot miner={top3[2]} rank={3} />
+        </div>
+      </div>
+
+      <div className="card-glass rounded-2xl p-2">
+        {rest.length === 0 && list.length <= 3 ? (
+          <p className="p-4 text-sm text-muted-foreground text-center">Only the podium is set — invite miners to fill the ranks.</p>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {rest.map((m, i) => {
+              const rank = i + 4;
+              const name = m.first_name || m.username || "Anon";
+              return (
+                <div key={rank} className="flex items-center gap-3 px-3 py-2.5">
+                  <span className="w-6 text-center text-xs font-bold text-muted-foreground">#{rank}</span>
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/40 to-accent/40 flex items-center justify-center text-sm font-bold overflow-hidden">
+                    {m.avatar_url ? <img src={m.avatar_url} alt={name} className="w-full h-full object-cover" /> : podiumInitial(m)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{name}</p>
+                    <p className="text-[10px] text-muted-foreground">≈ ${usdt(Number(m.mining_rate), price)}/d</p>
+                  </div>
+                  <span className="text-sm tabular-nums text-[color:var(--success)] font-semibold">{formatGram(m.mining_rate)}/d</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -609,6 +714,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const items: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "mine", label: "Mine", icon: <Pickaxe className="w-5 h-5" /> },
     { id: "tasks", label: "Tasks", icon: <ListChecks className="w-5 h-5" /> },
+    { id: "top", label: "Top", icon: <Trophy className="w-5 h-5" /> },
     { id: "friends", label: "Friends", icon: <Users className="w-5 h-5" /> },
     { id: "deposit", label: "Deposit", icon: <ArrowDownToLine className="w-5 h-5" /> },
     { id: "withdraw", label: "Cash", icon: <ArrowUpFromLine className="w-5 h-5" /> },
