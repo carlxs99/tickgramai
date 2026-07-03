@@ -111,6 +111,35 @@ export const authWithTelegram = createServerFn({ method: "POST" })
       throw new Error(`Profile upsert failed: ${upsertErr.message}`);
     }
 
+    // Referral linking: if a start_param (referral code) was provided and this
+    // profile has no referrer yet, attach it. Never self-refer.
+    if (startParam) {
+      const code = startParam.trim().toUpperCase();
+      const { data: myProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("id, referred_by, referral_code")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (myProfile && !myProfile.referred_by && myProfile.referral_code !== code) {
+        const { data: referrer } = await supabaseAdmin
+          .from("profiles")
+          .select("id, user_id")
+          .eq("referral_code", code)
+          .maybeSingle();
+        if (referrer && referrer.user_id !== userId) {
+          await supabaseAdmin
+            .from("profiles")
+            .update({ referred_by: referrer.id })
+            .eq("user_id", userId);
+          await supabaseAdmin
+            .from("referrals")
+            .insert({ referrer_id: referrer.user_id, referred_id: userId })
+            .select()
+            .maybeSingle();
+        }
+      }
+    }
+
     // Sign in with password using publishable client (returns tokens)
     const pub = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
       auth: { persistSession: false, autoRefreshToken: false },
