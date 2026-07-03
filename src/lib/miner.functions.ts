@@ -75,6 +75,17 @@ export const completeTask = createServerFn({ method: "POST" })
     return { reward: Number(task.reward), balance: newBalance };
   });
 
+export const saveWallet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { address: string | null }) =>
+    z.object({ address: z.string().min(10).max(80).nullable() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase
+      .from("profiles").update({ wallet_address: data.address }).eq("user_id", context.userId);
+    if (error) throw error;
+    return { ok: true };
+  });
+
 export const submitDeposit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { amountTon: number; txHash?: string }) =>
