@@ -779,3 +779,171 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
     </nav>
   );
 }
+
+function AdminTab() {
+  const statsFn = useServerFn(adminStats);
+  const listFn = useServerFn(adminListTasks);
+  const saveFn = useServerFn(adminSaveTask);
+  const delFn = useServerFn(adminDeleteTask);
+  const qc = useQueryClient();
+
+  const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: () => statsFn(), refetchInterval: 20_000 });
+  const { data: tasks } = useQuery({ queryKey: ["admin-tasks"], queryFn: () => listFn() });
+
+  const empty = {
+    id: undefined as string | undefined,
+    code: "",
+    title: "",
+    description: "",
+    reward: 0.1,
+    kind: "daily" as "daily" | "once" | "channel" | "group",
+    min_deposit: 0,
+    link: "",
+    target_chat: "",
+    is_active: true,
+  };
+  const [form, setForm] = useState(empty);
+  const editing = !!form.id;
+
+  const save = useMutation({
+    mutationFn: () => saveFn({
+      data: {
+        id: form.id,
+        code: form.code.trim(),
+        title: form.title.trim(),
+        description: form.description?.trim() || null,
+        reward: Number(form.reward) || 0,
+        kind: form.kind,
+        min_deposit: Number(form.min_deposit) || 0,
+        link: form.link?.trim() || null,
+        target_chat: form.target_chat?.trim() || null,
+        is_active: form.is_active,
+      },
+    }),
+    onSuccess: () => {
+      toast.success(editing ? "Tarea actualizada" : "Tarea creada");
+      setForm(empty);
+      qc.invalidateQueries({ queryKey: ["admin-tasks"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Error"),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => delFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Eliminada");
+      qc.invalidateQueries({ queryKey: ["admin-tasks"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Error"),
+  });
+
+  return (
+    <div className="space-y-4 pb-4">
+      <div className="flex items-center gap-2">
+        <Shield className="w-5 h-5 text-primary" />
+        <h2 className="text-2xl font-bold">Admin</h2>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard label="Users" value={String(stats?.users ?? 0)} sub={`${stats?.completedToday ?? 0} tasks today`} icon={<Users className="w-4 h-4 text-primary" />} />
+        <StatCard label="Deposits" value={`${(stats?.deposits.totalTon ?? 0).toFixed(2)} TON`} sub={`${stats?.deposits.confirmed ?? 0} confirmed`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
+        <StatCard label="Withdrawals" value={`${formatGram(stats?.withdrawals.totalGram ?? 0)}`} sub={`${stats?.withdrawals.pending ?? 0} pending`} icon={<ArrowUpFromLine className="w-4 h-4 text-[color:var(--gold)]" />} />
+        <StatCard label="Mining rate" value={`${formatGram(stats?.totals.miningRate ?? 0)}/d`} sub={`${formatGram(stats?.totals.balance ?? 0)} balances`} icon={<Sparkles className="w-4 h-4 text-accent" />} />
+      </div>
+
+      <div className="card-glass rounded-2xl p-4 space-y-2">
+        <p className="font-semibold flex items-center gap-2">
+          {editing ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {editing ? "Editar tarea" : "Nueva tarea"}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
+            placeholder="Título" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
+            placeholder="Código único (ej: sub_canal_1)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+          <select className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
+            value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as any })}>
+            <option value="daily">Daily</option>
+            <option value="once">Once</option>
+            <option value="channel">Channel (verificar suscripción)</option>
+            <option value="group">Group (verificar miembro)</option>
+          </select>
+          <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
+            type="number" step="0.01" placeholder="Recompensa GRAM"
+            value={form.reward} onChange={(e) => setForm({ ...form, reward: Number(e.target.value) })} />
+          <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
+            type="number" step="0.01" placeholder="Depósito mínimo"
+            value={form.min_deposit} onChange={(e) => setForm({ ...form, min_deposit: Number(e.target.value) })} />
+          <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
+            placeholder="Descripción (opcional)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          {(form.kind === "channel" || form.kind === "group") && (
+            <>
+              <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
+                placeholder="@canal_o_grupo (chat_id)"
+                value={form.target_chat} onChange={(e) => setForm({ ...form, target_chat: e.target.value })} />
+              <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
+                placeholder="https://t.me/... (link para el usuario)"
+                value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} />
+            </>
+          )}
+          <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
+            Activa
+          </label>
+        </div>
+        {(form.kind === "channel" || form.kind === "group") && (
+          <p className="text-[11px] text-muted-foreground">
+            El bot <b>@Tickgramaibot</b> debe ser administrador del canal/grupo para verificar la suscripción del usuario.
+          </p>
+        )}
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={() => save.mutate()}
+            disabled={save.isPending || !form.title || !form.code}
+            className="flex-1 py-2 rounded-xl bg-gradient-to-r from-primary to-accent font-semibold text-primary-foreground text-sm disabled:opacity-50"
+          >
+            {save.isPending ? "Guardando…" : editing ? "Guardar cambios" : "Crear tarea"}
+          </button>
+          {editing && (
+            <button onClick={() => setForm(empty)} className="px-3 py-2 rounded-xl card-glass text-sm">
+              Cancelar
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="card-glass rounded-2xl p-4">
+        <p className="font-semibold mb-2">Tareas ({tasks?.length ?? 0})</p>
+        <div className="space-y-2">
+          {tasks?.map((t: any) => (
+            <div key={t.id} className="rounded-xl bg-background/40 p-3 flex items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-sm truncate">{t.title}</p>
+                  {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">off</span>}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {t.kind} · +{formatGram(t.reward)} GRAM
+                  {t.target_chat ? ` · ${t.target_chat}` : ""}
+                </p>
+              </div>
+              <button className="p-2 rounded-lg card-glass" onClick={() => setForm({
+                id: t.id, code: t.code, title: t.title, description: t.description ?? "",
+                reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),
+                link: t.link ?? "", target_chat: t.target_chat ?? "", is_active: !!t.is_active,
+              })}>
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button className="p-2 rounded-lg card-glass text-destructive"
+                onClick={() => { if (confirm("¿Eliminar tarea?")) remove.mutate(t.id); }}>
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+          {!tasks?.length && <p className="text-xs text-muted-foreground">Sin tareas todavía.</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
