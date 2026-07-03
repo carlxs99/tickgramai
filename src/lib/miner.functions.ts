@@ -190,28 +190,34 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     z.object({ amount: z.number().positive().min(1), address: z.string().min(10), memo: z.string().optional() }).parse(d))
   .handler(async ({ context, data }) => {
     const { userId } = context;
-    // All economic mutations go through service_role. Also enforce a hard
-    // address length ceiling and basic character set to avoid downstream abuse.
     if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
       throw new Error("Invalid address format");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profile } = await supabaseAdmin
-      .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
-    if (!profile || Number(profile.balance) < data.amount) throw new Error("Insufficient balance");
     // 5% network fee (must match UI copy in withdraw.subtitle / withdraw.fee_label).
     const fee = data.amount * 0.05;
     const net = data.amount - fee;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Atomic balance decrement: returns the new balance if the user had enough
+    // funds, or NULL otherwise. Prevents concurrent withdrawals from
+    // double-spending against the same balance.
+    const { data: newBalance, error: dErr } = await supabaseAdmin
+      .rpc("atomic_decrement_balance" as never, { _user_id: userId, _amount: data.amount } as never);
+    if (dErr) throw dErr;
+    if (newBalance === null || newBalance === undefined) {
+      throw new Error("Insufficient balance");
+    }
     const { error } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId, amount: data.amount, address: data.address, memo: data.memo ?? null,
       fee, net_amount: net, status: "pending",
     });
-    if (error) throw error;
-    await supabaseAdmin.from("profiles")
-      .update({ balance: Number(profile.balance) - data.amount })
-      .eq("user_id", userId);
+    if (error) {
+      // Refund on insert failure so the user is not charged for a non-existent withdrawal.
+      await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: userId, _amount: data.amount } as never);
+      throw error;
+    }
     return { ok: true, fee, net };
   });
+
 
 export const listWithdrawals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
