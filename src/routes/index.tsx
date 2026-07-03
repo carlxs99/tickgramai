@@ -795,11 +795,17 @@ function WithdrawTab() {
   const lFn = useServerFn(listWithdrawals);
   const qc = useQueryClient();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
-  const [amount, setAmount] = useState("100");
+  const [amount, setAmount] = useState("1");
   const [address, setAddress] = useState("");
   const { data: hist } = useQuery({ queryKey: ["withdrawals"], queryFn: () => lFn() });
+  const amountNum = Number(amount);
+  const amountInvalid = isNaN(amountNum) || amountNum < 1;
   const mut = useMutation({
-    mutationFn: () => wFn({ data: { amount: Number(amount), address } }),
+    mutationFn: () => {
+      if (amountInvalid) throw new Error(t("withdraw.min_error"));
+      if (!address.trim()) throw new Error(t("withdraw.address"));
+      return wFn({ data: { amount: amountNum, address } });
+    },
     onSuccess: (r) => { toast.success(t("withdraw.requested_net", { amount: formatGram(r.net) })); qc.invalidateQueries(); },
     onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
   });
@@ -812,9 +818,12 @@ function WithdrawTab() {
           <span className="text-muted-foreground">{t("withdraw.available")}</span>
           <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
         </div>
-        <Field label={t("withdraw.amount")}><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" /></Field>
+        <Field label={t("withdraw.amount")}>
+          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" />
+          {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error")}</p>}
+        </Field>
         <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
-        <button disabled={mut.isPending} onClick={() => mut.mutate()}
+        <button disabled={mut.isPending || amountInvalid || !address.trim()} onClick={() => mut.mutate()}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
           {mut.isPending ? t("withdraw.submitting") : t("withdraw.request")}
         </button>
