@@ -711,7 +711,7 @@ function WithdrawTab() {
           <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
         </div>
         <Field label="Amount (GRAM)"><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" /></Field>
-        <Field label="TON address"><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
+        <Field label="GRAM address"><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
         <button disabled={mut.isPending} onClick={() => mut.mutate()}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
           {mut.isPending ? "Submitting…" : "Request withdrawal"}
