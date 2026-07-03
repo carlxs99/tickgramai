@@ -66,28 +66,34 @@ function MinerApp() {
   }
   if (!ready) return <Center><Loader2 className="w-8 h-8 animate-spin text-primary" /></Center>;
 
+  const manifestUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/tonconnect-manifest.json`
+    : "https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json";
+
   return (
-    <div className="min-h-screen pb-24 max-w-md mx-auto">
-      <Toaster theme="dark" position="top-center" richColors />
-      <Header />
-      <AnimatePresence mode="wait">
-        <motion.main
-          key={tab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.18 }}
-          className="px-4 pt-4"
-        >
-          {tab === "mine" && <MineTab />}
-          {tab === "tasks" && <TasksTab />}
-          {tab === "friends" && <FriendsTab />}
-          {tab === "deposit" && <DepositTab />}
-          {tab === "withdraw" && <WithdrawTab />}
-        </motion.main>
-      </AnimatePresence>
-      <BottomNav tab={tab} setTab={setTab} />
-    </div>
+    <TonConnectUIProvider manifestUrl={manifestUrl}>
+      <div className="min-h-screen pb-24 max-w-md mx-auto">
+        <Toaster theme="dark" position="top-center" richColors />
+        <Header />
+        <AnimatePresence mode="wait">
+          <motion.main
+            key={tab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.18 }}
+            className="px-4 pt-4"
+          >
+            {tab === "mine" && <MineTab />}
+            {tab === "tasks" && <TasksTab />}
+            {tab === "friends" && <FriendsTab />}
+            {tab === "deposit" && <DepositTab />}
+            {tab === "withdraw" && <WithdrawTab />}
+          </motion.main>
+        </AnimatePresence>
+        <BottomNav tab={tab} setTab={setTab} />
+      </div>
+    </TonConnectUIProvider>
   );
 }
 
