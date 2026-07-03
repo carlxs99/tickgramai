@@ -44,25 +44,16 @@ export const collectIncome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
-    // balance/mining_rate/last_collect_at are economically sensitive columns.
-    // authenticated role has no direct UPDATE grant on them (RLS-hardened);
-    // all mutations go through service_role.
+    // Atomic collect via SECURITY DEFINER RPC (row-level FOR UPDATE lock).
+    // Prevents race conditions with concurrent collect / withdraw / task-claim.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profile } = await supabaseAdmin
-      .from("profiles").select("balance,mining_rate,last_collect_at").eq("user_id", userId).maybeSingle();
-    if (!profile) throw new Error("No profile");
-    const rateGramPerDay = Number(profile.mining_rate ?? 0);
-    const now = new Date();
-    const seconds = Math.max(0, (now.getTime() - new Date(profile.last_collect_at as string).getTime()) / 1000);
-    const gained = (rateGramPerDay / 86400) * seconds;
-    const newBalance = Number(profile.balance) + gained;
-    const { error } = await supabaseAdmin
-      .from("profiles")
-      .update({ balance: newBalance, last_collect_at: now.toISOString() })
-      .eq("user_id", userId);
+    const { data, error } = await supabaseAdmin
+      .rpc("atomic_collect_income" as never, { _user_id: userId } as never);
     if (error) throw error;
-    return { gained, balance: newBalance };
+    const row: any = Array.isArray(data) ? data[0] : data;
+    return { gained: Number(row?.gained ?? 0), balance: Number(row?.new_balance ?? 0) };
   });
+
 
 
 
