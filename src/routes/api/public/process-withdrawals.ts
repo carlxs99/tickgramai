@@ -122,10 +122,31 @@ async function processOne(row: any, supabaseAdmin: any) {
 }
 
 
+// Timing-safe comparison for shared-secret auth.
+function safeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+function authorized(request: Request): boolean {
+  const expected = process.env.CRON_SECRET;
+  if (!expected) return false;
+  const header = request.headers.get("authorization") ?? "";
+  const provided = header.replace(/^Bearer\s+/i, "").trim() ||
+    request.headers.get("x-cron-secret") ||
+    new URL(request.url).searchParams.get("secret") || "";
+  return provided.length > 0 && safeEqual(provided, expected);
+}
+
 export const Route = createFileRoute("/api/public/process-withdrawals")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        if (!authorized(request)) {
+          return new Response("Unauthorized", { status: 401 });
+        }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         const { data: rows, error } = await supabaseAdmin
