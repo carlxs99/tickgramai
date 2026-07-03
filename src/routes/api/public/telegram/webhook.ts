@@ -43,14 +43,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (chatId && text) {
           if (text.startsWith("/start")) {
-            const appUrl = `${new URL(request.url).origin}/`;
+            const payload = text.slice("/start".length).trim();
+            const appDeepLink = payload
+              ? `https://t.me/Tickgramaibot/app?startapp=${encodeURIComponent(payload)}`
+              : `https://t.me/Tickgramaibot/app`;
             await sendMessage(
               chatId,
-              `🤖 <b>TICK GRAM AI</b>\n\nWelcome to <b>TICK GRAM AI</b> — the smartest way to mine <b>GRAM</b> right inside Telegram.\n\n• Complete tasks and earn GRAM\n• Invite friends for bonus rewards\n• Deposit to boost your mining rate and earn passive income daily\n\nTap the button below to launch the app.`,
+              `🤖 <b>TICK GRAM AI</b>\n\nWelcome to <b>TICK GRAM AI</b> — the smartest way to mine <b>GRAM</b> right inside Telegram.\n\n• Complete tasks and earn GRAM\n• Invite friends and earn 10% of every deposit they make\n• Deposit to boost your mining rate and earn passive income daily\n\nTap the button below to launch the app.`,
               {
                 reply_markup: {
                   inline_keyboard: [[
-                    { text: "🚀 Open TICK GRAM AI", web_app: { url: appUrl } },
+                    { text: "🚀 Open TICK GRAM AI", url: appDeepLink },
                   ]],
                 },
               },
