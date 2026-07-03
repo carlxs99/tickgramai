@@ -205,7 +205,7 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
         <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 rounded-2xl card-glass">
           <div className="flex items-center gap-1">
             <Coins className="w-3.5 h-3.5 text-[color:var(--gold)]" />
-            <span className="font-semibold text-sm">{formatGram(bal)}</span>
+            <span className="font-semibold text-sm tabular-nums">{formatGram(bal, 6)}</span>
             <span className="text-[10px] text-muted-foreground">GRAM</span>
           </div>
           <span className="text-[10px] text-[color:var(--success)] tabular-nums">≈ ${usdt(bal, price)} USDT</span>
@@ -280,7 +280,7 @@ function MineTab() {
       </motion.div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
+        <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
         <StatCard label={t("mine.deposits")} value={formatGram(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
@@ -629,7 +629,7 @@ function DepositTab() {
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("deposit.your_balance")}</span>
-          <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
+          <span className="font-semibold tabular-nums">{formatGram(me.profile.balance, 6)} GRAM</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("deposit.current_rate")}</span>
@@ -816,7 +816,7 @@ function WithdrawTab() {
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.available")}</span>
-          <span className="font-semibold">{formatGram(me.profile.balance)} GRAM</span>
+          <span className="font-semibold tabular-nums">{formatGram(me.profile.balance, 6)} GRAM</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.min_label")}</span>
