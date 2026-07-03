@@ -504,6 +504,7 @@ function TasksTab() {
 
 
 function FriendsTab() {
+  const { t } = useT();
   const meFn = useServerFn(getMe);
   const frFn = useServerFn(getFriends);
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
@@ -512,19 +513,19 @@ function FriendsTab() {
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   return (
     <div className="space-y-3">
-      <h2 className="text-2xl font-bold">Friends</h2>
-      <p className="text-sm text-muted-foreground">Invite friends and earn 10% of their mining forever.</p>
+      <h2 className="text-2xl font-bold">{t("friends.title")}</h2>
+      <p className="text-sm text-muted-foreground">{t("friends.subtitle")}</p>
       <div className="card-glass rounded-2xl p-4">
-        <p className="text-xs text-muted-foreground">Your invite link</p>
+        <p className="text-xs text-muted-foreground">{t("friends.your_invite")}</p>
         <div className="mt-2 flex items-center gap-2">
           <code className="text-xs flex-1 truncate">{inviteUrl}</code>
-          <button onClick={() => { navigator.clipboard.writeText(inviteUrl); toast.success("Copied"); }}
+          <button onClick={() => { navigator.clipboard.writeText(inviteUrl); toast.success(t("common.copied")); }}
             className="p-2 rounded-lg bg-primary/20 text-primary"><Copy className="w-4 h-4" /></button>
         </div>
       </div>
       <div className="card-glass rounded-2xl p-4">
-        <p className="font-semibold mb-2">Your friends ({friends?.length ?? 0})</p>
-        {!friends?.length && <p className="text-sm text-muted-foreground">No referrals yet.</p>}
+        <p className="font-semibold mb-2">{t("friends.your_friends", { count: friends?.length ?? 0 })}</p>
+        {!friends?.length && <p className="text-sm text-muted-foreground">{t("friends.no_referrals")}</p>}
         {friends?.map((f: any) => (
           <div key={f.id} className="flex justify-between text-sm py-1.5">
             <span className="text-muted-foreground truncate">{f.referred_id.slice(0, 8)}…</span>
