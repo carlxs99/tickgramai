@@ -77,6 +77,7 @@ export const authWithTelegram = createServerFn({ method: "POST" })
       userId = found?.id;
       if (!userId) throw new Error(createErr.message);
     }
+    if (!userId) throw new Error("Failed to resolve user id");
 
     // Upsert profile
     await supabaseAdmin.from("profiles").upsert(
