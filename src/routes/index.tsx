@@ -838,6 +838,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 
 
 function AdminTab() {
+  const { t: tr } = useT();
   const statsFn = useServerFn(adminStats);
   const listFn = useServerFn(adminListTasks);
   const saveFn = useServerFn(adminSaveTask);
@@ -878,81 +879,79 @@ function AdminTab() {
       },
     }),
     onSuccess: () => {
-      toast.success(editing ? "Tarea actualizada" : "Tarea creada");
+      toast.success(editing ? tr("admin.task_updated") : tr("admin.task_created"));
       setForm(empty);
       qc.invalidateQueries({ queryKey: ["admin-tasks"] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Error"),
+    onError: (e: any) => toast.error(e?.message ?? tr("common.error")),
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => {
-      toast.success("Eliminada");
+      toast.success(tr("admin.deleted"));
       qc.invalidateQueries({ queryKey: ["admin-tasks"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Error"),
+    onError: (e: any) => toast.error(e?.message ?? tr("common.error")),
   });
 
   return (
     <div className="space-y-4 pb-4">
       <div className="flex items-center gap-2">
         <Shield className="w-5 h-5 text-primary" />
-        <h2 className="text-2xl font-bold">Admin</h2>
+        <h2 className="text-2xl font-bold">{tr("admin.title")}</h2>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Users" value={String(stats?.users ?? 0)} sub={`${stats?.completedToday ?? 0} tasks today`} icon={<Users className="w-4 h-4 text-primary" />} />
-        <StatCard label="Deposits" value={`${(stats?.deposits.totalTon ?? 0).toFixed(2)} TON`} sub={`${stats?.deposits.confirmed ?? 0} confirmed`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
-        <StatCard label="Withdrawals" value={`${formatGram(stats?.withdrawals.totalGram ?? 0)}`} sub={`${stats?.withdrawals.pending ?? 0} pending`} icon={<ArrowUpFromLine className="w-4 h-4 text-[color:var(--gold)]" />} />
-        <StatCard label="Mining rate" value={`${formatGram(stats?.totals.miningRate ?? 0)}/d`} sub={`${formatGram(stats?.totals.balance ?? 0)} balances`} icon={<Sparkles className="w-4 h-4 text-accent" />} />
+        <StatCard label={tr("admin.users")} value={String(stats?.users ?? 0)} sub={tr("admin.tasks_today", { n: stats?.completedToday ?? 0 })} icon={<Users className="w-4 h-4 text-primary" />} />
+        <StatCard label={tr("admin.deposits")} value={`${(stats?.deposits.totalTon ?? 0).toFixed(2)} TON`} sub={tr("admin.confirmed", { n: stats?.deposits.confirmed ?? 0 })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
+        <StatCard label={tr("admin.withdrawals")} value={`${formatGram(stats?.withdrawals.totalGram ?? 0)}`} sub={tr("admin.pending", { n: stats?.withdrawals.pending ?? 0 })} icon={<ArrowUpFromLine className="w-4 h-4 text-[color:var(--gold)]" />} />
+        <StatCard label={tr("admin.mining_rate")} value={`${formatGram(stats?.totals.miningRate ?? 0)}/d`} sub={tr("admin.balances", { n: formatGram(stats?.totals.balance ?? 0) })} icon={<Sparkles className="w-4 h-4 text-accent" />} />
       </div>
 
       <div className="card-glass rounded-2xl p-4 space-y-2">
         <p className="font-semibold flex items-center gap-2">
           {editing ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {editing ? "Editar tarea" : "Nueva tarea"}
+          {editing ? tr("admin.edit_task") : tr("admin.new_task")}
         </p>
         <div className="grid grid-cols-2 gap-2">
           <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            placeholder="Título" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            placeholder={tr("admin.title_ph")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            placeholder="Código único (ej: sub_canal_1)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+            placeholder={tr("admin.code_ph")} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
           <select className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
             value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as any })}>
-            <option value="daily">Daily</option>
-            <option value="once">Once</option>
-            <option value="channel">Channel (verificar suscripción)</option>
-            <option value="group">Group (verificar miembro)</option>
+            <option value="daily">{tr("admin.kind.daily")}</option>
+            <option value="once">{tr("admin.kind.once")}</option>
+            <option value="channel">{tr("admin.kind.channel")}</option>
+            <option value="group">{tr("admin.kind.group")}</option>
           </select>
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            type="number" step="0.01" placeholder="Recompensa GRAM"
+            type="number" step="0.01" placeholder={tr("admin.reward_ph")}
             value={form.reward} onChange={(e) => setForm({ ...form, reward: Number(e.target.value) })} />
           <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            type="number" step="0.01" placeholder="Depósito mínimo"
+            type="number" step="0.01" placeholder={tr("admin.min_deposit_ph")}
             value={form.min_deposit} onChange={(e) => setForm({ ...form, min_deposit: Number(e.target.value) })} />
           <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            placeholder="Descripción (opcional)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            placeholder={tr("admin.desc_ph")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           {(form.kind === "channel" || form.kind === "group") && (
             <>
               <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-                placeholder="@canal_o_grupo (chat_id)"
+                placeholder={tr("admin.target_chat_ph")}
                 value={form.target_chat} onChange={(e) => setForm({ ...form, target_chat: e.target.value })} />
               <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-                placeholder="https://t.me/... (link para el usuario)"
+                placeholder={tr("admin.link_ph")}
                 value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} />
             </>
           )}
           <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground">
             <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
-            Activa
+            {tr("admin.active")}
           </label>
         </div>
         {(form.kind === "channel" || form.kind === "group") && (
-          <p className="text-[11px] text-muted-foreground">
-            El bot <b>@Tickgramaibot</b> debe ser administrador del canal/grupo para verificar la suscripción del usuario.
-          </p>
+          <p className="text-[11px] text-muted-foreground">{tr("admin.bot_note")}</p>
         )}
         <div className="flex gap-2 pt-1">
           <button
@@ -960,25 +959,25 @@ function AdminTab() {
             disabled={save.isPending || !form.title || !form.code}
             className="flex-1 py-2 rounded-xl bg-gradient-to-r from-primary to-accent font-semibold text-primary-foreground text-sm disabled:opacity-50"
           >
-            {save.isPending ? "Guardando…" : editing ? "Guardar cambios" : "Crear tarea"}
+            {save.isPending ? tr("admin.saving") : editing ? tr("admin.save_changes") : tr("admin.create_task")}
           </button>
           {editing && (
             <button onClick={() => setForm(empty)} className="px-3 py-2 rounded-xl card-glass text-sm">
-              Cancelar
+              {tr("common.cancel")}
             </button>
           )}
         </div>
       </div>
 
       <div className="card-glass rounded-2xl p-4">
-        <p className="font-semibold mb-2">Tareas ({tasks?.length ?? 0})</p>
+        <p className="font-semibold mb-2">{tr("admin.tasks_count", { count: tasks?.length ?? 0 })}</p>
         <div className="space-y-2">
           {tasks?.map((t: any) => (
             <div key={t.id} className="rounded-xl bg-background/40 p-3 flex items-start gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-sm truncate">{t.title}</p>
-                  {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">off</span>}
+                  {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{tr("common.off")}</span>}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   {t.kind} · +{formatGram(t.reward)} GRAM
@@ -993,12 +992,12 @@ function AdminTab() {
                 <Pencil className="w-3.5 h-3.5" />
               </button>
               <button className="p-2 rounded-lg card-glass text-destructive"
-                onClick={() => { if (confirm("¿Eliminar tarea?")) remove.mutate(t.id); }}>
+                onClick={() => { if (confirm(tr("admin.delete_confirm"))) remove.mutate(t.id); }}>
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
-          {!tasks?.length && <p className="text-xs text-muted-foreground">Sin tareas todavía.</p>}
+          {!tasks?.length && <p className="text-xs text-muted-foreground">{tr("admin.no_tasks")}</p>}
         </div>
       </div>
     </div>
