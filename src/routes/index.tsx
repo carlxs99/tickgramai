@@ -94,6 +94,7 @@ function MinerApp() {
           >
             {tab === "mine" && <MineTab />}
             {tab === "tasks" && <TasksTab />}
+            {tab === "top" && <LeaderboardTab />}
             {tab === "friends" && <FriendsTab />}
             {tab === "deposit" && <DepositTab />}
             {tab === "withdraw" && <WithdrawTab />}
