@@ -44,25 +44,16 @@ export const collectIncome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
-    // balance/mining_rate/last_collect_at are economically sensitive columns.
-    // authenticated role has no direct UPDATE grant on them (RLS-hardened);
-    // all mutations go through service_role.
+    // Atomic collect via SECURITY DEFINER RPC (row-level FOR UPDATE lock).
+    // Prevents race conditions with concurrent collect / withdraw / task-claim.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profile } = await supabaseAdmin
-      .from("profiles").select("balance,mining_rate,last_collect_at").eq("user_id", userId).maybeSingle();
-    if (!profile) throw new Error("No profile");
-    const rateGramPerDay = Number(profile.mining_rate ?? 0);
-    const now = new Date();
-    const seconds = Math.max(0, (now.getTime() - new Date(profile.last_collect_at as string).getTime()) / 1000);
-    const gained = (rateGramPerDay / 86400) * seconds;
-    const newBalance = Number(profile.balance) + gained;
-    const { error } = await supabaseAdmin
-      .from("profiles")
-      .update({ balance: newBalance, last_collect_at: now.toISOString() })
-      .eq("user_id", userId);
+    const { data, error } = await supabaseAdmin
+      .rpc("atomic_collect_income" as never, { _user_id: userId } as never);
     if (error) throw error;
-    return { gained, balance: newBalance };
+    const row: any = Array.isArray(data) ? data[0] : data;
+    return { gained: Number(row?.gained ?? 0), balance: Number(row?.new_balance ?? 0) };
   });
+
 
 
 
@@ -142,13 +133,13 @@ export const completeTask = createServerFn({ method: "POST" })
       user_id: userId, task_id: task.id, completed_on: today, reward: task.reward,
     });
     if (iErr) throw new Error("Already claimed today");
-    // Credit reward via service_role (authenticated cannot UPDATE balance directly).
+    // Atomic increment (RPC) — avoids lost-update when multiple tasks / rewards
+    // are claimed concurrently.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profile } = await supabaseAdmin
-      .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
-    const newBalance = Number(profile?.balance ?? 0) + Number(task.reward);
-    await supabaseAdmin.from("profiles").update({ balance: newBalance }).eq("user_id", userId);
-    return { reward: Number(task.reward), balance: newBalance };
+    const { data: newBalance, error: bErr } = await supabaseAdmin
+      .rpc("atomic_add_balance" as never, { _user_id: userId, _amount: Number(task.reward) } as never);
+    if (bErr) throw bErr;
+    return { reward: Number(task.reward), balance: Number(newBalance ?? 0) };
   });
 
 export const saveWallet = createServerFn({ method: "POST" })
@@ -168,21 +159,21 @@ export const submitDeposit = createServerFn({ method: "POST" })
     z.object({ amountTon: z.number().positive(), txHash: z.string().optional() }).parse(d))
   .handler(async ({ context, data }) => {
     const { userId } = context;
-    // Daily ROI 3.3% in USDT value. Since 1 TON = 1 GRAM (same USD price),
-    // 1 TON deposited yields 0.033 GRAM/day (= 3.3% USDT/day).
-    const DAILY_ROI = 0.033;
-    const gramPerDay = data.amountTon * DAILY_ROI;
-    // Insert with admin client because RLS restricts users to inserting
-    // only safe initial values (status='pending', gram_per_day=0, tx_hash=null).
-    // Server-side logic is trusted to set the reward and tx hash correctly.
+    // This endpoint records the user's INTENT to deposit. It does NOT credit
+    // mining_rate — real credit comes only from on-chain events processed by
+    // /api/public/verify-deposits after the TON transaction confirms.
+    // We therefore store gram_per_day = 0 and status = 'pending' to match the
+    // RLS invariant on public.deposits, and never trust client-side amounts
+    // for anything economic.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("deposits").insert({
-      user_id: userId, amount_ton: data.amountTon, gram_per_day: gramPerDay,
-      tx_hash: data.txHash ?? null, status: "pending",
+      user_id: userId, amount_ton: data.amountTon, gram_per_day: 0,
+      tx_hash: null, status: "pending",
     });
     if (error) throw error;
     return { ok: true };
   });
+
 
 export const listDeposits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -199,28 +190,34 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     z.object({ amount: z.number().positive().min(1), address: z.string().min(10), memo: z.string().optional() }).parse(d))
   .handler(async ({ context, data }) => {
     const { userId } = context;
-    // All economic mutations go through service_role. Also enforce a hard
-    // address length ceiling and basic character set to avoid downstream abuse.
     if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
       throw new Error("Invalid address format");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profile } = await supabaseAdmin
-      .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
-    if (!profile || Number(profile.balance) < data.amount) throw new Error("Insufficient balance");
     // 5% network fee (must match UI copy in withdraw.subtitle / withdraw.fee_label).
     const fee = data.amount * 0.05;
     const net = data.amount - fee;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Atomic balance decrement: returns the new balance if the user had enough
+    // funds, or NULL otherwise. Prevents concurrent withdrawals from
+    // double-spending against the same balance.
+    const { data: newBalance, error: dErr } = await supabaseAdmin
+      .rpc("atomic_decrement_balance" as never, { _user_id: userId, _amount: data.amount } as never);
+    if (dErr) throw dErr;
+    if (newBalance === null || newBalance === undefined) {
+      throw new Error("Insufficient balance");
+    }
     const { error } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId, amount: data.amount, address: data.address, memo: data.memo ?? null,
       fee, net_amount: net, status: "pending",
     });
-    if (error) throw error;
-    await supabaseAdmin.from("profiles")
-      .update({ balance: Number(profile.balance) - data.amount })
-      .eq("user_id", userId);
+    if (error) {
+      // Refund on insert failure so the user is not charged for a non-existent withdrawal.
+      await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: userId, _amount: data.amount } as never);
+      throw error;
+    }
     return { ok: true, fee, net };
   });
+
 
 export const listWithdrawals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

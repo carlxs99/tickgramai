@@ -335,6 +335,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      atomic_add_balance: {
+        Args: { _amount: number; _user_id: string }
+        Returns: number
+      }
+      atomic_collect_income: {
+        Args: { _user_id: string }
+        Returns: {
+          gained: number
+          new_balance: number
+        }[]
+      }
+      atomic_decrement_balance: {
+        Args: { _amount: number; _user_id: string }
+        Returns: number
+      }
       generate_memo_tag: { Args: never; Returns: string }
       get_top_miners: {
         Args: { _limit?: number }

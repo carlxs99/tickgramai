@@ -128,15 +128,15 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             if (profile.referred_by) {
               const { data: refProfile } = await supabaseAdmin
                 .from("profiles")
-                .select("user_id, balance, telegram_id, first_name")
+                .select("user_id, telegram_id, first_name")
                 .eq("id", profile.referred_by)
                 .maybeSingle();
               if (refProfile) {
                 const bonus = amountTon * 0.10;
+                // Atomic add: avoids lost-update when the referrer is also
+                // collecting income or claiming rewards concurrently.
                 await supabaseAdmin
-                  .from("profiles")
-                  .update({ balance: Number(refProfile.balance ?? 0) + bonus })
-                  .eq("user_id", refProfile.user_id);
+                  .rpc("atomic_add_balance" as never, { _user_id: refProfile.user_id, _amount: bonus } as never);
                 const { data: refRow } = await supabaseAdmin
                   .from("referrals")
                   .select("id, bonus_earned")
