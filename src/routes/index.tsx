@@ -587,6 +587,22 @@ function DepositTab() {
   const [amount, setAmount] = useState("");
   const { data: deposits } = useQuery({ queryKey: ["deposits"], queryFn: () => listFn() });
 
+  // Reinvest
+  const reinvestFn = useServerFn(reinvestBalance);
+  const [reinvestAmount, setReinvestAmount] = useState("");
+  const reinvestNum = Math.max(0, Number(reinvestAmount) || 0);
+  const balance = Number(me.profile.balance ?? 0);
+  const reinvest = useMutation({
+    mutationFn: (amt: number) => reinvestFn({ data: { amount: amt } }),
+    onSuccess: (r: any) => {
+      toast.success(`+${(r.gramPerDay ?? 0).toFixed(4)} GRAM/day`);
+      getTelegram()?.HapticFeedback?.impactOccurred("medium");
+      setReinvestAmount("");
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
+  });
+
   const amountNum = Math.max(0, Number(amount) || 0);
   const usdtValue = amountNum * price;
   const memoTag: string = (me.profile as any).memo_tag ?? "";
