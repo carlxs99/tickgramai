@@ -171,6 +171,7 @@ function MineTab() {
   });
 
   const rate = Number(data.profile.mining_rate);
+  const price = useTonPrice();
 
   return (
     <div className="space-y-4">
@@ -186,8 +187,13 @@ function MineTab() {
           <div className="mt-2 text-5xl font-extrabold tabular-nums">
             {formatGram(live, 4)}
           </div>
-          <div className="mt-1 text-sm text-muted-foreground">
-            {rate > 0 ? `${formatGram(rate, 2)} GRAM / day` : "Deposit TON to start mining"}
+          <div className="text-xs text-[color:var(--success)] tabular-nums mt-0.5">
+            ≈ ${usdt(live, price)} USDT
+          </div>
+          <div className="mt-2 text-sm text-muted-foreground">
+            {rate > 0
+              ? <>{formatGram(rate, 2)} GRAM/day <span className="text-[color:var(--success)]">(≈ ${usdt(rate, price)} /day)</span></>
+              : "Deposit TON to start mining"}
           </div>
           <motion.button
             whileTap={{ scale: 0.96 }}
@@ -201,8 +207,8 @@ function MineTab() {
       </motion.div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Balance" value={formatGram(data.profile.balance)} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
-        <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " TON"} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
+        <StatCard label="Balance" value={formatGram(data.profile.balance)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
+        <StatCard label="Deposits" value={formatGram(data.profile.deposit_total) + " TON"} sub={`1 TON ≈ $${price.toFixed(2)}`} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
       <TopMinersCard />
@@ -210,11 +216,12 @@ function MineTab() {
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function StatCard({ label, value, sub, icon }: { label: string; value: string; sub?: string; icon: React.ReactNode }) {
   return (
     <div className="card-glass rounded-2xl p-4">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">{icon}{label}</div>
       <div className="mt-1 text-lg font-bold">{value}</div>
+      {sub && <div className="text-[10px] text-[color:var(--success)] tabular-nums">{sub}</div>}
     </div>
   );
 }
