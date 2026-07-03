@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { fetchTonPriceUsdt } from "@/lib/prices.functions";
+
 
 // Mining rate is stored directly in GRAM/day on profiles.mining_rate.
 // 1 GRAM deposited → 0.033 GRAM/day (deterministic 3.3% daily, independent of
