@@ -2,8 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase.rpc("has_role", {
+async function assertAdmin(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.rpc("has_role", {
     _user_id: userId,
     _role: "admin",
   });
