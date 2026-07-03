@@ -208,7 +208,11 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     if (!profile || Number(profile.balance) < data.amount) throw new Error("Insufficient balance");
     const fee = data.amount * 0.10;
     const net = data.amount - fee;
-    const { error } = await supabase.from("withdrawals").insert({
+    // Insert with admin client because RLS restricts users to inserting
+    // only safe initial values (status='pending', fee=0, net_amount=0).
+    // Server-side logic computes the trusted fee and net amount.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("withdrawals").insert({
       user_id: userId, amount: data.amount, address: data.address, memo: data.memo ?? null,
       fee, net_amount: net, status: "pending",
     });
