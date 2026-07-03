@@ -175,6 +175,7 @@ function usdt(gram: number, price: number) {
 }
 
 function Header({ onAdminClick }: { onAdminClick: () => void }) {
+  const { t } = useT();
   const meFn = useServerFn(getMe);
   const { data } = useQuery({ queryKey: ["me-header"], queryFn: () => meFn(), refetchInterval: 15000 });
   const price = useTonPrice();
@@ -188,14 +189,15 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
           {initial}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground">Welcome</p>
+          <p className="text-xs text-muted-foreground">{t("header.welcome")}</p>
           <p className="font-semibold truncate">{name}</p>
         </div>
+        <LanguageSwitcher />
         {data?.isAdmin && (
           <button
             onClick={onAdminClick}
             className="p-2 rounded-xl card-glass text-primary"
-            aria-label="Admin panel"
+            aria-label={t("header.admin_panel")}
           >
             <Shield className="w-4 h-4" />
           </button>
