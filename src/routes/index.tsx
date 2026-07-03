@@ -523,7 +523,7 @@ function DepositTab() {
     <div className="space-y-3 pb-2">
       <h2 className="text-2xl font-bold">Deposit</h2>
       <p className="text-sm text-muted-foreground">
-        Connect your TON wallet and pay directly. Your unique memo is added automatically so we can detect your deposit.
+        Connect your GRAM wallet and pay directly. Your unique memo is added automatically so we can detect your deposit.
       </p>
 
       <div className="card-glass rounded-2xl p-4 space-y-3">
