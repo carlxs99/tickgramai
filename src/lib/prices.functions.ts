@@ -41,18 +41,22 @@ async function fromCoinbase(): Promise<number | null> {
   } catch { return null; }
 }
 
-export const getTonPrice = createServerFn({ method: "GET" }).handler(async () => {
-  if (cache && Date.now() - cache.at < TTL_MS) return { price: cache.price, cached: true };
-  // Try providers in order; use the first that returns a live price.
+export async function fetchTonPriceUsdt(): Promise<number> {
+  if (cache && Date.now() - cache.at < TTL_MS) return cache.price;
   const price =
     (await fromBinance()) ??
     (await fromCoingecko()) ??
     (await fromCoinbase());
   if (price != null) {
     cache = { price, at: Date.now() };
-    return { price, cached: false };
+    return price;
   }
-  // Fallback: reuse last known cached value if any.
-  if (cache) return { price: cache.price, cached: true };
-  return { price: 0, cached: true };
+  if (cache) return cache.price;
+  return 0;
+}
+
+export const getTonPrice = createServerFn({ method: "GET" }).handler(async () => {
+  const cachedHit = cache && Date.now() - cache.at < TTL_MS;
+  const price = await fetchTonPriceUsdt();
+  return { price, cached: !!cachedHit };
 });
