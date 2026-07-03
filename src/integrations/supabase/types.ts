@@ -82,6 +82,8 @@ export type Database = {
           deposit_total: number
           first_name: string | null
           id: string
+          is_premium: boolean
+          language_code: string | null
           last_collect_at: string
           last_name: string | null
           memo_tag: string
@@ -101,6 +103,8 @@ export type Database = {
           deposit_total?: number
           first_name?: string | null
           id?: string
+          is_premium?: boolean
+          language_code?: string | null
           last_collect_at?: string
           last_name?: string | null
           memo_tag?: string
@@ -120,6 +124,8 @@ export type Database = {
           deposit_total?: number
           first_name?: string | null
           id?: string
+          is_premium?: boolean
+          language_code?: string | null
           last_collect_at?: string
           last_name?: string | null
           memo_tag?: string
@@ -265,36 +271,51 @@ export type Database = {
         Row: {
           address: string
           amount: number
+          attempts: number
           created_at: string
+          error_message: string | null
           fee: number
           id: string
           memo: string | null
           net_amount: number
+          paid_at: string | null
+          processed_at: string | null
           status: string
+          tx_hash: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           address: string
           amount: number
+          attempts?: number
           created_at?: string
+          error_message?: string | null
           fee?: number
           id?: string
           memo?: string | null
           net_amount?: number
+          paid_at?: string | null
+          processed_at?: string | null
           status?: string
+          tx_hash?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           address?: string
           amount?: number
+          attempts?: number
           created_at?: string
+          error_message?: string | null
           fee?: number
           id?: string
           memo?: string | null
           net_amount?: number
+          paid_at?: string | null
+          processed_at?: string | null
           status?: string
+          tx_hash?: string | null
           updated_at?: string
           user_id?: string
         }
