@@ -513,8 +513,9 @@ function detectDefault(): Lang {
   if (typeof window === "undefined") return "en";
   const saved = window.localStorage.getItem("app-lang") as Lang | null;
   if (saved && DICTS[saved]) return saved;
-  const nav = (window.navigator?.language || "en").slice(0, 2).toLowerCase();
-  if (nav === "es" || nav === "ru" || nav === "hi") return nav;
+  // No saved preference → default to English. We don't auto-detect the
+  // browser language so users always start in a known language and pick
+  // theirs explicitly from the switcher.
   return "en";
 }
 
@@ -550,35 +551,48 @@ export function LanguageSwitcher() {
   const { lang, setLang, t } = useT();
   const [open, setOpen] = useState(false);
   return (
-    <div className="relative">
+    <>
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(true)}
         aria-label={t("header.language")}
-        className="p-2 rounded-xl card-glass text-sm leading-none"
+        className="p-2 rounded-xl card-glass text-sm leading-none flex items-center gap-1"
       >
         <span aria-hidden>{LANGS.find((l) => l.code === lang)?.flag ?? "🌐"}</span>
       </button>
       {open && (
-        <>
+        <div className="fixed inset-0 z-[100] flex items-end justify-center">
           <button
-            aria-hidden
+            aria-label="Close"
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-40 bg-transparent"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
-          <div className="absolute right-0 mt-2 z-50 min-w-[140px] rounded-xl card-glass p-1 shadow-xl">
-            {LANGS.map((l) => (
-              <button
-                key={l.code}
-                onClick={() => { setLang(l.code); setOpen(false); }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${lang === l.code ? "bg-primary/15 text-primary font-semibold" : ""}`}
-              >
-                <span aria-hidden>{l.flag}</span>
-                <span>{l.label}</span>
-              </button>
-            ))}
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative w-full max-w-md card-glass rounded-t-3xl p-4 pb-6 shadow-2xl animate-in slide-in-from-bottom-4"
+          >
+            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-white/20" />
+            <p className="text-center text-base font-semibold mb-3">{t("header.language")}</p>
+            <div className="space-y-1.5">
+              {LANGS.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => { setLang(l.code); setOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition ${
+                    lang === l.code
+                      ? "bg-primary/20 text-primary font-semibold"
+                      : "bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <span className="text-lg" aria-hidden>{l.flag}</span>
+                  <span className="flex-1 text-left">{l.label}</span>
+                  {lang === l.code && <span aria-hidden>✓</span>}
+                </button>
+              ))}
+            </div>
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </>
   );
 }
