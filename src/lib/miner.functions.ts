@@ -159,21 +159,21 @@ export const submitDeposit = createServerFn({ method: "POST" })
     z.object({ amountTon: z.number().positive(), txHash: z.string().optional() }).parse(d))
   .handler(async ({ context, data }) => {
     const { userId } = context;
-    // Daily ROI 3.3% in USDT value. Since 1 TON = 1 GRAM (same USD price),
-    // 1 TON deposited yields 0.033 GRAM/day (= 3.3% USDT/day).
-    const DAILY_ROI = 0.033;
-    const gramPerDay = data.amountTon * DAILY_ROI;
-    // Insert with admin client because RLS restricts users to inserting
-    // only safe initial values (status='pending', gram_per_day=0, tx_hash=null).
-    // Server-side logic is trusted to set the reward and tx hash correctly.
+    // This endpoint records the user's INTENT to deposit. It does NOT credit
+    // mining_rate — real credit comes only from on-chain events processed by
+    // /api/public/verify-deposits after the TON transaction confirms.
+    // We therefore store gram_per_day = 0 and status = 'pending' to match the
+    // RLS invariant on public.deposits, and never trust client-side amounts
+    // for anything economic.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("deposits").insert({
-      user_id: userId, amount_ton: data.amountTon, gram_per_day: gramPerDay,
-      tx_hash: data.txHash ?? null, status: "pending",
+      user_id: userId, amount_ton: data.amountTon, gram_per_day: 0,
+      tx_hash: null, status: "pending",
     });
     if (error) throw error;
     return { ok: true };
   });
+
 
 export const listDeposits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
