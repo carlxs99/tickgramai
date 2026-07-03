@@ -115,9 +115,15 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               status: "confirmed",
             });
 
+            // Update mining_rate (additive) and deposit_total (cumulative TON deposited).
+            // deposit_total gates deposit-locked tasks in listTasks/completeTask.
+            const { data: curProf } = await supabaseAdmin
+              .from("profiles").select("deposit_total").eq("user_id", profile.user_id).maybeSingle();
+            const newDepositTotal = Number(curProf?.deposit_total ?? 0) + amountTon;
             await supabaseAdmin.from("profiles")
-              .update({ mining_rate: newRate })
+              .update({ mining_rate: newRate, deposit_total: newDepositTotal })
               .eq("user_id", profile.user_id);
+
 
 
 

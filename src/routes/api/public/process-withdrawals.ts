@@ -25,8 +25,8 @@ async function processOne(row: any, supabaseAdmin: any) {
 
   const fail = async (msg: string) => {
     await supabaseAdmin.from("withdrawals").update({ status: "failed", error_message: msg.slice(0, 500) }).eq("id", row.id);
-    const { data: p } = await supabaseAdmin.from("profiles").select("balance").eq("user_id", row.user_id).maybeSingle();
-    if (p) await supabaseAdmin.from("profiles").update({ balance: Number(p.balance) + Number(row.amount) }).eq("user_id", row.user_id);
+    // Atomic refund: prevents lost-update against concurrent balance mutations.
+    await supabaseAdmin.rpc("atomic_add_balance", { _user_id: row.user_id, _amount: Number(row.amount) });
   };
 
   // 2) Validate destination address
