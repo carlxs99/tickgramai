@@ -80,9 +80,7 @@ function MinerAppInner() {
         // Outside Telegram (dev/browser) → demo. Inside Telegram without
         // initData → the Mini App was opened without a WebApp button.
         if (insideTelegram) {
-          setError(
-            "Telegram no envió tu identidad. Abre la Mini App desde el botón del menú del bot (@Tickgramaibot) o desde t.me/Tickgramaibot/app."
-          );
+          setError(t("auth.telegram_no_identity"));
           return;
         }
 
