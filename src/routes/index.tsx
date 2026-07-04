@@ -354,7 +354,7 @@ function MineTab() {
   );
 }
 
-function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
+function GiftBoxesCard() {
   const { t } = useT();
   const listFn = useServerFn(listGiftBoxes);
   const openFn = useServerFn(openGiftBox);
