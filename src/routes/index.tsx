@@ -400,7 +400,8 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
   }[rank];
   const { t } = useT();
   const name = miner ? (miner.first_name || miner.username || t("leaderboard.anon")) : "—";
-  const rate = miner ? formatGram(miner.mining_rate) : "—";
+  const rateUsd = miner ? Number(miner.mining_rate_usd ?? 0) : 0;
+  const rateLabel = miner ? `$${rateUsd.toFixed(2)}` : "—";
   return (
     <div className={`flex-1 flex flex-col items-center ${styles.order}`}>
       <div className="relative">
@@ -419,11 +420,11 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
         </div>
       </div>
       <p className="mt-2 text-xs font-semibold text-center truncate max-w-[90%]">{name}</p>
-      <p className="text-[10px] text-muted-foreground">{rate}/d</p>
+      <p className="text-[10px] text-muted-foreground">{rateLabel}/d</p>
       <div className={`mt-2 w-full ${styles.height} ${styles.bar} rounded-t-2xl relative overflow-hidden`}>
         <div className="absolute inset-x-0 top-2 text-center">
-          <div className="text-base font-extrabold text-black/90 drop-shadow">{rate}</div>
-          <div className="text-[9px] font-semibold text-black/70 tracking-wider">GRAM/d</div>
+          <div className="text-base font-extrabold text-black/90 drop-shadow">{rateLabel}</div>
+          <div className="text-[9px] font-semibold text-black/70 tracking-wider">USDT/d</div>
         </div>
       </div>
     </div>
