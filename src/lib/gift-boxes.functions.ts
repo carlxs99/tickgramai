@@ -33,8 +33,7 @@ export const listGiftBoxes = createServerFn({ method: "GET" })
     };
   });
 
-// Open a gift box. GATED to admin during Coming Soon phase — non-admins are
-// rejected server-side even if the UI is bypassed.
+// Open a gift box.
 export const openGiftBox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { boxId: string }) => z.object({ boxId: z.string().uuid() }).parse(d))
@@ -42,12 +41,6 @@ export const openGiftBox = createServerFn({ method: "POST" })
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Admin-only until public launch.
-    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Gift boxes coming soon");
 
     const { data: row, error } = await supabaseAdmin
       .rpc("open_gift_box" as never, { _user_id: userId, _box_id: data.boxId } as never);
