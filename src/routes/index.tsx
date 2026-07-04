@@ -152,16 +152,21 @@ function Center({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex items-center justify-center">{children}</div>;
 }
 
-// TON price hook — 1 GRAM = 1 TON = price USDT
+// TON price hook — 1 GRAM = 1 TON = price USDT (live from server, refreshed frequently)
 function useTonPrice() {
   const fn = useServerFn(getTonPrice);
   const q = useQuery({
     queryKey: ["ton-price"],
     queryFn: () => fn(),
-    refetchInterval: 20_000,
+    refetchInterval: 8_000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
-    staleTime: 10_000,
+    refetchOnReconnect: true,
+    refetchOnMount: true,
+    staleTime: 5_000,
+    gcTime: 60_000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
   return q.data?.price ?? 5.5;
 }
