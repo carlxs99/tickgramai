@@ -641,9 +641,6 @@ function PartnerTasksSection() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold truncate">{pt.title}</p>
                 <p className="text-xs mt-0.5 text-[color:var(--success)]">+{formatReward(pt.reward_per_click)} GRAM</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-                  {pt.current_clicks}/{pt.target_clicks} {tr("partner.clicks")}
-                </p>
               </div>
               {(() => {
                 const visitedAt = visited[pt.id];
