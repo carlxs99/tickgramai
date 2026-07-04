@@ -473,6 +473,45 @@ function BonusCountdown({ expiresAt }: { expiresAt: string }) {
   );
 }
 
+function ActiveBonusBanner() {
+  const { t } = useT();
+  const listFn = useServerFn(listGiftBoxes);
+  const { data } = useQuery({
+    queryKey: ["gift-boxes"],
+    queryFn: () => listFn(),
+    refetchInterval: 60_000,
+  });
+  const bonus = data?.activeBonus as { percent: number; expires_at: string } | null | undefined;
+  if (!bonus) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative rounded-2xl p-3 overflow-hidden flex items-center gap-3"
+      style={{
+        background:
+          "linear-gradient(135deg, oklch(0.42 0.16 300) 0%, oklch(0.48 0.20 285) 60%, oklch(0.55 0.18 260) 100%)",
+      }}
+    >
+      <div className="w-9 h-9 rounded-xl bg-amber-400/90 flex items-center justify-center shrink-0">
+        <Sparkles className="w-5 h-5 text-black" strokeWidth={2.5} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[10px] font-bold tracking-widest text-amber-200 uppercase">
+          {t("gift.title")}
+        </div>
+        <div className="text-sm font-extrabold text-white leading-tight">
+          {t("gift.active_bonus")}{" "}
+          <span className="text-amber-200">+{Number(bonus.percent).toFixed(1)}%</span>{" "}
+          {t("gift.active_bonus_suffix")}
+        </div>
+      </div>
+      <BonusCountdown expiresAt={bonus.expires_at} />
+    </motion.div>
+  );
+}
+
+
 function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmount: number }; onClose: () => void }) {
   const { t } = useT();
   const isGram = prize.prizeType === "gram_mining";
