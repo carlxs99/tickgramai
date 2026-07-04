@@ -899,6 +899,9 @@ function PartnerTasksSection() {
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold truncate">{pt.title}</p>
                   <p className="text-[10px] text-muted-foreground tabular-nums">{pt.status}</p>
+                  <p className="text-[10px] text-[color:var(--success)] tabular-nums">
+                    {pt.current_clicks ?? 0} / {pt.target_clicks} {tr("partner.clicks")}
+                  </p>
                 </div>
                 {pt.status === "pending_payment" && (
                   <button
