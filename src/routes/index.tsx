@@ -401,7 +401,7 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
   const { t } = useT();
   const name = miner ? (miner.first_name || miner.username || t("leaderboard.anon")) : "—";
   const rateUsd = miner ? Number(miner.mining_rate_usd ?? 0) : 0;
-  const rateLabel = miner ? `$${rateUsd.toFixed(2)}` : "—";
+  const rateLabel = miner ? `$${rateUsd.toFixed(5)}` : "—";
   return (
     <div className={`flex-1 flex flex-col items-center ${styles.order}`}>
       <div className="relative">
