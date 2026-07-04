@@ -314,7 +314,7 @@ function MineTab() {
           </div>
           <div className="mt-2 text-sm text-muted-foreground">
             {rateUsd > 0
-              ? <>${rateUsd.toFixed(4)} {t("mine.per_day_suffix")} <span className="text-muted-foreground/70">(≈ {formatGram(rate, 4)} {t("mine.per_day")})</span></>
+              ? <>${rateUsd.toFixed(5)} {t("mine.per_day_suffix")} <span className="text-muted-foreground/70">(≈ {formatGram(rate, 5)} {t("mine.per_day")})</span></>
               : t("mine.deposit_to_start")}
           </div>
           <motion.button
@@ -401,7 +401,7 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
   const { t } = useT();
   const name = miner ? (miner.first_name || miner.username || t("leaderboard.anon")) : "—";
   const rateUsd = miner ? Number(miner.mining_rate_usd ?? 0) : 0;
-  const rateLabel = miner ? `$${rateUsd.toFixed(2)}` : "—";
+  const rateLabel = miner ? `$${rateUsd.toFixed(5)}` : "—";
   return (
     <div className={`flex-1 flex flex-col items-center ${styles.order}`}>
       <div className="relative">
@@ -478,9 +478,9 @@ function LeaderboardTab() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{name}</p>
-                    <p className="text-[10px] text-muted-foreground">≈ {formatGram(price > 0 ? Number(m.mining_rate_usd ?? 0) / price : 0, 2)} GRAM/d</p>
+                    <p className="text-[10px] text-muted-foreground">≈ {formatGram(price > 0 ? Number(m.mining_rate_usd ?? 0) / price : 0, 5)} GRAM/d</p>
                   </div>
-                  <span className="text-sm tabular-nums text-[color:var(--success)] font-semibold">${Number(m.mining_rate_usd ?? 0).toFixed(2)}/d</span>
+                  <span className="text-sm tabular-nums text-[color:var(--success)] font-semibold">${Number(m.mining_rate_usd ?? 0).toFixed(5)}/d</span>
                 </div>
               );
             })}
