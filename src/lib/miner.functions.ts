@@ -241,28 +241,20 @@ export const reinvestBalance = createServerFn({ method: "POST" })
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
     const usdPerDay = data.amount * tonPrice * 0.033;
     const gramPerDay = data.amount * 0.033; // snapshot for deposit history
-    // Increase mining_rate_usd (source of truth) + legacy mining_rate + deposit_total.
-    const { data: prof, error: pErr } = await supabaseAdmin
-      .from("profiles")
-      .select("mining_rate, mining_rate_usd, deposit_total")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (pErr || !prof) {
-      await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: userId, _amount: data.amount } as never);
-      throw pErr ?? new Error("Profile not found");
-    }
+    // Atomic increment of mining_rate_usd / mining_rate / deposit_total
+    // — no lost-update race with concurrent deposit crediting.
     const { error: uErr } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        mining_rate: Number(prof.mining_rate ?? 0) + gramPerDay,
-        mining_rate_usd: Number((prof as any).mining_rate_usd ?? 0) + usdPerDay,
-        deposit_total: Number(prof.deposit_total ?? 0) + data.amount,
-      })
-      .eq("user_id", userId);
+      .rpc("atomic_add_mining_rate" as never, {
+        _user_id: userId,
+        _add_rate_usd: usdPerDay,
+        _add_rate_gram: gramPerDay,
+        _add_deposit_ton: data.amount,
+      } as never);
     if (uErr) {
       await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: userId, _amount: data.amount } as never);
       throw uErr;
     }
+
     await supabaseAdmin.from("deposits").insert({
       user_id: userId,
       amount_ton: data.amount,
