@@ -1198,7 +1198,7 @@ function WithdrawTab() {
   const amountInvalid = isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram);
   const mut = useMutation({
     mutationFn: () => {
-      if (amountInvalid) throw new Error(t("withdraw.min_error"));
+      if (amountInvalid) throw new Error(t("withdraw.min_error", { amount: formatGram(minGram) }));
       if (!address.trim()) throw new Error(t("withdraw.address"));
       return wFn({ data: { amount: amountNum, address } });
     },
