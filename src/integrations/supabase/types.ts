@@ -538,6 +538,13 @@ export type Database = {
           reward: number
         }[]
       }
+      complete_task: {
+        Args: { _task_id: string; _user_id: string }
+        Returns: {
+          completed_on: string
+          reward: number
+        }[]
+      }
       consume_active_deposit_bonus: {
         Args: { _user_id: string }
         Returns: number
