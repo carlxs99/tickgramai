@@ -425,6 +425,19 @@ export type Database = {
         Args: { _amount: number; _user_id: string }
         Returns: number
       }
+      atomic_add_mining_rate: {
+        Args: {
+          _add_deposit_ton?: number
+          _add_rate_gram: number
+          _add_rate_usd: number
+          _user_id: string
+        }
+        Returns: {
+          new_deposit_total: number
+          new_rate_gram: number
+          new_rate_usd: number
+        }[]
+      }
       atomic_collect_income: {
         Args: { _user_id: string }
         Returns: {
