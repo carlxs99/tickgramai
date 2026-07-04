@@ -271,7 +271,22 @@ function MineTab() {
           </div>
           <motion.button
             whileTap={{ scale: 0.96 }}
-            onClick={() => collect.mutate()}
+            onClick={() => {
+              try {
+                const key = "collect_ad_counter";
+                const n = (parseInt(localStorage.getItem(key) || "0", 10) || 0) + 1;
+                localStorage.setItem(key, String(n));
+                if (n % 2 === 0 && typeof (window as any).show_11237001 === "function") {
+                  (window as any).show_11237001().then(() => {
+                    collect.mutate();
+                  }).catch(() => {
+                    collect.mutate();
+                  });
+                  return;
+                }
+              } catch {}
+              collect.mutate();
+            }}
             disabled={collect.isPending || live < 0.0001}
             className="mt-5 w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-accent font-bold text-primary-foreground disabled:opacity-50 shadow-lg"
           >
