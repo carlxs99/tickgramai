@@ -1194,11 +1194,13 @@ function WithdrawTab() {
   const lFn = useServerFn(listWithdrawals);
   const qc = useQueryClient();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
-  const [amount, setAmount] = useState("1");
+  const price = useTonPrice();
+  const minGram = price > 0 ? 3 / price : 0;
+  const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const { data: hist } = useQuery({ queryKey: ["withdrawals"], queryFn: () => lFn() });
   const amountNum = Number(amount);
-  const amountInvalid = isNaN(amountNum) || amountNum < 1;
+  const amountInvalid = isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram);
   const mut = useMutation({
     mutationFn: () => {
       if (amountInvalid) throw new Error(t("withdraw.min_error"));
@@ -1219,7 +1221,7 @@ function WithdrawTab() {
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.min_label")}</span>
-          <span className="font-semibold">1 GRAM</span>
+          <span className="font-semibold">$3{minGram > 0 ? ` (~${formatGram(minGram)} GRAM)` : ""}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.fee_label")}</span>
