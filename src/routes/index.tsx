@@ -420,6 +420,9 @@ function GiftBoxesCard() {
             <div className="text-[11px] text-white/70 mt-0.5">
               {t("gift.rule")}
             </div>
+            <div className="text-[11px] font-bold text-amber-200 mt-0.5">
+              {t("gift.rewards_hint")}
+            </div>
           </div>
         </div>
 
