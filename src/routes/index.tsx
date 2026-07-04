@@ -274,12 +274,16 @@ function MineTab() {
   const [tick, setTick] = useState(0);
   useEffect(() => { const i = setInterval(() => setTick((tk) => tk + 1), 100); return () => clearInterval(i); }, []);
 
+  const price = useTonPrice();
+  const rateUsd = Number((data.profile as any).mining_rate_usd ?? 0);
+  const rate = price > 0 ? rateUsd / price : 0; // GRAM/day at current TON price
+
   const live = useMemo(() => {
     const now = Date.now();
     const last = new Date(data.profile.last_collect_at).getTime();
     const secs = Math.max(0, (now - last) / 1000);
-    return (Number(data.profile.mining_rate) / 86400) * secs;
-  }, [data, tick]);
+    return (rate / 86400) * secs;
+  }, [data, tick, rate]);
 
   const collect = useMutation({
     mutationFn: () => collectFn(),
@@ -290,9 +294,6 @@ function MineTab() {
     },
     onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
   });
-
-  const rate = Number(data.profile.mining_rate);
-  const price = useTonPrice();
 
   return (
     <div className="space-y-4">
@@ -312,8 +313,8 @@ function MineTab() {
             ≈ ${usdt(live, price)} USDT
           </div>
           <div className="mt-2 text-sm text-muted-foreground">
-            {rate > 0
-              ? <>{formatGram(rate, 2)} {t("mine.per_day")} <span className="text-[color:var(--success)]">(≈ ${usdt(rate, price)} {t("mine.per_day_suffix")})</span></>
+            {rateUsd > 0
+              ? <>${rateUsd.toFixed(4)} {t("mine.per_day_suffix")} <span className="text-muted-foreground/70">(≈ {formatGram(rate, 4)} {t("mine.per_day")})</span></>
               : t("mine.deposit_to_start")}
           </div>
           <motion.button
