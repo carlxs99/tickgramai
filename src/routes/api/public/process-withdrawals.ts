@@ -57,7 +57,7 @@ async function processOne(row: any, supabaseAdmin: any) {
         internal({
           to: dest,
           value,
-          body: row.memo ? String(row.memo) : undefined,
+          body: "TickGram withdraw",
           bounce: false,
         }),
       ],
