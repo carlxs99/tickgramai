@@ -705,30 +705,19 @@ export function LanguageSwitcher() {
           <div
             role="dialog"
             aria-modal="true"
-            style={{
-              backgroundColor: "hsl(var(--card, 240 10% 12%))",
-              color: "hsl(var(--card-foreground, 0 0% 98%))",
-              borderTop: "1px solid hsl(var(--border, 240 6% 20%))",
-            }}
-            className="relative w-full max-w-md rounded-t-3xl p-4 pb-8 shadow-2xl animate-in slide-in-from-bottom-4"
+            className="relative w-full max-w-md rounded-t-3xl p-4 pb-8 shadow-2xl animate-in slide-in-from-bottom-4 bg-card text-card-foreground border-t border-border"
           >
-            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full opacity-40" style={{ backgroundColor: "currentColor" }} />
+            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-muted-foreground/40" />
             <p className="text-center text-base font-semibold mb-3">{t("header.language")}</p>
             <div className="space-y-1.5">
               {LANGS.map((l) => (
                 <button
                   key={l.code}
                   onClick={() => { setLang(l.code); setOpen(false); }}
-                  style={{
-                    backgroundColor: lang === l.code
-                      ? "hsl(var(--primary) / 0.18)"
-                      : "hsl(var(--muted, 240 5% 20%) / 0.6)",
-                    color: lang === l.code
-                      ? "hsl(var(--primary))"
-                      : "hsl(var(--card-foreground, 0 0% 98%))",
-                  }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition ${
-                    lang === l.code ? "font-semibold" : ""
+                    lang === l.code
+                      ? "bg-primary/15 text-primary font-semibold"
+                      : "bg-muted/60 text-card-foreground"
                   }`}
                 >
                   <span className="text-lg" aria-hidden>{l.flag}</span>
