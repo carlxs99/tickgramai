@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 // Simple in-memory cache. Worker instances may reset — that's fine, we just refetch.
 let cache: { price: number; at: number } | null = null;
-const TTL_MS = 15_000;
+const TTL_MS = 5_000;
 
 async function fromBinance(): Promise<number | null> {
   try {
