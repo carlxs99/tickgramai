@@ -379,7 +379,7 @@ function GiftBoxesCard() {
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
 
-  const canOpen = isAdmin && unopened > 0 && !openMut.isPending;
+  const canOpen = unopened > 0 && !openMut.isPending;
 
   return (
     <>
