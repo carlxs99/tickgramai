@@ -1440,7 +1440,7 @@ function AdminTab() {
                   {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{tr("common.off")}</span>}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  {t.kind} · +${Number(t.reward).toFixed(4)} USDT/día ⛏️
+                  {t.kind} · capital ${Number(t.reward).toFixed(4)} → +${(Number(t.reward) * 0.033).toFixed(6)} USDT/día ⛏️
                   {t.target_chat ? ` · ${t.target_chat}` : ""}
                 </p>
               </div>
