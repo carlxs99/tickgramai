@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 export type Lang = "en" | "es" | "ru" | "hi";
 
@@ -686,16 +687,11 @@ export function useT() {
 export function LanguageSwitcher() {
   const { lang, setLang, t } = useT();
   const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        aria-label={t("header.language")}
-        className="shrink-0 h-9 w-9 rounded-xl card-glass text-base leading-none flex items-center justify-center"
-      >
-        <span aria-hidden>{LANGS.find((l) => l.code === lang)?.flag ?? "🌐"}</span>
-      </button>
-      {open && (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  const modal = open && mounted
+    ? createPortal(
         <div className="fixed inset-0 z-[100] flex items-end justify-center">
           <button
             aria-label="Close"
@@ -727,9 +723,21 @@ export function LanguageSwitcher() {
               ))}
             </div>
           </div>
-        </div>
-      )}
-    </>
+        </div>,
+        document.body
+      )
+    : null;
 
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        aria-label={t("header.language")}
+        className="shrink-0 h-9 w-9 rounded-xl card-glass text-base leading-none flex items-center justify-center"
+      >
+        <span aria-hidden>{LANGS.find((l) => l.code === lang)?.flag ?? "🌐"}</span>
+      </button>
+      {modal}
+    </>
   );
 }
