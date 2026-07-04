@@ -691,7 +691,7 @@ export function LanguageSwitcher() {
       <button
         onClick={() => setOpen(true)}
         aria-label={t("header.language")}
-        className="p-2 rounded-xl card-glass text-sm leading-none flex items-center gap-1"
+        className="shrink-0 h-9 w-9 rounded-xl card-glass text-base leading-none flex items-center justify-center"
       >
         <span aria-hidden>{LANGS.find((l) => l.code === lang)?.flag ?? "🌐"}</span>
       </button>
@@ -705,7 +705,7 @@ export function LanguageSwitcher() {
           <div
             role="dialog"
             aria-modal="true"
-            className="relative w-full max-w-md rounded-t-3xl p-4 pb-8 shadow-2xl animate-in slide-in-from-bottom-4 bg-card text-card-foreground border-t border-border"
+            className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-t-3xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-2xl animate-in slide-in-from-bottom-4 bg-card text-card-foreground border-t border-border"
           >
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-muted-foreground/40" />
             <p className="text-center text-base font-semibold mb-3">{t("header.language")}</p>
@@ -720,9 +720,9 @@ export function LanguageSwitcher() {
                       : "bg-muted/60 text-card-foreground"
                   }`}
                 >
-                  <span className="text-lg" aria-hidden>{l.flag}</span>
-                  <span className="flex-1 text-left">{l.label}</span>
-                  {lang === l.code && <span aria-hidden>✓</span>}
+                  <span className="text-lg leading-none w-6 text-center shrink-0" aria-hidden>{l.flag}</span>
+                  <span className="flex-1 text-left truncate">{l.label}</span>
+                  {lang === l.code && <span className="shrink-0" aria-hidden>✓</span>}
                 </button>
               ))}
             </div>
@@ -730,5 +730,6 @@ export function LanguageSwitcher() {
         </div>
       )}
     </>
+
   );
 }
