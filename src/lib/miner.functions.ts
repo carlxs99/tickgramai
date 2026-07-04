@@ -146,13 +146,30 @@ export const completeTask = createServerFn({ method: "POST" })
       user_id: userId, task_id: task.id, completed_on: today, reward: task.reward,
     });
     if (iErr) throw new Error("Already claimed today");
-    // Atomic increment (RPC) — avoids lost-update when multiple tasks / rewards
-    // are claimed concurrently.
+
+    // Admin-defined task rewards are added to the user's mining rate (USDT/day),
+    // NOT the balance. Partner tasks credit the balance directly (see completePartnerTask).
+    const rewardUsd = Number(task.reward);
+    const tonPrice = (await fetchTonPriceUsdt()) || 1;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: newBalance, error: bErr } = await supabaseAdmin
-      .rpc("atomic_add_balance" as never, { _user_id: userId, _amount: Number(task.reward) } as never);
-    if (bErr) throw bErr;
-    return { reward: Number(task.reward), balance: Number(newBalance ?? 0) };
+    const { data: cur } = await supabaseAdmin
+      .from("profiles")
+      .select("mining_rate_usd, balance")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const newRateUsd = Number((cur as any)?.mining_rate_usd ?? 0) + rewardUsd;
+    const newRateGram = newRateUsd / tonPrice;
+    const { error: uErr } = await supabaseAdmin
+      .from("profiles")
+      .update({ mining_rate_usd: newRateUsd, mining_rate: newRateGram } as never)
+      .eq("user_id", userId);
+    if (uErr) throw uErr;
+    return {
+      reward: rewardUsd,
+      rewardUsd,
+      balance: Number((cur as any)?.balance ?? 0),
+      miningRateUsd: newRateUsd,
+    };
   });
 
 export const saveWallet = createServerFn({ method: "POST" })
