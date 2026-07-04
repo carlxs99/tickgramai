@@ -1198,7 +1198,7 @@ function WithdrawTab() {
   const amountInvalid = isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram);
   const mut = useMutation({
     mutationFn: () => {
-      if (amountInvalid) throw new Error(t("withdraw.min_error"));
+      if (amountInvalid) throw new Error(t("withdraw.min_error", { amount: formatGram(minGram) }));
       if (!address.trim()) throw new Error(t("withdraw.address"));
       return wFn({ data: { amount: amountNum, address } });
     },
@@ -1208,7 +1208,7 @@ function WithdrawTab() {
   return (
     <div className="space-y-3">
       <h2 className="text-2xl font-bold">{t("withdraw.title")}</h2>
-      <p className="text-sm text-muted-foreground">{t("withdraw.subtitle")}</p>
+      <p className="text-sm text-muted-foreground">{t("withdraw.subtitle", { amount: formatGram(minGram) })}</p>
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.available")}</span>
@@ -1216,7 +1216,7 @@ function WithdrawTab() {
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.min_label")}</span>
-          <span className="font-semibold">$3{minGram > 0 ? ` (~${formatGram(minGram)} GRAM)` : ""}</span>
+          <span className="font-semibold">{minGram > 0 ? `${formatGram(minGram)} GRAM (~$3)` : "$3"}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.fee_label")}</span>
@@ -1224,7 +1224,7 @@ function WithdrawTab() {
         </div>
         <Field label={t("withdraw.amount")}>
           <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" />
-          {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error")}</p>}
+          {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minGram) })}</p>}
         </Field>
         <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
         {!amountInvalid && (
