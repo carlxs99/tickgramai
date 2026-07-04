@@ -723,7 +723,7 @@ function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
 
         <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
           <p className="text-sm">
-            {tr("partner.cost_label")} <span className="font-bold tabular-nums">{costTon.toFixed(4)} TON</span>
+            {tr("partner.cost_label")} <span className="font-bold tabular-nums">{costTon.toFixed(4)} GRAM</span>
           </p>
         </div>
 
