@@ -167,20 +167,17 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               status: "confirmed",
             });
 
-            // Update mining_rate_usd (additive, source of truth) and deposit_total.
-            // Also keep mining_rate (GRAM/day at deposit price) for backwards compat
-            // display fallbacks.
-            const { data: curProf } = await supabaseAdmin
-              .from("profiles").select("deposit_total, mining_rate").eq("user_id", profile.user_id).maybeSingle();
-            const newDepositTotal = Number(curProf?.deposit_total ?? 0) + amountTon;
-            const newRateGram = Number(curProf?.mining_rate ?? 0) + gramPerDay;
-            await supabaseAdmin.from("profiles")
-              .update({
-                mining_rate: newRateGram,
-                mining_rate_usd: newRateUsd,
-                deposit_total: newDepositTotal,
-              })
-              .eq("user_id", profile.user_id);
+            // Atomic increment — prevents lost-updates with completeTask /
+            // reinvestBalance running concurrently for the same user.
+            await supabaseAdmin.rpc("atomic_add_mining_rate" as never, {
+              _user_id: profile.user_id,
+              _add_rate_usd: usdPerDay,
+              _add_rate_gram: gramPerDay,
+              _add_deposit_ton: amountTon,
+            } as never);
+            const newRateGram = Number((profile as any).mining_rate ?? 0) + gramPerDay;
+            void newRateGram;
+
 
 
 
