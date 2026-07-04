@@ -152,13 +152,13 @@ function Center({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex items-center justify-center">{children}</div>;
 }
 
-// TON price hook — 1 GRAM = 1 TON = price USDT (live from server, refreshed frequently)
+// TON price hook — real-time via Binance WebSocket stream, with server polling fallback
 function useTonPrice() {
   const fn = useServerFn(getTonPrice);
   const q = useQuery({
     queryKey: ["ton-price"],
     queryFn: () => fn(),
-    refetchInterval: 8_000,
+    refetchInterval: 15_000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -168,7 +168,49 @@ function useTonPrice() {
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
-  return q.data?.price ?? 5.5;
+
+  const [livePrice, setLivePrice] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let closedByUs = false;
+    let attempts = 0;
+
+    const connect = () => {
+      try {
+        ws = new WebSocket("wss://stream.binance.com:9443/ws/tonusdt@trade");
+        ws.onopen = () => { attempts = 0; };
+        ws.onmessage = (ev) => {
+          try {
+            const msg = JSON.parse(ev.data);
+            const p = parseFloat(msg?.p);
+            if (isFinite(p) && p > 0) setLivePrice(p);
+          } catch {}
+        };
+        ws.onclose = () => {
+          if (closedByUs) return;
+          attempts += 1;
+          const delay = Math.min(1000 * 2 ** attempts, 15_000);
+          reconnectTimer = setTimeout(connect, delay);
+        };
+        ws.onerror = () => { try { ws?.close(); } catch {} };
+      } catch {
+        attempts += 1;
+        reconnectTimer = setTimeout(connect, Math.min(1000 * 2 ** attempts, 15_000));
+      }
+    };
+    connect();
+
+    return () => {
+      closedByUs = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      try { ws?.close(); } catch {}
+    };
+  }, []);
+
+  return livePrice ?? q.data?.price ?? 5.5;
 }
 
 function usdt(gram: number, price: number) {
