@@ -117,3 +117,104 @@ export const adminDeleteTask = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+// List all users, ordered by mining rate (USD) desc. Optional search by username / first_name / telegram id.
+export const adminListUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { search?: string; limit?: number } | undefined) =>
+    z.object({ search: z.string().max(100).optional(), limit: z.number().int().min(1).max(500).optional() }).partial().parse(d ?? {}))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
+      .from("profiles")
+      .select("user_id, username, first_name, last_name, avatar_url, telegram_id, balance, mining_rate, mining_rate_usd, deposit_total, created_at")
+      .order("mining_rate_usd", { ascending: false })
+      .order("balance", { ascending: false })
+      .limit(data.limit ?? 200);
+    const s = data.search?.trim();
+    if (s) {
+      const esc = s.replace(/[%,]/g, "");
+      const asNum = Number(s);
+      if (Number.isFinite(asNum) && s.match(/^\d+$/)) {
+        q = q.or(`username.ilike.%${esc}%,first_name.ilike.%${esc}%,telegram_id.eq.${asNum}`);
+      } else {
+        q = q.or(`username.ilike.%${esc}%,first_name.ilike.%${esc}%,last_name.ilike.%${esc}%`);
+      }
+    }
+    const { data: rows, error } = await q;
+    if (error) throw error;
+    return rows ?? [];
+  });
+
+// Full details for a single user: profile + deposits + withdrawals + referrals + completed tasks count.
+export const adminUserDetails = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { user_id: string }) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [profileRes, depositsRes, withdrawalsRes, refsRes, tasksDoneRes] = await Promise.all([
+      supabaseAdmin.from("profiles").select("*").eq("user_id", data.user_id).maybeSingle(),
+      supabaseAdmin.from("deposits").select("id, amount_ton, gram_per_day, status, tx_hash, created_at")
+        .eq("user_id", data.user_id).order("created_at", { ascending: false }).limit(50),
+      supabaseAdmin.from("withdrawals").select("id, amount, net_amount, fee, status, address, tx_hash, created_at, paid_at")
+        .eq("user_id", data.user_id).order("created_at", { ascending: false }).limit(50),
+      supabaseAdmin.from("referrals").select("referred_id, bonus_earned, created_at")
+        .eq("referrer_id", data.user_id).order("created_at", { ascending: false }).limit(100),
+      supabaseAdmin.from("user_tasks").select("id", { count: "exact", head: true }).eq("user_id", data.user_id),
+    ]);
+
+    if (profileRes.error) throw profileRes.error;
+    if (!profileRes.data) throw new Error("Usuario no encontrado");
+
+    // Enrich referrals with the referred user's profile info.
+    const refs = refsRes.data ?? [];
+    let referredProfiles: any[] = [];
+    if (refs.length) {
+      const ids = refs.map((r: any) => r.referred_id);
+      const { data: rp } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, username, first_name, avatar_url, mining_rate_usd, deposit_total")
+        .in("user_id", ids);
+      referredProfiles = rp ?? [];
+    }
+    const referrals = refs.map((r: any) => {
+      const p = referredProfiles.find((x) => x.user_id === r.referred_id);
+      return {
+        referred_id: r.referred_id,
+        bonus_earned: Number(r.bonus_earned ?? 0),
+        created_at: r.created_at,
+        username: p?.username ?? null,
+        first_name: p?.first_name ?? null,
+        avatar_url: p?.avatar_url ?? null,
+        mining_rate_usd: Number(p?.mining_rate_usd ?? 0),
+        deposit_total: Number(p?.deposit_total ?? 0),
+      };
+    });
+
+    const deposits = depositsRes.data ?? [];
+    const withdrawals = withdrawalsRes.data ?? [];
+
+    return {
+      profile: profileRes.data,
+      deposits,
+      withdrawals,
+      referrals,
+      totals: {
+        depositsCount: deposits.length,
+        depositsConfirmed: deposits.filter((d: any) => d.status === "confirmed").length,
+        depositsTonConfirmed: deposits.filter((d: any) => d.status === "confirmed")
+          .reduce((s: number, d: any) => s + Number(d.amount_ton || 0), 0),
+        withdrawalsCount: withdrawals.length,
+        withdrawalsPaid: withdrawals.filter((w: any) => w.status === "paid").length,
+        withdrawalsGramPaid: withdrawals.filter((w: any) => w.status === "paid")
+          .reduce((s: number, w: any) => s + Number(w.amount || 0), 0),
+        referralsCount: referrals.length,
+        referralBonusTotal: referrals.reduce((s, r) => s + r.bonus_earned, 0),
+        tasksCompleted: tasksDoneRes.count ?? 0,
+      },
+    };
+  });
+
