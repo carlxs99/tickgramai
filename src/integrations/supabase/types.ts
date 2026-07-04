@@ -464,6 +464,7 @@ export type Database = {
           reward: number
         }[]
       }
+      expire_stale_pending_deposits: { Args: never; Returns: number }
       generate_memo_tag: { Args: never; Returns: string }
       generate_partner_memo: { Args: never; Returns: string }
       get_top_miners: {
