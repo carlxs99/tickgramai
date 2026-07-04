@@ -3,12 +3,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2 } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
 import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
+import { listGiftBoxes, openGiftBox } from "@/lib/gift-boxes.functions";
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
@@ -348,8 +349,175 @@ function MineTab() {
         <StatCard label={t("mine.deposits")} value={formatGram(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
-      
+      <GiftBoxesCard isAdmin={!!data.isAdmin} />
     </div>
+  );
+}
+
+function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
+  const listFn = useServerFn(listGiftBoxes);
+  const openFn = useServerFn(openGiftBox);
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["gift-boxes"],
+    queryFn: () => listFn(),
+    refetchInterval: 60_000,
+  });
+  const unopened = data?.unopenedCount ?? 0;
+  const activeBonus = data?.activeBonus as { percent: number; expires_at: string } | null | undefined;
+  const [prize, setPrize] = useState<{ prizeType: string; prizeAmount: number } | null>(null);
+
+  const firstUnopened = (data?.boxes ?? []).find((b: any) => b.status === "unopened");
+  const openMut = useMutation({
+    mutationFn: () => openFn({ data: { boxId: firstUnopened!.id } }),
+    onSuccess: (r) => {
+      getTelegram()?.HapticFeedback?.impactOccurred?.("heavy");
+      setPrize({ prizeType: r.prizeType, prizeAmount: r.prizeAmount });
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+  });
+
+  const canOpen = isAdmin && unopened > 0 && !openMut.isPending;
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-3xl p-5 overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.42 0.16 300) 0%, oklch(0.48 0.20 285) 60%, oklch(0.55 0.18 260) 100%)",
+        }}
+      >
+        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+        <div className="relative flex items-center gap-4">
+          <motion.div
+            animate={unopened > 0 ? { rotate: [0, -6, 6, -6, 0], scale: [1, 1.05, 1] } : {}}
+            transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 1.5 }}
+            className="relative shrink-0"
+          >
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 flex items-center justify-center shadow-xl">
+              <Gift className="w-10 h-10 text-white drop-shadow" strokeWidth={2.5} />
+            </div>
+            {unopened > 0 && (
+              <div className="absolute -top-1.5 -right-1.5 min-w-6 h-6 px-1.5 rounded-full bg-amber-400 text-black text-xs font-extrabold flex items-center justify-center ring-2 ring-background">
+                {unopened}
+              </div>
+            )}
+          </motion.div>
+          <div className="flex-1 min-w-0">
+            <div className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest text-amber-200 uppercase">
+              <Sparkles className="w-3 h-3" /> Gift Boxes
+            </div>
+            <div className="text-lg font-extrabold text-white leading-tight mt-0.5">
+              {unopened > 0
+                ? `¡Tienes ${unopened} caja${unopened === 1 ? "" : "s"}!`
+                : "Invita amigos y gana cajas"}
+            </div>
+            <div className="text-[11px] text-white/70 mt-0.5">
+              1 caja por cada referido que deposite
+            </div>
+          </div>
+        </div>
+
+        {activeBonus && (
+          <div className="relative mt-3 rounded-xl bg-black/25 px-3 py-2 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+            <div className="flex-1 text-[11px] text-white">
+              Bonus activo: <span className="font-bold text-amber-200">+{Number(activeBonus.percent).toFixed(1)}%</span> a tu próximo depósito
+            </div>
+            <BonusCountdown expiresAt={activeBonus.expires_at} />
+          </div>
+        )}
+
+        <button
+          onClick={() => canOpen && openMut.mutate()}
+          disabled={!canOpen}
+          className="relative mt-4 w-full py-3 rounded-2xl font-bold text-sm bg-white text-purple-900 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2"
+        >
+          {openMut.isPending ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Abriendo...</>
+          ) : !isAdmin ? (
+            <><Lock className="w-4 h-4" /> Coming Soon</>
+          ) : unopened > 0 ? (
+            <><Gift className="w-4 h-4" /> Abrir caja (admin)</>
+          ) : (
+            <>Sin cajas aún</>
+          )}
+        </button>
+      </motion.div>
+
+      <AnimatePresence>
+        {prize && <PrizeModal prize={prize} onClose={() => setPrize(null)} />}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function BonusCountdown({ expiresAt }: { expiresAt: string }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  const ms = Math.max(0, new Date(expiresAt).getTime() - now);
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  const s = Math.floor((ms % 60_000) / 1000);
+  return (
+    <div className="text-[10px] tabular-nums text-white/70 font-semibold">
+      {h}h {m}m {s}s
+    </div>
+  );
+}
+
+function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmount: number }; onClose: () => void }) {
+  const isGram = prize.prizeType === "gram_mining";
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.7, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}
+        transition={{ type: "spring", damping: 18 }}
+        className="relative w-full max-w-sm rounded-3xl p-6 text-center overflow-hidden"
+        style={{ background: "linear-gradient(160deg, oklch(0.42 0.16 300), oklch(0.55 0.18 260))" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button onClick={onClose} className="absolute top-3 right-3 text-white/60 hover:text-white">
+          <X className="w-5 h-5" />
+        </button>
+        <motion.div
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: "spring", damping: 12, delay: 0.1 }}
+          className="mx-auto w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center shadow-2xl"
+        >
+          <Gift className="w-12 h-12 text-white" strokeWidth={2.5} />
+        </motion.div>
+        <div className="mt-4 text-xs font-bold tracking-widest text-amber-200 uppercase">¡Premio!</div>
+        <div className="mt-1 text-3xl font-extrabold text-white tabular-nums">
+          {isGram
+            ? `+${prize.prizeAmount.toFixed(8).replace(/0+$/, "").replace(/\.$/, "")} GRAM/día`
+            : `+${prize.prizeAmount.toFixed(2)}%`}
+        </div>
+        <div className="text-xs text-white/70 mt-1">
+          {isGram
+            ? "Añadido a tu minería diaria"
+            : "Bonus al próximo depósito (24h)"}
+        </div>
+        <button
+          onClick={onClose}
+          className="mt-5 w-full py-3 rounded-2xl bg-white text-purple-900 font-bold"
+        >
+          ¡Genial!
+        </button>
+      </motion.div>
+    </motion.div>
   );
 }
 
