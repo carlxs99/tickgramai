@@ -32,6 +32,10 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { Address } = await import("@ton/core");
         const { sendTelegramMessage } = await import("@/lib/telegram-notify.server");
+        const { fetchTonPriceUsdt } = await import("@/lib/prices.functions");
+
+        // TON price at the moment of confirmation — used to lock in the USD-denominated ROI.
+        const tonPriceAtDeposit = await fetchTonPriceUsdt();
 
         // Canonical raw address of our receiving wallet ("0:abcd…")
         const oursRaw = Address.parse(RECEIVING_WALLET).toRawString().toLowerCase();
