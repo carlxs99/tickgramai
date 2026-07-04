@@ -396,6 +396,7 @@ const ru: Dict = {
   "gift.have_boxes_plural": "У вас {count} боксов!",
   "gift.invite_cta": "Приглашай друзей и получай боксы",
   "gift.rule": "1 бокс за каждого реферала, сделавшего депозит",
+  "gift.rewards_hint": "Вас ждут награды в бонусах и GRAM!",
   "gift.active_bonus": "Активный бонус:",
   "gift.active_bonus_suffix": "к следующему депозиту",
   "gift.opening": "Открываем…",
