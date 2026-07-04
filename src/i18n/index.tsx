@@ -272,10 +272,10 @@ const es: Dict = {
   "deposit.max": "Máx",
 
   "withdraw.title": "Retirar",
-  "withdraw.subtitle": "Mínimo 1 GRAM. Comisión de red del 5%.",
+  "withdraw.subtitle": "Mínimo {amount} GRAM (valor $3). Comisión de red del 5%.",
   "withdraw.available": "Disponible",
   "withdraw.amount": "Cantidad (GRAM)",
-  "withdraw.min_error": "El retiro mínimo es $3",
+  "withdraw.min_error": "El retiro mínimo es {amount} GRAM",
   "withdraw.address": "Dirección GRAM",
   "withdraw.request": "Solicitar retiro",
   "withdraw.submitting": "Enviando…",
