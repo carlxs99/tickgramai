@@ -240,7 +240,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                   Number(profile.telegram_id),
                   `✅ <b>Deposit confirmed!</b>\n\n` +
                     `Hi ${name}, we received your deposit of <b>${amountTon.toFixed(4)} TON</b>.\n\n` +
-                    `⚡ Mining rate added: <b>+${gramPerDay.toFixed(4)} GRAM/day</b>\n` +
+                    `⚡ Mining rate added: <b>+$${usdPerDay.toFixed(4)} USDT/day</b>\n` +
                     `📈 Daily ROI: 3.3%\n\n` +
                     `Open TICK GRAM AI to check your balance.`,
                 );
