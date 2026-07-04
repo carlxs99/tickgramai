@@ -99,9 +99,9 @@ async function processOne(row: any, supabaseAdmin: any) {
       .maybeSingle();
     const handle = prof?.username ? `@${prof.username}` : (prof?.first_name || "user");
     const amount = Number(row.net_amount ?? row.amount).toFixed(2);
-    const explorerUrl = txHashB64
-      ? `https://tonviewer.com/transaction/${encodeURIComponent(txHashB64)}`
-      : `https://tonviewer.com/${wallet.address.toString()}`;
+    const explorerUrl = txHashHex
+      ? `https://tonviewer.com/transaction/${txHashHex}`
+      : `https://tonviewer.com/${dest.toString({ urlSafe: true, bounceable: false })}`;
     const groupText =
       `✅ <b>Withdraw Approved!</b>\n\n` +
       `👤 User: ${escapeHtml(handle)}\n\n` +
