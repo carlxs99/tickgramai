@@ -1138,6 +1138,9 @@ function DepositTab() {
       <h2 className="text-2xl font-bold">{t("deposit.title")}</h2>
       <p className="text-sm text-muted-foreground">{t("deposit.subtitle")}</p>
 
+      <ActiveBonusBanner />
+
+
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("deposit.your_balance")}</span>
