@@ -371,7 +371,7 @@ function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
   const openMut = useMutation({
     mutationFn: () => openFn({ data: { boxId: firstUnopened!.id } }),
     onSuccess: (r) => {
-      getTelegram()?.HapticFeedback?.notificationOccurred?.("success");
+      getTelegram()?.HapticFeedback?.impactOccurred?.("heavy");
       setPrize({ prizeType: r.prizeType, prizeAmount: r.prizeAmount });
       qc.invalidateQueries();
     },
