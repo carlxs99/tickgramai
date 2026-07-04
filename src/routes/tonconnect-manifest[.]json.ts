@@ -8,7 +8,7 @@ export const Route = createFileRoute("/tonconnect-manifest.json")({
         const origin = `${url.protocol}//${url.host}`;
         return Response.json({
           url: origin,
-          name: "Ultra Gram Miner",
+          name: "TICK GRAM AI",
           iconUrl: `${origin}/favicon.ico`,
         }, {
           headers: { "cache-control": "public, max-age=300" },
