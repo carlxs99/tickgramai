@@ -1460,6 +1460,199 @@ function AdminTab() {
           {!tasks?.length && <p className="text-xs text-muted-foreground">{tr("admin.no_tasks")}</p>}
         </div>
       </div>
+
+      <AdminUsersSection />
+    </div>
+  );
+}
+
+function AdminUsersSection() {
+  const listFn = useServerFn(adminListUsers);
+  const detailFn = useServerFn(adminUserDetails);
+  const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+
+  useEffect(() => {
+    const h = setTimeout(() => setDebounced(search.trim()), 300);
+    return () => clearTimeout(h);
+  }, [search]);
+
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["admin-users", debounced],
+    queryFn: () => listFn({ data: { search: debounced || undefined, limit: 200 } }),
+  });
+
+  const { data: detail, isLoading: loadingDetail } = useQuery({
+    queryKey: ["admin-user", selected],
+    queryFn: () => detailFn({ data: { user_id: selected! } }),
+    enabled: !!selected,
+  });
+
+  if (selected) {
+    return (
+      <div className="card-glass rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg card-glass" aria-label="Volver">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <p className="font-semibold flex items-center gap-2">
+            <UserCircle2 className="w-4 h-4 text-primary" /> Detalles del usuario
+          </p>
+        </div>
+        {loadingDetail || !detail ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
+            <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              {detail.profile.avatar_url ? (
+                <img src={detail.profile.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                  <UserCircle2 className="w-6 h-6 text-muted-foreground" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="font-semibold text-sm truncate">
+                  {detail.profile.first_name || detail.profile.username || "—"}
+                </p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {detail.profile.username ? `@${detail.profile.username} · ` : ""}
+                  TG {detail.profile.telegram_id ?? "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <StatMini label="Minería" value={`$${Number(detail.profile.mining_rate_usd ?? 0).toFixed(4)}/día`} />
+              <StatMini label="Balance" value={`${formatGram(Number(detail.profile.balance ?? 0))} GRAM`} />
+              <StatMini label="Rate GRAM" value={`${formatGram(Number(detail.profile.mining_rate ?? 0))}/día`} />
+              <StatMini label="Depositado" value={`${Number(detail.profile.deposit_total ?? 0).toFixed(4)} TON`} />
+              <StatMini label="Depósitos" value={`${detail.totals.depositsConfirmed}/${detail.totals.depositsCount} · ${detail.totals.depositsTonConfirmed.toFixed(4)} TON`} />
+              <StatMini label="Retiros" value={`${detail.totals.withdrawalsPaid}/${detail.totals.withdrawalsCount} · ${formatGram(detail.totals.withdrawalsGramPaid)}`} />
+              <StatMini label="Referidos" value={`${detail.totals.referralsCount} · +${formatGram(detail.totals.referralBonusTotal)}`} />
+              <StatMini label="Tareas hechas" value={String(detail.totals.tasksCompleted)} />
+            </div>
+
+            <DetailList title={`Depósitos (${detail.deposits.length})`} empty="Sin depósitos">
+              {detail.deposits.slice(0, 20).map((d: any) => (
+                <div key={d.id} className="flex justify-between text-[11px] py-1 border-b border-white/5 last:border-0">
+                  <span className="truncate">{new Date(d.created_at).toLocaleDateString()} · {d.status}</span>
+                  <span className="tabular-nums font-semibold">{Number(d.amount_ton).toFixed(4)} TON</span>
+                </div>
+              ))}
+            </DetailList>
+
+            <DetailList title={`Retiros (${detail.withdrawals.length})`} empty="Sin retiros">
+              {detail.withdrawals.slice(0, 20).map((w: any) => (
+                <div key={w.id} className="flex justify-between text-[11px] py-1 border-b border-white/5 last:border-0">
+                  <span className="truncate">{new Date(w.created_at).toLocaleDateString()} · {w.status}</span>
+                  <span className="tabular-nums font-semibold">{formatGram(Number(w.amount))} GRAM</span>
+                </div>
+              ))}
+            </DetailList>
+
+            <DetailList title={`Referidos (${detail.referrals.length})`} empty="Sin referidos">
+              {detail.referrals.slice(0, 30).map((r: any) => (
+                <div key={r.referred_id} className="flex justify-between items-center text-[11px] py-1 border-b border-white/5 last:border-0">
+                  <button
+                    onClick={() => setSelected(r.referred_id)}
+                    className="truncate underline-offset-2 hover:underline text-left"
+                  >
+                    {r.first_name || (r.username ? `@${r.username}` : r.referred_id.slice(0, 8))}
+                  </button>
+                  <span className="tabular-nums text-muted-foreground">
+                    ${r.mining_rate_usd.toFixed(4)}/d · {r.deposit_total.toFixed(2)} TON
+                  </span>
+                </div>
+              ))}
+            </DetailList>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-glass rounded-2xl p-4 space-y-3">
+      <p className="font-semibold flex items-center gap-2">
+        <Users className="w-4 h-4 text-primary" /> Usuarios ({users?.length ?? 0})
+      </p>
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por username, nombre o Telegram ID…"
+          className="w-full bg-background/60 rounded-xl pl-9 pr-3 py-2 text-sm border border-white/5"
+        />
+      </div>
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
+          <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-[70vh] overflow-y-auto">
+          {users?.map((u: any, i: number) => (
+            <button
+              key={u.user_id}
+              onClick={() => setSelected(u.user_id)}
+              className="w-full rounded-xl bg-background/40 p-3 flex items-center gap-3 text-left hover:bg-background/60 transition"
+            >
+              <div className="w-6 text-[11px] font-bold text-muted-foreground tabular-nums text-center">
+                {i + 1}
+              </div>
+              {u.avatar_url ? (
+                <img src={u.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                  <UserCircle2 className="w-4 h-4 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">
+                  {u.first_name || (u.username ? `@${u.username}` : u.user_id.slice(0, 8))}
+                </p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {u.username ? `@${u.username} · ` : ""}
+                  {Number(u.deposit_total ?? 0).toFixed(2)} TON depositado
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-bold text-[color:var(--success)] tabular-nums">
+                  ${Number(u.mining_rate_usd ?? 0).toFixed(4)}/d
+                </p>
+                <p className="text-[10px] text-muted-foreground tabular-nums">
+                  {formatGram(Number(u.balance ?? 0))} GRAM
+                </p>
+              </div>
+            </button>
+          ))}
+          {!users?.length && <p className="text-xs text-muted-foreground text-center py-4">Sin resultados</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-background/40 p-2">
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <p className="text-xs font-bold tabular-nums truncate">{value}</p>
+    </div>
+  );
+}
+
+function DetailList({ title, empty, children }: { title: string; empty: string; children: React.ReactNode }) {
+  const arr = Array.isArray(children) ? children : [children];
+  const hasContent = arr.filter(Boolean).length > 0;
+  return (
+    <div className="rounded-xl bg-background/40 p-3">
+      <p className="text-xs font-semibold mb-1">{title}</p>
+      {hasContent ? <div>{children}</div> : <p className="text-[11px] text-muted-foreground">{empty}</p>}
     </div>
   );
 }
