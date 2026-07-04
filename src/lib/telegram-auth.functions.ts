@@ -67,31 +67,54 @@ export const authWithTelegram = createServerFn({ method: "POST" })
     const passSecret = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const password = createHmac("sha256", passSecret).update(`tg:${tgUser.id}`).digest("hex");
 
-    // Ensure user exists
-    const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
-    void existing;
-    // Try create; ignore duplicate
-    const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        telegram_id: tgUser.id,
-        username: tgUser.username,
-        first_name: tgUser.first_name,
-        last_name: tgUser.last_name,
-        avatar_url: tgUser.photo_url,
-      },
-    });
-    let userId = created?.user?.id;
-    if (createErr && !userId) {
-      // fetch existing by email
-      const { data: byEmail } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-      const found = byEmail.users.find((u) => u.email === email);
-      userId = found?.id;
-      if (!userId) throw new Error(createErr.message);
+    // Resolve user id: prefer an existing profile keyed by telegram_id
+    // (fast, indexed, and immune to auth listUsers pagination limits).
+    let userId: string | undefined;
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("user_id")
+      .eq("telegram_id", tgUser.id)
+      .maybeSingle();
+    if (existingProfile?.user_id) {
+      userId = existingProfile.user_id as string;
+    } else {
+      // Create the auth user. If it already exists (email collision from a
+      // previous run without a profile), fall back to paginating listUsers.
+      const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          telegram_id: tgUser.id,
+          username: tgUser.username,
+          first_name: tgUser.first_name,
+          last_name: tgUser.last_name,
+          avatar_url: tgUser.photo_url,
+        },
+      });
+      userId = created?.user?.id;
+      if (!userId && createErr) {
+        // Paginate through auth users to find the matching email.
+        for (let page = 1; page <= 20 && !userId; page++) {
+          const { data: pageData, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage: 1000,
+          });
+          if (listErr) break;
+          const found = pageData.users.find((u) => u.email === email);
+          if (found) userId = found.id;
+          if (!pageData.users.length || pageData.users.length < 1000) break;
+        }
+        if (!userId) throw new Error(createErr.message);
+      }
     }
     if (!userId) throw new Error("Failed to resolve user id");
+
+    // Always make sure the auth password matches our deterministic one so
+    // signInWithPassword below succeeds even for legacy users whose password
+    // hash was created with a different secret.
+    await supabaseAdmin.auth.admin.updateUserById(userId, { password });
+
 
     // Upsert profile — only set fields that are actually provided so we
     // never wipe existing data with nulls on re-auth.
