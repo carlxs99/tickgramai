@@ -476,6 +476,7 @@ function BonusCountdown({ expiresAt }: { expiresAt: string }) {
 }
 
 function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmount: number }; onClose: () => void }) {
+  const { t } = useT();
   const isGram = prize.prizeType === "gram_mining";
   return (
     <motion.div
@@ -501,25 +502,24 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
         >
           <Gift className="w-12 h-12 text-white" strokeWidth={2.5} />
         </motion.div>
-        <div className="mt-4 text-xs font-bold tracking-widest text-amber-200 uppercase">¡Premio!</div>
+        <div className="mt-4 text-xs font-bold tracking-widest text-amber-200 uppercase">{t("gift.prize_title")}</div>
         <div className="mt-1 text-3xl font-extrabold text-white tabular-nums">
           {isGram
-            ? `+${prize.prizeAmount.toFixed(8).replace(/0+$/, "").replace(/\.$/, "")} GRAM/día`
+            ? `+${prize.prizeAmount.toFixed(8).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
             : `+${prize.prizeAmount.toFixed(2)}%`}
         </div>
         <div className="text-xs text-white/70 mt-1">
-          {isGram
-            ? "Añadido a tu minería diaria"
-            : "Bonus al próximo depósito (24h)"}
+          {isGram ? t("gift.prize_gram_sub") : t("gift.prize_bonus_sub")}
         </div>
         <button
           onClick={onClose}
           className="mt-5 w-full py-3 rounded-2xl bg-white text-purple-900 font-bold"
         >
-          ¡Genial!
+          {t("gift.cool")}
         </button>
       </motion.div>
     </motion.div>
+
   );
 }
 
