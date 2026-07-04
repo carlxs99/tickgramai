@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      deposit_bonuses: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          percent: number
+          source_gift_box_id: string | null
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          percent: number
+          source_gift_box_id?: string | null
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          percent?: number
+          source_gift_box_id?: string | null
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_bonuses_source_gift_box_id_fkey"
+            columns: ["source_gift_box_id"]
+            isOneToOne: false
+            referencedRelation: "gift_boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deposits: {
         Row: {
           amount_ton: number
@@ -43,6 +81,42 @@ export type Database = {
           status?: string
           tx_hash?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gift_boxes: {
+        Row: {
+          created_at: string
+          id: string
+          opened_at: string | null
+          prize_amount: number | null
+          prize_type: string | null
+          source: string
+          source_ref_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          prize_amount?: number | null
+          prize_type?: string | null
+          source?: string
+          source_ref_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          prize_amount?: number | null
+          prize_type?: string | null
+          source?: string
+          source_ref_id?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -464,6 +538,10 @@ export type Database = {
           reward: number
         }[]
       }
+      consume_active_deposit_bonus: {
+        Args: { _user_id: string }
+        Returns: number
+      }
       expire_stale_pending_deposits: { Args: never; Returns: number }
       generate_memo_tag: { Args: never; Returns: string }
       generate_partner_memo: { Args: never; Returns: string }
@@ -484,6 +562,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      open_gift_box: {
+        Args: { _box_id: string; _user_id: string }
+        Returns: {
+          bonus_expires_at: string
+          mining_rate_gram: number
+          prize_amount: number
+          prize_type: string
+        }[]
       }
     }
     Enums: {
