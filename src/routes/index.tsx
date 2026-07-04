@@ -928,7 +928,7 @@ function DepositTab() {
   const reinvest = useMutation({
     mutationFn: (amt: number) => reinvestFn({ data: { amount: amt } }),
     onSuccess: (r: any) => {
-      toast.success(`+${(r.gramPerDay ?? 0).toFixed(4)} GRAM/day`);
+      toast.success(`+$${(r.usdPerDay ?? 0).toFixed(4)} USDT/day`);
       getTelegram()?.HapticFeedback?.impactOccurred("medium");
       setReinvestAmount("");
       qc.invalidateQueries();
