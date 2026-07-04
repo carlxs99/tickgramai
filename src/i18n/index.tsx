@@ -430,10 +430,10 @@ const ru: Dict = {
   "deposit.max": "Макс",
 
   "withdraw.title": "Вывод",
-  "withdraw.subtitle": "Минимум 1 GRAM. Комиссия сети 5%.",
+  "withdraw.subtitle": "Минимум {amount} GRAM (эквивалент $3). Комиссия сети 5%.",
   "withdraw.available": "Доступно",
   "withdraw.amount": "Сумма (GRAM)",
-  "withdraw.min_error": "Минимальный вывод — $3",
+  "withdraw.min_error": "Минимальный вывод — {amount} GRAM",
   "withdraw.address": "Адрес GRAM",
   "withdraw.request": "Запросить вывод",
   "withdraw.submitting": "Отправляем…",
