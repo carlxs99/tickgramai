@@ -440,10 +440,8 @@ function GiftBoxesCard() {
         >
           {openMut.isPending ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> {t("gift.opening")}</>
-          ) : !isAdmin ? (
-            <><Lock className="w-4 h-4" /> {t("gift.coming_soon")}</>
           ) : unopened > 0 ? (
-            <><Gift className="w-4 h-4" /> {t("gift.open_admin")}</>
+            <><Gift className="w-4 h-4" /> {t("gift.open")}</>
           ) : (
             <>{t("gift.no_boxes_yet")}</>
           )}
