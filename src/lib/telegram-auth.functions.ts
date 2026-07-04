@@ -50,8 +50,11 @@ export const authWithTelegram = createServerFn({ method: "POST" })
       }
       tgUser = parsed.user;
       startParam = parsed.startParam;
-    } else if (data.demoId) {
-      // Demo mode (preview / no bot token yet)
+    } else if (data.demoId && process.env.ENABLE_DEMO_AUTH === "1") {
+      // Demo mode: ONLY enabled via explicit env flag (non-production).
+      // Without this gate, anyone could sign in as any telegram_id
+      // (impersonation of arbitrary users). Do NOT set ENABLE_DEMO_AUTH=1
+      // in the production environment.
       tgUser = { id: data.demoId, first_name: "Miner", username: `demo_${data.demoId}` };
     } else {
       throw new Error("Missing Telegram initData");
