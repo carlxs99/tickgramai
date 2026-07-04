@@ -355,6 +355,7 @@ function MineTab() {
 }
 
 function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
+  const { t } = useT();
   const listFn = useServerFn(listGiftBoxes);
   const openFn = useServerFn(openGiftBox);
   const qc = useQueryClient();
@@ -409,15 +410,15 @@ function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
           </motion.div>
           <div className="flex-1 min-w-0">
             <div className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest text-amber-200 uppercase">
-              <Sparkles className="w-3 h-3" /> Gift Boxes
+              <Sparkles className="w-3 h-3" /> {t("gift.title")}
             </div>
             <div className="text-lg font-extrabold text-white leading-tight mt-0.5">
               {unopened > 0
-                ? `¡Tienes ${unopened} caja${unopened === 1 ? "" : "s"}!`
-                : "Invita amigos y gana cajas"}
+                ? t(unopened === 1 ? "gift.have_boxes" : "gift.have_boxes_plural", { count: String(unopened) })
+                : t("gift.invite_cta")}
             </div>
             <div className="text-[11px] text-white/70 mt-0.5">
-              1 caja por cada referido que deposite
+              {t("gift.rule")}
             </div>
           </div>
         </div>
@@ -426,7 +427,7 @@ function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
           <div className="relative mt-3 rounded-xl bg-black/25 px-3 py-2 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
             <div className="flex-1 text-[11px] text-white">
-              Bonus activo: <span className="font-bold text-amber-200">+{Number(activeBonus.percent).toFixed(1)}%</span> a tu próximo depósito
+              {t("gift.active_bonus")} <span className="font-bold text-amber-200">+{Number(activeBonus.percent).toFixed(1)}%</span> {t("gift.active_bonus_suffix")}
             </div>
             <BonusCountdown expiresAt={activeBonus.expires_at} />
           </div>
@@ -438,15 +439,16 @@ function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
           className="relative mt-4 w-full py-3 rounded-2xl font-bold text-sm bg-white text-purple-900 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2"
         >
           {openMut.isPending ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Abriendo...</>
+            <><Loader2 className="w-4 h-4 animate-spin" /> {t("gift.opening")}</>
           ) : !isAdmin ? (
-            <><Lock className="w-4 h-4" /> Coming Soon</>
+            <><Lock className="w-4 h-4" /> {t("gift.coming_soon")}</>
           ) : unopened > 0 ? (
-            <><Gift className="w-4 h-4" /> Abrir caja (admin)</>
+            <><Gift className="w-4 h-4" /> {t("gift.open_admin")}</>
           ) : (
-            <>Sin cajas aún</>
+            <>{t("gift.no_boxes_yet")}</>
           )}
         </button>
+
       </motion.div>
 
       <AnimatePresence>
@@ -474,6 +476,7 @@ function BonusCountdown({ expiresAt }: { expiresAt: string }) {
 }
 
 function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmount: number }; onClose: () => void }) {
+  const { t } = useT();
   const isGram = prize.prizeType === "gram_mining";
   return (
     <motion.div
@@ -499,25 +502,24 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
         >
           <Gift className="w-12 h-12 text-white" strokeWidth={2.5} />
         </motion.div>
-        <div className="mt-4 text-xs font-bold tracking-widest text-amber-200 uppercase">¡Premio!</div>
+        <div className="mt-4 text-xs font-bold tracking-widest text-amber-200 uppercase">{t("gift.prize_title")}</div>
         <div className="mt-1 text-3xl font-extrabold text-white tabular-nums">
           {isGram
-            ? `+${prize.prizeAmount.toFixed(8).replace(/0+$/, "").replace(/\.$/, "")} GRAM/día`
+            ? `+${prize.prizeAmount.toFixed(8).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
             : `+${prize.prizeAmount.toFixed(2)}%`}
         </div>
         <div className="text-xs text-white/70 mt-1">
-          {isGram
-            ? "Añadido a tu minería diaria"
-            : "Bonus al próximo depósito (24h)"}
+          {isGram ? t("gift.prize_gram_sub") : t("gift.prize_bonus_sub")}
         </div>
         <button
           onClick={onClose}
           className="mt-5 w-full py-3 rounded-2xl bg-white text-purple-900 font-bold"
         >
-          ¡Genial!
+          {t("gift.cool")}
         </button>
       </motion.div>
     </motion.div>
+
   );
 }
 
