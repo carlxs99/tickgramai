@@ -314,7 +314,7 @@ function MineTab() {
           </div>
           <div className="mt-2 text-sm text-muted-foreground">
             {rateUsd > 0
-              ? <>${rateUsd.toFixed(4)} {t("mine.per_day_suffix")} <span className="text-muted-foreground/70">(≈ {formatGram(rate, 4)} {t("mine.per_day")})</span></>
+              ? <>${rateUsd.toFixed(5)} {t("mine.per_day_suffix")} <span className="text-muted-foreground/70">(≈ {formatGram(rate, 5)} {t("mine.per_day")})</span></>
               : t("mine.deposit_to_start")}
           </div>
           <motion.button
