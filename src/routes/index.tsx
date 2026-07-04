@@ -505,7 +505,7 @@ function TasksTab() {
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   const mut = useMutation({
     mutationFn: (taskId: string) => doFn({ data: { taskId } }),
-    onSuccess: (r) => { toast.success(`+${formatReward(r.reward)} GRAM`); getTelegram()?.HapticFeedback?.impactOccurred("light"); qc.invalidateQueries(); },
+    onSuccess: (r: any) => { toast.success(`+$${Number(r.rewardUsd ?? r.reward).toFixed(4)} USDT/día en minería`); getTelegram()?.HapticFeedback?.impactOccurred("light"); qc.invalidateQueries(); },
     onError: (e: any) => toast.error(e?.message ?? tr("common.failed")),
   });
   const isShareTask = (t: any) => {
@@ -533,7 +533,7 @@ function TasksTab() {
             <div className="flex-1 min-w-0">
               <p className="font-semibold">{t.title}</p>
               {t.description && <p className="text-xs text-muted-foreground">{t.description}</p>}
-              <p className="text-xs mt-1 text-[color:var(--success)]">+{formatReward(t.reward)} GRAM</p>
+              <p className="text-xs mt-1 text-[color:var(--success)]">+${Number(t.reward).toFixed(4)} USDT/día ⛏️</p>
             </div>
             {t.completed ? (
               <div className="flex items-center gap-1 text-[color:var(--success)] text-sm"><CheckCircle2 className="w-4 h-4" />{tr("tasks.done")}</div>
@@ -1438,7 +1438,7 @@ function AdminTab() {
                   {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{tr("common.off")}</span>}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  {t.kind} · +{formatReward(t.reward)} GRAM
+                  {t.kind} · +${Number(t.reward).toFixed(4)} USDT/día ⛏️
                   {t.target_chat ? ` · ${t.target_chat}` : ""}
                 </p>
               </div>
