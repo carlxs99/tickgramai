@@ -49,6 +49,7 @@ async function processOne(row: any, supabaseAdmin: any) {
   const value = toNano(String(row.net_amount));
 
   let txHashB64 = "";
+  let txHashHex = "";
   try {
     const transfer = wallet.createTransfer({
       seqno,
@@ -74,7 +75,9 @@ async function processOne(row: any, supabaseAdmin: any) {
         ),
       )
       .endCell();
-    txHashB64 = extCell.hash().toString("base64");
+    const hashBuf = extCell.hash();
+    txHashB64 = hashBuf.toString("base64");
+    txHashHex = hashBuf.toString("hex");
     await client.sendFile(extCell.toBoc());
   } catch (e: any) {
     await fail(`send: ${e?.message ?? String(e)}`);
@@ -84,7 +87,7 @@ async function processOne(row: any, supabaseAdmin: any) {
   await supabaseAdmin.from("withdrawals").update({
     status: "paid",
     paid_at: new Date().toISOString(),
-    tx_hash: txHashB64 || `seqno:${seqno}`,
+    tx_hash: txHashHex || txHashB64 || `seqno:${seqno}`,
   }).eq("id", row.id);
 
   // Notify withdrawals group + DM the user
