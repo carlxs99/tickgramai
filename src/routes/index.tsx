@@ -518,7 +518,14 @@ function PartnerTasksSection() {
 
   const [showAdd, setShowAdd] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [visited, setVisited] = useState<Record<string, boolean>>({});
+  const [visited, setVisited] = useState<Record<string, number>>({});
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (Object.keys(visited).length === 0) return;
+    const id = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [visited]);
+  const CLAIM_DELAY_MS = 10_000;
 
   const complete = useMutation({
     mutationFn: (partnerTaskId: string) => completeFn({ data: { partnerTaskId } }),
@@ -535,7 +542,7 @@ function PartnerTasksSection() {
     if (tg?.openTelegramLink && /t\.me/.test(pt.link)) tg.openTelegramLink(pt.link);
     else if (tg?.openLink) tg.openLink(pt.link);
     else window.open(pt.link, "_blank");
-    setVisited((v) => ({ ...v, [pt.id]: true }));
+    setVisited((v) => ({ ...v, [pt.id]: Date.now() }));
   };
 
   return (
@@ -573,22 +580,39 @@ function PartnerTasksSection() {
                   {pt.current_clicks}/{pt.target_clicks} {tr("partner.clicks")}
                 </p>
               </div>
-              {visited[pt.id] ? (
-                <button
-                  onClick={() => complete.mutate(pt.id)}
-                  disabled={complete.isPending}
-                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
-                >
-                  {tr("tasks.claim")}
-                </button>
-              ) : (
-                <button
-                  onClick={() => openLink(pt)}
-                  className="px-3 py-2 rounded-xl card-glass text-sm font-semibold flex items-center gap-1"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" /> {tr("partner.open")}
-                </button>
-              )}
+              {(() => {
+                const visitedAt = visited[pt.id];
+                if (!visitedAt) {
+                  return (
+                    <button
+                      onClick={() => openLink(pt)}
+                      className="px-3 py-2 rounded-xl card-glass text-sm font-semibold flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> {tr("partner.open")}
+                    </button>
+                  );
+                }
+                const remainingMs = CLAIM_DELAY_MS - (now - visitedAt);
+                if (remainingMs > 0) {
+                  return (
+                    <button
+                      disabled
+                      className="px-4 py-2 rounded-xl card-glass text-sm font-semibold tabular-nums opacity-60"
+                    >
+                      {Math.ceil(remainingMs / 1000)}s
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    onClick={() => complete.mutate(pt.id)}
+                    disabled={complete.isPending}
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+                  >
+                    {tr("tasks.claim")}
+                  </button>
+                );
+              })()}
             </div>
           ))}
         </div>
