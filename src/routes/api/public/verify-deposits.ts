@@ -129,7 +129,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
             const { data: profile } = await supabaseAdmin
-              .from("profiles").select("user_id, mining_rate, memo_tag, referred_by, telegram_id, first_name")
+              .from("profiles").select("user_id, mining_rate, mining_rate_usd, memo_tag, referred_by, telegram_id, first_name")
               .eq("memo_tag", comment).maybeSingle();
             if (!profile) {
               results.push({ txHash, memo: comment, skipped: "no_user" });
@@ -137,10 +137,15 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
 
-            // Deterministic ROI: 1 GRAM (= 1 TON) deposited yields exactly
-            // amountTon * 0.033 GRAM/day, independent of TON price movements.
+            // Deterministic ROI: 3.3% daily denominated in USDT.
+            // usdPerDay stays fixed; the GRAM/day the user earns floats with the
+            // TON price at collect time.
+            const priceForCredit = tonPriceAtDeposit > 0 ? tonPriceAtDeposit : 1;
+            const usdValue = amountTon * priceForCredit;
+            const usdPerDay = usdValue * DAILY_ROI;
+            // Snapshot of GRAM/day at deposit price (for history & Telegram DM only).
             const gramPerDay = amountTon * DAILY_ROI;
-            const newRate = Number((profile as any).mining_rate ?? 0) + gramPerDay;
+            const newRateUsd = Number((profile as any).mining_rate_usd ?? 0) + usdPerDay;
 
             const { error: iErr } = await supabaseAdmin.from("processed_tx").insert({
               tx_hash: txHash,
@@ -162,14 +167,25 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               status: "confirmed",
             });
 
-            // Update mining_rate (additive) and deposit_total (cumulative TON deposited).
-            // deposit_total gates deposit-locked tasks in listTasks/completeTask.
+            // Update mining_rate_usd (additive, source of truth) and deposit_total.
+            // Also keep mining_rate (GRAM/day at deposit price) for backwards compat
+            // display fallbacks.
             const { data: curProf } = await supabaseAdmin
-              .from("profiles").select("deposit_total").eq("user_id", profile.user_id).maybeSingle();
+              .from("profiles").select("deposit_total, mining_rate").eq("user_id", profile.user_id).maybeSingle();
             const newDepositTotal = Number(curProf?.deposit_total ?? 0) + amountTon;
+            const newRateGram = Number(curProf?.mining_rate ?? 0) + gramPerDay;
             await supabaseAdmin.from("profiles")
-              .update({ mining_rate: newRate, deposit_total: newDepositTotal })
+              .update({
+                mining_rate: newRateGram,
+                mining_rate_usd: newRateUsd,
+                deposit_total: newDepositTotal,
+              })
               .eq("user_id", profile.user_id);
+
+
+
+
+
 
 
 
