@@ -374,22 +374,14 @@ export const listPartnerTasks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const [tasks, completed] = await Promise.all([
-      supabase
-        .from("partner_tasks")
-        .select("id, owner_id, title, link, kind, target_clicks, current_clicks, reward_per_click, status")
-        .eq("status", "active")
-        .neq("owner_id", userId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("partner_task_completions")
-        .select("partner_task_id")
-        .eq("user_id", userId),
-    ]);
-    if (tasks.error) throw tasks.error;
-    const done = new Set((completed.data ?? []).map((r: any) => r.partner_task_id));
-    return (tasks.data ?? []).filter((t: any) => !done.has(t.id));
+    const { data, error } = await supabase.rpc(
+      "list_active_partner_tasks" as never,
+      { _user_id: userId } as never,
+    );
+    if (error) throw error;
+    return (data ?? []) as any[];
   });
+
 
 // Owner list: my partner tasks (any state).
 export const listMyPartnerTasks = createServerFn({ method: "GET" })

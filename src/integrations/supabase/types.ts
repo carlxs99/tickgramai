@@ -563,6 +563,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_active_partner_tasks: {
+        Args: { _user_id: string }
+        Returns: {
+          current_clicks: number
+          id: string
+          kind: string
+          link: string
+          owner_id: string
+          reward_per_click: number
+          status: string
+          target_clicks: number
+          title: string
+        }[]
+      }
       open_gift_box: {
         Args: { _box_id: string; _user_id: string }
         Returns: {
