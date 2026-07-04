@@ -287,7 +287,7 @@ function MineTab() {
               } catch {}
               collect.mutate();
             }}
-            disabled={collect.isPending || live < 0.0001}
+            disabled={collect.isPending}
             className="mt-5 w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-accent font-bold text-primary-foreground disabled:opacity-50 shadow-lg"
           >
             {collect.isPending ? t("mine.collecting") : t("mine.collect")}
