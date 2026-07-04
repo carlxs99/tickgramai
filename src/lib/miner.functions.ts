@@ -280,11 +280,12 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
       throw new Error("Invalid address format");
     }
-    // Minimum withdrawal is $3 (in GRAM value at current TON price).
+    // Minimum withdrawal is $3 worth of GRAM at current TON price.
     const tonPrice = await fetchTonPriceUsdt();
     if (!(tonPrice > 0)) throw new Error("Precio TON no disponible");
-    if (data.amount * tonPrice < 3) {
-      throw new Error("Minimum withdrawal is $3");
+    const minGram = 3 / tonPrice;
+    if (data.amount < minGram) {
+      throw new Error(`Minimum withdrawal is ${minGram.toFixed(4)} GRAM`);
     }
     // 5% network fee (must match UI copy in withdraw.subtitle / withdraw.fee_label).
     const fee = data.amount * 0.05;
