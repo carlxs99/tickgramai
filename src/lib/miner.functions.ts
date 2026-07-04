@@ -198,10 +198,19 @@ export const submitDeposit = createServerFn({ method: "POST" })
     // This endpoint records the user's INTENT to deposit. It does NOT credit
     // mining_rate — real credit comes only from on-chain events processed by
     // /api/public/verify-deposits after the TON transaction confirms.
-    // We therefore store gram_per_day = 0 and status = 'pending' to match the
-    // RLS invariant on public.deposits, and never trust client-side amounts
-    // for anything economic.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Rate limit: reject if the user already has 5 pending deposit intents
+    // in the last hour, to prevent flooding the deposits table.
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await supabaseAdmin
+      .from("deposits")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "pending")
+      .gte("created_at", oneHourAgo);
+    if ((count ?? 0) >= 5) {
+      throw new Error("Demasiadas solicitudes de depósito pendientes. Espera unos minutos.");
+    }
     const { error } = await supabaseAdmin.from("deposits").insert({
       user_id: userId, amount_ton: data.amountTon, gram_per_day: 0,
       tx_hash: null, status: "pending",
@@ -209,6 +218,7 @@ export const submitDeposit = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
 
 // Reinvest GRAM from balance into mining_rate. Same ROI as an on-chain
 // deposit (3.3% daily), atomically debits balance and increases mining_rate.
