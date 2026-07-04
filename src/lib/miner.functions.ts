@@ -1,11 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchTonPriceUsdt } from "@/lib/prices.functions";
 
 
-// Mining rate is stored directly in GRAM/day on profiles.mining_rate.
-// 1 GRAM deposited → 0.033 GRAM/day (deterministic 3.3% daily, independent of
-// TON price fluctuations). GRAM is pegged 1:1 to TON in USD by design.
+// Mining rate is stored in USDT/day on profiles.mining_rate_usd (source of truth).
+// 1 TON deposited at price P → P * 0.033 USDT/day (deterministic 3.3% daily in USD).
+// GRAM earned = usd_per_day * seconds / (86400 * current_ton_price), so the user's
+// GRAM yield floats with the TON price while the USD yield stays fixed.
 
 // GET current user profile with accumulated (uncollected) income
 export const getMe = createServerFn({ method: "GET" })
@@ -26,16 +28,23 @@ export const getMe = createServerFn({ method: "GET" })
       _role: "admin",
     });
 
-    const rateGramPerDay = Number(profile.mining_rate ?? 0);
+    const rateUsdPerDay = Number((profile as any).mining_rate_usd ?? 0);
+    const tonPrice = (await fetchTonPriceUsdt()) || 1;
+    const rateGramPerDay = rateUsdPerDay / tonPrice;
     const now = Date.now();
     const last = new Date(profile.last_collect_at as string).getTime();
     const seconds = Math.max(0, (now - last) / 1000);
     const perSecond = rateGramPerDay / 86400;
     const pending = perSecond * seconds;
     return {
-      profile: { ...profile, mining_rate: rateGramPerDay },
+      profile: {
+        ...profile,
+        mining_rate: rateGramPerDay,
+        mining_rate_usd: rateUsdPerDay,
+      },
       pending,
       perSecond,
+      tonPrice,
       isAdmin: !!isAdmin,
     };
   });
@@ -44,11 +53,15 @@ export const collectIncome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
+    // Fetch current TON price server-side (never trust the client for economic inputs).
+    const tonPrice = await fetchTonPriceUsdt();
+    if (!(tonPrice > 0)) throw new Error("Precio TON no disponible");
+
     // Atomic collect via SECURITY DEFINER RPC (row-level FOR UPDATE lock).
-    // Prevents race conditions with concurrent collect / withdraw / task-claim.
+    // Converts USD/day → GRAM at the current TON price.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
-      .rpc("atomic_collect_income" as never, { _user_id: userId } as never);
+      .rpc("atomic_collect_income_usd" as never, { _user_id: userId, _ton_price: tonPrice } as never);
     if (error) throw error;
     const row: any = Array.isArray(data) ? data[0] : data;
     return { gained: Number(row?.gained ?? 0), balance: Number(row?.new_balance ?? 0) };
