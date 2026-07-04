@@ -271,11 +271,17 @@ export const listDeposits = createServerFn({ method: "GET" })
 export const submitWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { amount: number; address: string; memo?: string }) =>
-    z.object({ amount: z.number().positive().min(1), address: z.string().min(10), memo: z.string().optional() }).parse(d))
+    z.object({ amount: z.number().positive(), address: z.string().min(10), memo: z.string().optional() }).parse(d))
   .handler(async ({ context, data }) => {
     const { userId } = context;
     if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
       throw new Error("Invalid address format");
+    }
+    // Minimum withdrawal is $3 (in GRAM value at current TON price).
+    const tonPrice = await fetchTonPriceUsdt();
+    if (!(tonPrice > 0)) throw new Error("Precio TON no disponible");
+    if (data.amount * tonPrice < 3) {
+      throw new Error("Minimum withdrawal is $3");
     }
     // 5% network fee (must match UI copy in withdraw.subtitle / withdraw.fee_label).
     const fee = data.amount * 0.05;
