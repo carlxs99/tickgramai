@@ -153,19 +153,29 @@ export const completeTask = createServerFn({ method: "POST" })
     const rewardCapitalUsd = Number(task.reward);
     const dailyAddUsd = rewardCapitalUsd * 0.033;
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
+    const dailyAddGram = dailyAddUsd / tonPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: cur } = await supabaseAdmin
-      .from("profiles")
-      .select("mining_rate_usd, balance")
-      .eq("user_id", userId)
-      .maybeSingle();
-    const newRateUsd = Number((cur as any)?.mining_rate_usd ?? 0) + dailyAddUsd;
-    const newRateGram = newRateUsd / tonPrice;
-    const { error: uErr } = await supabaseAdmin
-      .from("profiles")
-      .update({ mining_rate_usd: newRateUsd, mining_rate: newRateGram } as never)
-      .eq("user_id", userId);
+    // Atomic add — prevents lost-update races with concurrent reinvest/deposit crediting.
+    const { data: rpcRow, error: uErr } = await supabaseAdmin
+      .rpc("atomic_add_mining_rate" as never, {
+        _user_id: userId,
+        _add_rate_usd: dailyAddUsd,
+        _add_rate_gram: dailyAddGram,
+        _add_deposit_ton: 0,
+      } as never);
     if (uErr) throw uErr;
+    const rpc: any = Array.isArray(rpcRow) ? rpcRow[0] : rpcRow;
+    const { data: cur } = await supabaseAdmin
+      .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
+    return {
+      reward: dailyAddUsd,
+      rewardUsd: dailyAddUsd,
+      rewardCapitalUsd,
+      balance: Number((cur as any)?.balance ?? 0),
+      miningRateUsd: Number(rpc?.new_rate_usd ?? 0),
+    };
+  });
+
     return {
       reward: dailyAddUsd,
       rewardUsd: dailyAddUsd,
