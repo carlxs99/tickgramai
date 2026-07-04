@@ -477,9 +477,9 @@ function LeaderboardTab() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{name}</p>
-                    <p className="text-[10px] text-muted-foreground">≈ ${usdt(Number(m.mining_rate), price)}/d</p>
+                    <p className="text-[10px] text-muted-foreground">≈ {formatGram(price > 0 ? Number(m.mining_rate_usd ?? 0) / price : 0, 2)} GRAM/d</p>
                   </div>
-                  <span className="text-sm tabular-nums text-[color:var(--success)] font-semibold">{formatGram(m.mining_rate)}/d</span>
+                  <span className="text-sm tabular-nums text-[color:var(--success)] font-semibold">${Number(m.mining_rate_usd ?? 0).toFixed(2)}/d</span>
                 </div>
               );
             })}
