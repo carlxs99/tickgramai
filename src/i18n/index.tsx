@@ -114,10 +114,10 @@ const en: Dict = {
   "deposit.max": "Max",
 
   "withdraw.title": "Withdraw",
-  "withdraw.subtitle": "Min 1 GRAM. 5% network fee.",
+  "withdraw.subtitle": "Min {amount} GRAM ($3 value). 5% network fee.",
   "withdraw.available": "Available",
   "withdraw.amount": "Amount (GRAM)",
-  "withdraw.min_error": "Minimum withdrawal is $3",
+  "withdraw.min_error": "Minimum withdrawal is {amount} GRAM",
   "withdraw.address": "GRAM address",
   "withdraw.request": "Request withdrawal",
   "withdraw.submitting": "Submitting…",
