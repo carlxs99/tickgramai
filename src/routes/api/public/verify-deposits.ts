@@ -142,9 +142,16 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             // TON price at collect time.
             const priceForCredit = tonPriceAtDeposit > 0 ? tonPriceAtDeposit : 1;
             const usdValue = amountTon * priceForCredit;
-            const usdPerDay = usdValue * DAILY_ROI;
-            // Snapshot of GRAM/day at deposit price (for history & Telegram DM only).
-            const gramPerDay = amountTon * DAILY_ROI;
+            const baseUsdPerDay = usdValue * DAILY_ROI;
+            const baseGramPerDay = amountTon * DAILY_ROI;
+
+            // Consume active gift-box deposit bonus (0 if none). Adds an extra
+            // percentage on top of the credited mining rate; the bonus is single-use.
+            const { data: bonusPct } = await supabaseAdmin
+              .rpc("consume_active_deposit_bonus" as never, { _user_id: profile.user_id } as never);
+            const bonusMultiplier = 1 + Number(bonusPct ?? 0) / 100;
+            const usdPerDay = baseUsdPerDay * bonusMultiplier;
+            const gramPerDay = baseGramPerDay * bonusMultiplier;
             const newRateUsd = Number((profile as any).mining_rate_usd ?? 0) + usdPerDay;
 
             const { error: iErr } = await supabaseAdmin.from("processed_tx").insert({
@@ -177,6 +184,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             } as never);
             const newRateGram = Number((profile as any).mining_rate ?? 0) + gramPerDay;
             void newRateGram;
+
 
 
 
