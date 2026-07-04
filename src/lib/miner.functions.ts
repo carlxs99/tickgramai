@@ -141,11 +141,13 @@ export const completeTask = createServerFn({ method: "POST" })
       if (!isMember) throw new Error("Aún no estás suscrito al canal/grupo");
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const { error: iErr } = await supabase.from("user_tasks").insert({
-      user_id: userId, task_id: task.id, completed_on: today, reward: task.reward,
-    });
-    if (iErr) throw new Error("Already claimed today");
+    // Completions go through a SECURITY DEFINER RPC that atomically validates
+    // task state, deposit gating, and (for non-daily kinds) rejects duplicates.
+    const { supabaseAdmin: adminForTask } = await import("@/integrations/supabase/client.server");
+    const { error: iErr } = await adminForTask
+      .rpc("complete_task" as never, { _user_id: userId, _task_id: task.id } as never);
+    if (iErr) throw new Error(iErr.message || "Already claimed");
+
 
     // Admin-defined task rewards act as "capital": mining adds 3.3% of the reward
     // per day (matching the deposit formula), NOT the full reward as daily rate.
