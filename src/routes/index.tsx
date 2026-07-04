@@ -349,7 +349,7 @@ function MineTab() {
         <StatCard label={t("mine.deposits")} value={formatGram(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
-      <GiftBoxesCard isAdmin={!!data.isAdmin} />
+      <GiftBoxesCard />
     </div>
   );
 }
