@@ -349,12 +349,12 @@ function MineTab() {
         <StatCard label={t("mine.deposits")} value={formatGram(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
       </div>
 
-      <GiftBoxesCard isAdmin={!!data.isAdmin} />
+      <GiftBoxesCard />
     </div>
   );
 }
 
-function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
+function GiftBoxesCard() {
   const { t } = useT();
   const listFn = useServerFn(listGiftBoxes);
   const openFn = useServerFn(openGiftBox);
@@ -379,7 +379,7 @@ function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
 
-  const canOpen = isAdmin && unopened > 0 && !openMut.isPending;
+  const canOpen = unopened > 0 && !openMut.isPending;
 
   return (
     <>
@@ -440,10 +440,8 @@ function GiftBoxesCard({ isAdmin }: { isAdmin: boolean }) {
         >
           {openMut.isPending ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> {t("gift.opening")}</>
-          ) : !isAdmin ? (
-            <><Lock className="w-4 h-4" /> {t("gift.coming_soon")}</>
           ) : unopened > 0 ? (
-            <><Gift className="w-4 h-4" /> {t("gift.open_admin")}</>
+            <><Gift className="w-4 h-4" /> {t("gift.open")}</>
           ) : (
             <>{t("gift.no_boxes_yet")}</>
           )}
