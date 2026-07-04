@@ -641,9 +641,6 @@ function PartnerTasksSection() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold truncate">{pt.title}</p>
                 <p className="text-xs mt-0.5 text-[color:var(--success)]">+{formatReward(pt.reward_per_click)} GRAM</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-                  {pt.current_clicks}/{pt.target_clicks} {tr("partner.clicks")}
-                </p>
               </div>
               {(() => {
                 const visitedAt = visited[pt.id];
@@ -691,9 +688,7 @@ function PartnerTasksSection() {
               <div key={pt.id} className="flex justify-between items-center text-xs">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold truncate">{pt.title}</p>
-                  <p className="text-[10px] text-muted-foreground tabular-nums">
-                    {pt.current_clicks}/{pt.target_clicks} · {pt.status}
-                  </p>
+                  <p className="text-[10px] text-muted-foreground tabular-nums">{pt.status}</p>
                 </div>
                 {pt.status === "pending_payment" && (
                   <button
