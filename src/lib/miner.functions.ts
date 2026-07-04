@@ -176,14 +176,7 @@ export const completeTask = createServerFn({ method: "POST" })
     };
   });
 
-    return {
-      reward: dailyAddUsd,
-      rewardUsd: dailyAddUsd,
-      rewardCapitalUsd,
-      balance: Number((cur as any)?.balance ?? 0),
-      miningRateUsd: newRateUsd,
-    };
-  });
+
 
 export const saveWallet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
