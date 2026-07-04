@@ -1,11 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchTonPriceUsdt } from "@/lib/prices.functions";
 
 
-// Mining rate is stored directly in GRAM/day on profiles.mining_rate.
-// 1 GRAM deposited → 0.033 GRAM/day (deterministic 3.3% daily, independent of
-// TON price fluctuations). GRAM is pegged 1:1 to TON in USD by design.
+// Mining rate is stored in USDT/day on profiles.mining_rate_usd (source of truth).
+// 1 TON deposited at price P → P * 0.033 USDT/day (deterministic 3.3% daily in USD).
+// GRAM earned = usd_per_day * seconds / (86400 * current_ton_price), so the user's
+// GRAM yield floats with the TON price while the USD yield stays fixed.
 
 // GET current user profile with accumulated (uncollected) income
 export const getMe = createServerFn({ method: "GET" })
@@ -26,16 +28,23 @@ export const getMe = createServerFn({ method: "GET" })
       _role: "admin",
     });
 
-    const rateGramPerDay = Number(profile.mining_rate ?? 0);
+    const rateUsdPerDay = Number((profile as any).mining_rate_usd ?? 0);
+    const tonPrice = (await fetchTonPriceUsdt()) || 1;
+    const rateGramPerDay = rateUsdPerDay / tonPrice;
     const now = Date.now();
     const last = new Date(profile.last_collect_at as string).getTime();
     const seconds = Math.max(0, (now - last) / 1000);
     const perSecond = rateGramPerDay / 86400;
     const pending = perSecond * seconds;
     return {
-      profile: { ...profile, mining_rate: rateGramPerDay },
+      profile: {
+        ...profile,
+        mining_rate: rateGramPerDay,
+        mining_rate_usd: rateUsdPerDay,
+      },
       pending,
       perSecond,
+      tonPrice,
       isAdmin: !!isAdmin,
     };
   });
@@ -44,11 +53,15 @@ export const collectIncome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
+    // Fetch current TON price server-side (never trust the client for economic inputs).
+    const tonPrice = await fetchTonPriceUsdt();
+    if (!(tonPrice > 0)) throw new Error("Precio TON no disponible");
+
     // Atomic collect via SECURITY DEFINER RPC (row-level FOR UPDATE lock).
-    // Prevents race conditions with concurrent collect / withdraw / task-claim.
+    // Converts USD/day → GRAM at the current TON price.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
-      .rpc("atomic_collect_income" as never, { _user_id: userId } as never);
+      .rpc("atomic_collect_income_usd" as never, { _user_id: userId, _ton_price: tonPrice } as never);
     if (error) throw error;
     const row: any = Array.isArray(data) ? data[0] : data;
     return { gained: Number(row?.gained ?? 0), balance: Number(row?.new_balance ?? 0) };
@@ -191,17 +204,17 @@ export const reinvestBalance = createServerFn({ method: "POST" })
     if (newBalance === null || newBalance === undefined) {
       throw new Error("Insufficient balance");
     }
-    const gramPerDay = data.amount * 0.033;
-    // Increase mining_rate and deposit_total (which gates deposit-locked tasks).
-    // Read → write is safe here because mining_rate/deposit_total are only
-    // mutated by trusted server code (service_role), never by the user.
+    // 3.3% daily denominated in USDT. Snapshot TON price to lock the USD value in.
+    const tonPrice = (await fetchTonPriceUsdt()) || 1;
+    const usdPerDay = data.amount * tonPrice * 0.033;
+    const gramPerDay = data.amount * 0.033; // snapshot for deposit history
+    // Increase mining_rate_usd (source of truth) + legacy mining_rate + deposit_total.
     const { data: prof, error: pErr } = await supabaseAdmin
       .from("profiles")
-      .select("mining_rate, deposit_total")
+      .select("mining_rate, mining_rate_usd, deposit_total")
       .eq("user_id", userId)
       .maybeSingle();
     if (pErr || !prof) {
-      // Refund on read failure so the user is never charged for a no-op.
       await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: userId, _amount: data.amount } as never);
       throw pErr ?? new Error("Profile not found");
     }
@@ -209,6 +222,7 @@ export const reinvestBalance = createServerFn({ method: "POST" })
       .from("profiles")
       .update({
         mining_rate: Number(prof.mining_rate ?? 0) + gramPerDay,
+        mining_rate_usd: Number((prof as any).mining_rate_usd ?? 0) + usdPerDay,
         deposit_total: Number(prof.deposit_total ?? 0) + data.amount,
       })
       .eq("user_id", userId);
@@ -216,7 +230,6 @@ export const reinvestBalance = createServerFn({ method: "POST" })
       await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: userId, _amount: data.amount } as never);
       throw uErr;
     }
-    // Log as a confirmed deposit so it shows in history.
     await supabaseAdmin.from("deposits").insert({
       user_id: userId,
       amount_ton: data.amount,
@@ -224,7 +237,7 @@ export const reinvestBalance = createServerFn({ method: "POST" })
       tx_hash: null,
       status: "confirmed",
     });
-    return { ok: true, balance: Number(newBalance), gramPerDay };
+    return { ok: true, balance: Number(newBalance), gramPerDay, usdPerDay };
   });
 
 

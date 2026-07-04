@@ -171,6 +171,7 @@ export type Database = {
           last_name: string | null
           memo_tag: string
           mining_rate: number
+          mining_rate_usd: number
           mining_rate_usdt: number
           referral_code: string | null
           referred_by: string | null
@@ -193,6 +194,7 @@ export type Database = {
           last_name?: string | null
           memo_tag?: string
           mining_rate?: number
+          mining_rate_usd?: number
           mining_rate_usdt?: number
           referral_code?: string | null
           referred_by?: string | null
@@ -215,6 +217,7 @@ export type Database = {
           last_name?: string | null
           memo_tag?: string
           mining_rate?: number
+          mining_rate_usd?: number
           mining_rate_usdt?: number
           referral_code?: string | null
           referred_by?: string | null
@@ -429,6 +432,13 @@ export type Database = {
           new_balance: number
         }[]
       }
+      atomic_collect_income_usd: {
+        Args: { _ton_price: number; _user_id: string }
+        Returns: {
+          gained: number
+          new_balance: number
+        }[]
+      }
       atomic_decrement_balance: {
         Args: { _amount: number; _user_id: string }
         Returns: number
@@ -450,6 +460,7 @@ export type Database = {
           balance: number
           first_name: string
           mining_rate: number
+          mining_rate_usd: number
           username: string
         }[]
       }
