@@ -147,9 +147,11 @@ export const completeTask = createServerFn({ method: "POST" })
     });
     if (iErr) throw new Error("Already claimed today");
 
-    // Admin-defined task rewards are added to the user's mining rate (USDT/day),
-    // NOT the balance. Partner tasks credit the balance directly (see completePartnerTask).
-    const rewardUsd = Number(task.reward);
+    // Admin-defined task rewards act as "capital": mining adds 3.3% of the reward
+    // per day (matching the deposit formula), NOT the full reward as daily rate.
+    // Partner tasks credit the balance directly (see completePartnerTask).
+    const rewardCapitalUsd = Number(task.reward);
+    const dailyAddUsd = rewardCapitalUsd * 0.033;
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cur } = await supabaseAdmin
@@ -157,7 +159,7 @@ export const completeTask = createServerFn({ method: "POST" })
       .select("mining_rate_usd, balance")
       .eq("user_id", userId)
       .maybeSingle();
-    const newRateUsd = Number((cur as any)?.mining_rate_usd ?? 0) + rewardUsd;
+    const newRateUsd = Number((cur as any)?.mining_rate_usd ?? 0) + dailyAddUsd;
     const newRateGram = newRateUsd / tonPrice;
     const { error: uErr } = await supabaseAdmin
       .from("profiles")
@@ -165,8 +167,9 @@ export const completeTask = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     if (uErr) throw uErr;
     return {
-      reward: rewardUsd,
-      rewardUsd,
+      reward: dailyAddUsd,
+      rewardUsd: dailyAddUsd,
+      rewardCapitalUsd,
       balance: Number((cur as any)?.balance ?? 0),
       miningRateUsd: newRateUsd,
     };
