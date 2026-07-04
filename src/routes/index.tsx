@@ -518,7 +518,14 @@ function PartnerTasksSection() {
 
   const [showAdd, setShowAdd] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [visited, setVisited] = useState<Record<string, boolean>>({});
+  const [visited, setVisited] = useState<Record<string, number>>({});
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (Object.keys(visited).length === 0) return;
+    const id = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [visited]);
+  const CLAIM_DELAY_MS = 10_000;
 
   const complete = useMutation({
     mutationFn: (partnerTaskId: string) => completeFn({ data: { partnerTaskId } }),
@@ -535,7 +542,7 @@ function PartnerTasksSection() {
     if (tg?.openTelegramLink && /t\.me/.test(pt.link)) tg.openTelegramLink(pt.link);
     else if (tg?.openLink) tg.openLink(pt.link);
     else window.open(pt.link, "_blank");
-    setVisited((v) => ({ ...v, [pt.id]: true }));
+    setVisited((v) => ({ ...v, [pt.id]: Date.now() }));
   };
 
   return (
