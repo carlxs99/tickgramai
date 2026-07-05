@@ -356,7 +356,6 @@ function MineTab() {
 
 function GiftBoxVisual({ unopened, size = 80 }: { unopened: number; size?: number }) {
   const hasBoxes = unopened > 0;
-  const scale = size / 80;
   return (
     <motion.div
       animate={hasBoxes ? { rotate: [0, -5, 5, -5, 0], scale: [1, 1.06, 1] } : {}}
