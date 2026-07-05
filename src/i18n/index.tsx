@@ -97,7 +97,7 @@ const en: Dict = {
   "partner.kind_link": "Link",
 
   "friends.title": "Friends",
-  "friends.subtitle": "Invite friends and earn 10% of their mining forever.",
+  "friends.subtitle": "Invite friends and earn 10% of their deposits forever.",
   "friends.your_invite": "Your invite link",
   "friends.your_friends": "Your friends ({count})",
   "friends.no_referrals": "No referrals yet.",
