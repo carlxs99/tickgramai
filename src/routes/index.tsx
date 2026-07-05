@@ -106,7 +106,7 @@ function MinerAppInner() {
       </Center>
     );
   }
-  if (!ready) return <Center><Loader2 className="w-8 h-8 animate-spin text-primary" /></Center>;
+  if (!ready) return <div className="fixed inset-0 bg-background" aria-hidden />;
 
   const manifestUrl = typeof window !== "undefined"
     ? `${window.location.origin}/tonconnect-manifest.json`
