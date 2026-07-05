@@ -354,6 +354,168 @@ function MineTab() {
   );
 }
 
+function GiftBoxVisual({ unopened, size = 80 }: { unopened: number; size?: number }) {
+  const hasBoxes = unopened > 0;
+  return (
+    <motion.div
+      animate={hasBoxes ? { rotate: [0, -5, 5, -5, 0], scale: [1, 1.06, 1] } : {}}
+      transition={{ duration: 2, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
+      className="relative shrink-0"
+      style={{ width: size, height: size }}
+    >
+      {/* Soft radial glow behind the box */}
+      <div
+        className="absolute inset-0 rounded-full blur-2xl opacity-70"
+        style={{
+          background: "radial-gradient(circle, oklch(0.85 0.18 85 / 0.65) 0%, transparent 70%)",
+        }}
+      />
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        className="relative drop-shadow-2xl"
+        style={{ filter: "drop-shadow(0 10px 18px oklch(0.35 0.1 85 / 0.45))" }}
+      >
+        <defs>
+          <linearGradient id="goldBody" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="oklch(0.88 0.16 85)" />
+            <stop offset="50%" stopColor="oklch(0.78 0.18 80)" />
+            <stop offset="100%" stopColor="oklch(0.62 0.16 75)" />
+          </linearGradient>
+          <linearGradient id="goldLid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="oklch(0.92 0.14 85)" />
+            <stop offset="100%" stopColor="oklch(0.72 0.16 80)" />
+          </linearGradient>
+          <linearGradient id="goldSide" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="oklch(0.68 0.15 75)" />
+            <stop offset="100%" stopColor="oklch(0.55 0.14 70)" />
+          </linearGradient>
+          <linearGradient id="ribbonV" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="oklch(0.55 0.22 330)" />
+            <stop offset="40%" stopColor="oklch(0.65 0.24 330)" />
+            <stop offset="60%" stopColor="oklch(0.62 0.22 330)" />
+            <stop offset="100%" stopColor="oklch(0.45 0.18 330)" />
+          </linearGradient>
+          <linearGradient id="ribbonH" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="oklch(0.6 0.22 330)" />
+            <stop offset="100%" stopColor="oklch(0.48 0.18 330)" />
+          </linearGradient>
+          <linearGradient id="bow" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="oklch(0.68 0.24 340)" />
+            <stop offset="100%" stopColor="oklch(0.52 0.2 330)" />
+          </linearGradient>
+          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" />
+          </filter>
+        </defs>
+
+        {/* Sparkles */}
+        <g className="sparkles">
+          <motion.path
+            d="M18 22 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z"
+            fill="oklch(0.95 0.1 85)"
+            animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+            transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 0.3 }}
+          />
+          <motion.path
+            d="M82 18 l1 4 l4 1 l-4 1 l-1 4 l-1 -4 l-4 -1 l4 -1 z"
+            fill="oklch(0.95 0.1 85)"
+            animate={{ opacity: [0.2, 1, 0.2], scale: [0.7, 1.3, 0.7] }}
+            transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 0.6, delay: 0.4 }}
+          />
+          <motion.path
+            d="M12 58 l1 2 l2 1 l-2 1 l-1 2 l-1 -2 l-2 -1 l2 -1 z"
+            fill="oklch(0.95 0.1 85)"
+            animate={{ opacity: [0.3, 0.9, 0.3], scale: [0.8, 1.1, 0.8] }}
+            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.4, delay: 1 }}
+          />
+          <motion.path
+            d="M88 62 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z"
+            fill="oklch(0.95 0.1 85)"
+            animate={{ opacity: [0.2, 0.95, 0.2], scale: [0.7, 1.2, 0.7] }}
+            transition={{ duration: 2.3, repeat: Infinity, repeatDelay: 0.5, delay: 1.5 }}
+          />
+        </g>
+
+        {/* Box back / side face (3D depth) */}
+        <path
+          d="M28 34 L58 34 L68 26 L38 26 Z"
+          fill="url(#goldSide)"
+          opacity="0.9"
+        />
+        <path
+          d="M58 34 L58 72 L68 64 L68 26 Z"
+          fill="url(#goldSide)"
+          opacity="0.75"
+        />
+
+        {/* Box front face */}
+        <rect x="22" y="34" width="42" height="42" rx="3" fill="url(#goldBody)" />
+
+        {/* Vertical ribbon */}
+        <rect x="39" y="34" width="8" height="42" fill="url(#ribbonV)" />
+
+        {/* Horizontal ribbon */}
+        <rect x="22" y="51" width="42" height="8" fill="url(#ribbonH)" />
+
+        {/* Ribbon knot center */}
+        <circle cx="43" cy="55" r="5.5" fill="url(#bow)" />
+
+        {/* Lid top face */}
+        <path
+          d="M18 34 L60 34 L70 26 L28 26 Z"
+          fill="url(#goldLid)"
+        />
+        {/* Lid front edge */}
+        <rect x="18" y="34" width="44" height="8" rx="2" fill="url(#goldLid)" />
+        {/* Lid ribbon vertical */}
+        <rect x="37" y="26" width="8" height="16" fill="url(#ribbonV)" />
+
+        {/* Bow loops */}
+        <path
+          d="M43 34 C28 20, 20 28, 43 34"
+          fill="url(#bow)"
+          stroke="oklch(0.45 0.18 330)"
+          strokeWidth="0.5"
+        />
+        <path
+          d="M43 34 C58 20, 66 28, 43 34"
+          fill="url(#bow)"
+          stroke="oklch(0.45 0.18 330)"
+          strokeWidth="0.5"
+        />
+        <path
+          d="M43 34 C32 42, 24 36, 43 34"
+          fill="url(#bow)"
+          opacity="0.9"
+        />
+        <path
+          d="M43 34 C54 42, 62 36, 43 34"
+          fill="url(#bow)"
+          opacity="0.9"
+        />
+
+        {/* Highlight shine */}
+        <path
+          d="M24 38 Q32 38 38 44"
+          fill="none"
+          stroke="oklch(1 0 0 / 0.55)"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+
+      {/* Count badge as golden seal */}
+      {hasBoxes && (
+        <div className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1 rounded-full bg-gradient-to-br from-amber-200 to-amber-500 text-purple-900 text-[11px] font-extrabold flex items-center justify-center ring-[2.5px] ring-white/90 shadow-lg">
+          {unopened}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 function GiftBoxesCard() {
   const { t } = useT();
   const listFn = useServerFn(listGiftBoxes);
@@ -394,20 +556,7 @@ function GiftBoxesCard() {
       >
         <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
         <div className="relative flex items-center gap-4">
-          <motion.div
-            animate={unopened > 0 ? { rotate: [0, -6, 6, -6, 0], scale: [1, 1.05, 1] } : {}}
-            transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 1.5 }}
-            className="relative shrink-0"
-          >
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 flex items-center justify-center shadow-xl">
-              <Gift className="w-10 h-10 text-white drop-shadow" strokeWidth={2.5} />
-            </div>
-            {unopened > 0 && (
-              <div className="absolute -top-1.5 -right-1.5 min-w-6 h-6 px-1.5 rounded-full bg-amber-400 text-black text-xs font-extrabold flex items-center justify-center ring-2 ring-background">
-                {unopened}
-              </div>
-            )}
-          </motion.div>
+          <GiftBoxVisual unopened={unopened} size={84} />
           <div className="flex-1 min-w-0">
             <div className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest text-amber-200 uppercase">
               <Sparkles className="w-3 h-3" /> {t("gift.title")}
