@@ -738,8 +738,8 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
   const rateGram = price > 0 ? rateUsd / price : 0;
   const rateLabel = miner ? `$${rateUsd.toFixed(5)}` : "—";
   return (
-    <div className={`flex-1 flex flex-col items-center ${styles.order}`}>
-      <div className="relative">
+    <div className={`flex-1 basis-0 min-w-0 flex flex-col items-center ${styles.order}`}>
+      <div className="relative shrink-0">
         {styles.crown && (
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl select-none">👑</div>
         )}
@@ -754,8 +754,8 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
           {rank}
         </div>
       </div>
-      <p className="mt-2 text-xs font-semibold text-center truncate max-w-[90%]">{name}</p>
-      <p className="text-[10px] text-muted-foreground">≈ {formatGram(rateGram, 5)} GRAM/d</p>
+      <p className="mt-2 text-xs font-semibold text-center truncate w-full px-1">{name}</p>
+      <p className="text-[10px] text-muted-foreground truncate w-full text-center px-1">≈ {formatGram(rateGram, 5)} GRAM/d</p>
       <div className={`mt-2 w-full ${styles.height} ${styles.bar} rounded-t-2xl relative overflow-hidden`}>
         <div className="absolute inset-x-0 top-2 text-center">
           <div className="text-base font-extrabold text-black/90 drop-shadow">{rateLabel}</div>
