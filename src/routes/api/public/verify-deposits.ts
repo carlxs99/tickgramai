@@ -137,22 +137,23 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
 
-            // Deterministic ROI: 3.3% daily denominated in USDT.
-            // usdPerDay stays fixed; the GRAM/day the user earns floats with the
-            // TON price at collect time.
-            const priceForCredit = tonPriceAtDeposit > 0 ? tonPriceAtDeposit : 1;
-            const usdValue = amountTon * priceForCredit;
-            const baseUsdPerDay = usdValue * DAILY_ROI;
-            const baseGramPerDay = amountTon * DAILY_ROI;
-
-            // Consume active gift-box deposit bonus (0 if none). Adds an extra
-            // percentage on top of the credited mining rate; the bonus is single-use.
+            // Consume active gift-box deposit bonus (0 if none). The bonus
+            // acts as if the user deposited an extra percentage on top of the
+            // real amount — e.g. a 10% bonus on 1 TON is credited as 1.1 TON.
             const { data: bonusPct } = await supabaseAdmin
               .rpc("consume_active_deposit_bonus" as never, { _user_id: profile.user_id } as never);
-            const bonusMultiplier = 1 + Number(bonusPct ?? 0) / 100;
-            const usdPerDay = baseUsdPerDay * bonusMultiplier;
-            const gramPerDay = baseGramPerDay * bonusMultiplier;
+            const bonusPercent = Number(bonusPct ?? 0);
+            const bonusMultiplier = 1 + bonusPercent / 100;
+            const effectiveAmountTon = amountTon * bonusMultiplier;
+            const bonusAmountTon = effectiveAmountTon - amountTon;
+
+            // Deterministic ROI: 3.3% daily denominated in USDT.
+            const priceForCredit = tonPriceAtDeposit > 0 ? tonPriceAtDeposit : 1;
+            const usdValue = effectiveAmountTon * priceForCredit;
+            const usdPerDay = usdValue * DAILY_ROI;
+            const gramPerDay = effectiveAmountTon * DAILY_ROI;
             const newRateUsd = Number((profile as any).mining_rate_usd ?? 0) + usdPerDay;
+            void newRateUsd;
 
             const { error: iErr } = await supabaseAdmin.from("processed_tx").insert({
               tx_hash: txHash,
@@ -168,7 +169,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
 
             await supabaseAdmin.from("deposits").insert({
               user_id: profile.user_id,
-              amount_ton: amountTon,
+              amount_ton: effectiveAmountTon,
               gram_per_day: gramPerDay,
               tx_hash: txHash,
               status: "confirmed",
@@ -180,7 +181,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               _user_id: profile.user_id,
               _add_rate_usd: usdPerDay,
               _add_rate_gram: gramPerDay,
-              _add_deposit_ton: amountTon,
+              _add_deposit_ton: effectiveAmountTon,
             } as never);
             const newRateGram = Number((profile as any).mining_rate ?? 0) + gramPerDay;
             void newRateGram;
