@@ -242,10 +242,15 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             try {
               if (profile.telegram_id) {
                 const name = profile.first_name || "friend";
+                const bonusLine = bonusPercent > 0
+                  ? `🎁 Deposit bonus: <b>+${bonusPercent.toFixed(2)}%</b> (+${bonusAmountTon.toFixed(4)} TON)\n` +
+                    `💎 Effective deposit: <b>${effectiveAmountTon.toFixed(4)} TON</b>\n`
+                  : "";
                 await sendTelegramMessage(
                   Number(profile.telegram_id),
                   `✅ <b>Deposit confirmed!</b>\n\n` +
                     `Hi ${name}, we received your deposit of <b>${amountTon.toFixed(4)} TON</b>.\n\n` +
+                    bonusLine +
                     `⚡ Mining rate added: <b>+$${usdPerDay.toFixed(4)} USDT/day</b>\n` +
                     `📈 Daily ROI: 3.3%\n\n` +
                     `Open TICK GRAM AI to check your balance.`,
