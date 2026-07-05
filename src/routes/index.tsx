@@ -436,102 +436,119 @@ function GiftBoxVisual({ unopened, size = 88 }: { unopened: number; size?: numbe
             </filter>
           </defs>
 
-          {/* Back/right side faces (3D depth) */}
-          <path d="M32 38 L66 38 L78 28 L44 28 Z" fill={`url(#${id}-goldTop)`} opacity="0.95" />
-          <path d="M66 38 L66 80 L78 70 L78 28 Z" fill={`url(#${id}-goldSide)`} opacity="0.8" />
-
-          {/* Box front face (trapezoid for perspective) */}
+          {/* ============ BOX BODY ============ */}
+          {/* Right side face (perspective depth) */}
           <path
-            d="M18 40 L66 40 L66 80 L18 80 Z"
+            d="M64 44 L74 36 L74 76 L64 84 Z"
+            fill={`url(#${id}-goldSide)`}
+          />
+          {/* Front face */}
+          <rect
+            x="16"
+            y="44"
+            width="48"
+            height="40"
             fill={`url(#${id}-goldFront)`}
-            stroke="oklch(0.55 0.1 80 / 0.25)"
-            strokeWidth="0.5"
+            stroke="oklch(0.5 0.1 78 / 0.3)"
+            strokeWidth="0.4"
           />
 
-          {/* Front face vertical ribbon */}
-          <rect x="38" y="40" width="10" height="40" rx="1" fill={`url(#${id}-ribbonV)`} />
-          {/* Front face horizontal ribbon */}
-          <rect x="18" y="56" width="48" height="10" rx="1" fill={`url(#${id}-ribbonH)`} />
-          {/* Ribbon center knot */}
-          <circle cx="43" cy="61" r="6.5" fill={`url(#${id}-bow)`} />
+          {/* Vertical ribbon on front */}
+          <rect x="36" y="44" width="8" height="40" fill={`url(#${id}-ribbonV)`} />
+          {/* Vertical ribbon on side */}
+          <path d="M44 44 L52 36 L52 76 L44 84 Z" fill={`url(#${id}-ribbonV)`} opacity="0.85" />
+          {/* Horizontal ribbon on front */}
+          <rect x="16" y="60" width="48" height="8" fill={`url(#${id}-ribbonH)`} />
+          {/* Horizontal ribbon on side */}
+          <path d="M64 60 L74 52 L74 60 L64 68 Z" fill={`url(#${id}-ribbonH)`} opacity="0.85" />
 
-          {/* Lid top face */}
-          <path d="M14 36 L62 36 L72 28 L24 28 Z" fill={`url(#${id}-goldTop)`} />
-          {/* Lid front edge (slightly taller for depth) */}
+          {/* ============ LID ============ */}
+          {/* Lid top (parallelogram) */}
           <path
-            d="M14 36 L62 36 L62 44 L14 44 Z"
+            d="M12 36 L60 36 L70 28 L22 28 Z"
+            fill={`url(#${id}-goldTop)`}
+          />
+          {/* Lid right side */}
+          <path
+            d="M60 36 L70 28 L70 40 L60 48 Z"
+            fill={`url(#${id}-goldSide)`}
+          />
+          {/* Lid front */}
+          <rect
+            x="12"
+            y="36"
+            width="48"
+            height="12"
             fill={`url(#${id}-goldLidFront)`}
+            stroke="oklch(0.5 0.1 78 / 0.3)"
+            strokeWidth="0.4"
           />
-          {/* Lid vertical ribbon */}
-          <rect x="34" y="26" width="10" height="18" rx="1" fill={`url(#${id}-ribbonV)`} />
-          {/* Lid horizontal ribbon edge */}
-          <rect x="14" y="38" width="48" height="5" rx="1" fill={`url(#${id}-ribbonH)`} opacity="0.9" />
+          {/* Lid ribbon front */}
+          <rect x="36" y="36" width="8" height="12" fill={`url(#${id}-ribbonV)`} />
+          {/* Lid ribbon top */}
+          <path d="M36 36 L44 36 L54 28 L46 28 Z" fill={`url(#${id}-ribbonV)`} opacity="0.9" />
 
-          {/* Bow: fuller loops with inner shadow */}
-          <g filter={`url(#${id}-blur)`} opacity="0.35">
-            <path d="M43 34 C28 18, 16 26, 43 34" fill="oklch(0.35 0.14 330)" />
-            <path d="M43 34 C58 18, 70 26, 43 34" fill="oklch(0.35 0.14 330)" />
-            <path d="M43 34 C32 44, 22 38, 43 34" fill="oklch(0.35 0.14 330)" />
-            <path d="M43 34 C54 44, 64 38, 43 34" fill="oklch(0.35 0.14 330)" />
+          {/* ============ BOW ============ */}
+          <g filter={`url(#${id}-blur)`} opacity="0.4">
+            <ellipse cx="30" cy="30" rx="10" ry="6" fill="oklch(0.35 0.14 330)" />
+            <ellipse cx="50" cy="30" rx="10" ry="6" fill="oklch(0.35 0.14 330)" />
           </g>
+          {/* Left loop */}
           <path
-            d="M43 34 C28 18, 16 26, 43 34"
+            d="M40 30 C40 22, 26 20, 22 26 C18 32, 30 34, 40 30 Z"
             fill={`url(#${id}-bow)`}
             stroke="oklch(0.42 0.16 330)"
             strokeWidth="0.5"
           />
+          {/* Right loop */}
           <path
-            d="M43 34 C58 18, 70 26, 43 34"
+            d="M40 30 C40 22, 54 20, 58 26 C62 32, 50 34, 40 30 Z"
             fill={`url(#${id}-bow)`}
             stroke="oklch(0.42 0.16 330)"
             strokeWidth="0.5"
           />
+          {/* Ribbon tails */}
           <path
-            d="M43 34 C32 44, 22 38, 43 34"
+            d="M37 32 C34 38, 32 42, 30 44 L34 44 C36 42, 38 38, 40 34 Z"
             fill={`url(#${id}-bow)`}
-            stroke="oklch(0.42 0.16 330)"
-            strokeWidth="0.5"
-            opacity="0.95"
+            opacity="0.9"
           />
           <path
-            d="M43 34 C54 44, 64 38, 43 34"
+            d="M43 32 C46 38, 48 42, 50 44 L46 44 C44 42, 42 38, 40 34 Z"
             fill={`url(#${id}-bow)`}
-            stroke="oklch(0.42 0.16 330)"
-            strokeWidth="0.5"
-            opacity="0.95"
+            opacity="0.9"
           />
-          {/* Bow center detail */}
-          <circle cx="43" cy="34" r="3.5" fill="oklch(0.55 0.2 330)" />
+          {/* Bow center knot */}
+          <ellipse cx="40" cy="30" rx="4" ry="4.5" fill="oklch(0.5 0.2 330)" stroke="oklch(0.35 0.14 330)" strokeWidth="0.5" />
 
           {/* Shine sweep animation */}
           <motion.rect
             x="-20"
-            y="40"
-            width="22"
-            height="42"
+            y="44"
+            width="20"
+            height="40"
             fill={`url(#${id}-shine)`}
             opacity="0.5"
-            animate={{ x: [-20, 90] }}
+            animate={{ x: [-20, 80] }}
             transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 2.5, ease: "easeInOut" }}
             style={{ mixBlendMode: "overlay" }}
           />
 
-          {/* Floating sparkles / particles */}
+          {/* Floating sparkles */}
           <g>
             {[...Array(6)].map((_, i) => {
-              const positions = [
-                [14, 22, 3], [82, 18, 4], [10, 56, 2.5], [88, 60, 3.5], [24, 12, 2], [72, 78, 3]
+              const positions: [number, number, number][] = [
+                [10, 20, 2.5], [82, 16, 3], [6, 54, 2], [86, 58, 3], [24, 10, 1.8], [76, 80, 2.5]
               ];
               const [x, y, s] = positions[i];
               return (
                 <motion.path
                   key={i}
-                  d={`M${x} ${y} l${s * 0.3} ${s} ${s} ${s * 0.3} l-${s} ${s * 0.3} l-${s * 0.3} ${s} l-${s * 0.3}-${s} l-${s}-${s * 0.3} l${s}-${s * 0.3} z`}
+                  d={`M${x} ${y - s} L${x + s * 0.3} ${y - s * 0.3} L${x + s} ${y} L${x + s * 0.3} ${y + s * 0.3} L${x} ${y + s} L${x - s * 0.3} ${y + s * 0.3} L${x - s} ${y} L${x - s * 0.3} ${y - s * 0.3} Z`}
                   fill="oklch(0.96 0.1 85)"
                   animate={{
                     opacity: [0.2, 1, 0.2],
                     scale: [0.7, 1.25, 0.7],
-                    y: [0, -3, 0],
                   }}
                   transition={{
                     duration: 2 + i * 0.3,
@@ -544,19 +561,12 @@ function GiftBoxVisual({ unopened, size = 88 }: { unopened: number; size?: numbe
             })}
           </g>
 
-          {/* Edge highlights */}
+          {/* Highlights */}
           <path
-            d="M20 42 Q34 42 44 50"
+            d="M14 38 L58 38"
             fill="none"
-            stroke="oklch(1 0 0 / 0.6)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-          <path
-            d="M20 78 L64 78"
-            fill="none"
-            stroke="oklch(0.45 0.08 80 / 0.35)"
-            strokeWidth="1"
+            stroke="oklch(1 0 0 / 0.55)"
+            strokeWidth="0.8"
             strokeLinecap="round"
           />
         </svg>
