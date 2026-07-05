@@ -159,13 +159,15 @@ function MinerAppInner() {
             onAnimationStart={() => { try { window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } catch { window.scrollTo(0, 0); } }}
             className="px-4 pt-4"
           >
-            {tab === "mine" && <MineTab />}
-            {tab === "tasks" && <TasksTab />}
-            {tab === "top" && <LeaderboardTab />}
-            {tab === "friends" && <FriendsTab />}
-            {tab === "deposit" && <DepositTab />}
-            {tab === "withdraw" && <WithdrawTab />}
-            {tab === "admin" && <AdminTab />}
+            <Suspense fallback={<div className="min-h-[50vh]" aria-hidden />}>
+              {tab === "mine" && <MineTab />}
+              {tab === "tasks" && <TasksTab />}
+              {tab === "top" && <LeaderboardTab />}
+              {tab === "friends" && <FriendsTab />}
+              {tab === "deposit" && <DepositTab />}
+              {tab === "withdraw" && <WithdrawTab />}
+              {tab === "admin" && <AdminTab />}
+            </Suspense>
           </motion.main>
         </AnimatePresence>
         <BottomNav tab={tab} setTab={setTab} />
