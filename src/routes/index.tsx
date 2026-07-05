@@ -354,165 +354,248 @@ function MineTab() {
   );
 }
 
-function GiftBoxVisual({ unopened, size = 80 }: { unopened: number; size?: number }) {
+function GiftBoxVisual({ unopened, size = 88 }: { unopened: number; size?: number }) {
   const hasBoxes = unopened > 0;
+  const id = useMemo(() => `gift-box-${Math.random().toString(36).slice(2, 9)}`, []);
   return (
-    <motion.div
-      animate={hasBoxes ? { rotate: [0, -5, 5, -5, 0], scale: [1, 1.06, 1] } : {}}
-      transition={{ duration: 2, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
-      className="relative shrink-0"
-      style={{ width: size, height: size }}
-    >
-      {/* Soft radial glow behind the box */}
-      <div
-        className="absolute inset-0 rounded-full blur-2xl opacity-70"
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      {/* Animated ambient glow */}
+      <motion.div
+        className="absolute inset-0 rounded-full blur-2xl"
+        animate={hasBoxes
+          ? { opacity: [0.45, 0.75, 0.45], scale: [0.92, 1.08, 0.92] }
+          : { opacity: 0.5, scale: 1 }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         style={{
-          background: "radial-gradient(circle, oklch(0.85 0.18 85 / 0.65) 0%, transparent 70%)",
+          background: "radial-gradient(circle, oklch(0.85 0.18 85 / 0.8) 0%, oklch(0.7 0.15 75 / 0.3) 50%, transparent 70%)",
         }}
       />
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 100 100"
-        className="relative drop-shadow-2xl"
-        style={{ filter: "drop-shadow(0 10px 18px oklch(0.35 0.1 85 / 0.45))" }}
+
+      {/* Floating container */}
+      <motion.div
+        className="relative"
+        animate={hasBoxes ? { y: [0, -4, 0] } : {}}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        style={{ width: size, height: size }}
       >
-        <defs>
-          <linearGradient id="goldBody" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="oklch(0.88 0.16 85)" />
-            <stop offset="50%" stopColor="oklch(0.78 0.18 80)" />
-            <stop offset="100%" stopColor="oklch(0.62 0.16 75)" />
-          </linearGradient>
-          <linearGradient id="goldLid" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="oklch(0.92 0.14 85)" />
-            <stop offset="100%" stopColor="oklch(0.72 0.16 80)" />
-          </linearGradient>
-          <linearGradient id="goldSide" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="oklch(0.68 0.15 75)" />
-            <stop offset="100%" stopColor="oklch(0.55 0.14 70)" />
-          </linearGradient>
-          <linearGradient id="ribbonV" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="oklch(0.55 0.22 330)" />
-            <stop offset="40%" stopColor="oklch(0.65 0.24 330)" />
-            <stop offset="60%" stopColor="oklch(0.62 0.22 330)" />
-            <stop offset="100%" stopColor="oklch(0.45 0.18 330)" />
-          </linearGradient>
-          <linearGradient id="ribbonH" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="oklch(0.6 0.22 330)" />
-            <stop offset="100%" stopColor="oklch(0.48 0.18 330)" />
-          </linearGradient>
-          <linearGradient id="bow" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="oklch(0.68 0.24 340)" />
-            <stop offset="100%" stopColor="oklch(0.52 0.2 330)" />
-          </linearGradient>
-          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" />
-          </filter>
-        </defs>
+        <svg
+          width={size}
+          height={size}
+          viewBox="0 0 100 100"
+          className="relative"
+          style={{ filter: "drop-shadow(0 14px 22px oklch(0.3 0.1 85 / 0.55))" }}
+        >
+          <defs>
+            {/* Premium gold paper gradients */}
+            <linearGradient id={`${id}-goldFront`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="oklch(0.9 0.14 85)" />
+              <stop offset="45%" stopColor="oklch(0.8 0.17 82)" />
+              <stop offset="100%" stopColor="oklch(0.65 0.15 78)" />
+            </linearGradient>
+            <linearGradient id={`${id}-goldSide`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="oklch(0.68 0.14 78)" />
+              <stop offset="100%" stopColor="oklch(0.52 0.12 72)" />
+            </linearGradient>
+            <linearGradient id={`${id}-goldTop`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="oklch(0.94 0.12 85)" />
+              <stop offset="100%" stopColor="oklch(0.75 0.14 80)" />
+            </linearGradient>
+            <linearGradient id={`${id}-goldLidFront`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="oklch(0.93 0.13 85)" />
+              <stop offset="100%" stopColor="oklch(0.72 0.14 80)" />
+            </linearGradient>
 
-        {/* Sparkles */}
-        <g className="sparkles">
-          <motion.path
-            d="M18 22 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z"
-            fill="oklch(0.95 0.1 85)"
-            animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
-            transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 0.3 }}
+            {/* Satin ribbon gradients */}
+            <linearGradient id={`${id}-ribbonV`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="oklch(0.45 0.18 330)" />
+              <stop offset="20%" stopColor="oklch(0.62 0.24 330)" />
+              <stop offset="45%" stopColor="oklch(0.72 0.26 330)" />
+              <stop offset="65%" stopColor="oklch(0.58 0.22 330)" />
+              <stop offset="100%" stopColor="oklch(0.4 0.16 330)" />
+            </linearGradient>
+            <linearGradient id={`${id}-ribbonH`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="oklch(0.5 0.2 330)" />
+              <stop offset="40%" stopColor="oklch(0.68 0.25 330)" />
+              <stop offset="100%" stopColor="oklch(0.42 0.17 330)" />
+            </linearGradient>
+            <radialGradient id={`${id}-bow`} cx="40%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="oklch(0.75 0.27 340)" />
+              <stop offset="60%" stopColor="oklch(0.58 0.22 330)" />
+              <stop offset="100%" stopColor="oklch(0.42 0.18 330)" />
+            </radialGradient>
+
+            {/* Shine sweep */}
+            <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="white" stopOpacity="0" />
+              <stop offset="50%" stopColor="white" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </linearGradient>
+
+            <filter id={`${id}-blur`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+            </filter>
+          </defs>
+
+          {/* Back/right side faces (3D depth) */}
+          <path d="M32 38 L66 38 L78 28 L44 28 Z" fill={`url(#${id}-goldTop)`} opacity="0.95" />
+          <path d="M66 38 L66 80 L78 70 L78 28 Z" fill={`url(#${id}-goldSide)`} opacity="0.8" />
+
+          {/* Box front face (trapezoid for perspective) */}
+          <path
+            d="M18 40 L66 40 L66 80 L18 80 Z"
+            fill={`url(#${id}-goldFront)`}
+            stroke="oklch(0.55 0.1 80 / 0.25)"
+            strokeWidth="0.5"
           />
-          <motion.path
-            d="M82 18 l1 4 l4 1 l-4 1 l-1 4 l-1 -4 l-4 -1 l4 -1 z"
-            fill="oklch(0.95 0.1 85)"
-            animate={{ opacity: [0.2, 1, 0.2], scale: [0.7, 1.3, 0.7] }}
-            transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 0.6, delay: 0.4 }}
+
+          {/* Front face vertical ribbon */}
+          <rect x="38" y="40" width="10" height="40" rx="1" fill={`url(#${id}-ribbonV)`} />
+          {/* Front face horizontal ribbon */}
+          <rect x="18" y="56" width="48" height="10" rx="1" fill={`url(#${id}-ribbonH)`} />
+          {/* Ribbon center knot */}
+          <circle cx="43" cy="61" r="6.5" fill={`url(#${id}-bow)`} />
+
+          {/* Lid top face */}
+          <path d="M14 36 L62 36 L72 28 L24 28 Z" fill={`url(#${id}-goldTop)`} />
+          {/* Lid front edge (slightly taller for depth) */}
+          <path
+            d="M14 36 L62 36 L62 44 L14 44 Z"
+            fill={`url(#${id}-goldLidFront)`}
           />
-          <motion.path
-            d="M12 58 l1 2 l2 1 l-2 1 l-1 2 l-1 -2 l-2 -1 l2 -1 z"
-            fill="oklch(0.95 0.1 85)"
-            animate={{ opacity: [0.3, 0.9, 0.3], scale: [0.8, 1.1, 0.8] }}
-            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.4, delay: 1 }}
+          {/* Lid vertical ribbon */}
+          <rect x="34" y="26" width="10" height="18" rx="1" fill={`url(#${id}-ribbonV)`} />
+          {/* Lid horizontal ribbon edge */}
+          <rect x="14" y="38" width="48" height="5" rx="1" fill={`url(#${id}-ribbonH)`} opacity="0.9" />
+
+          {/* Bow: fuller loops with inner shadow */}
+          <g filter={`url(#${id}-blur)`} opacity="0.35">
+            <path d="M43 34 C28 18, 16 26, 43 34" fill="oklch(0.35 0.14 330)" />
+            <path d="M43 34 C58 18, 70 26, 43 34" fill="oklch(0.35 0.14 330)" />
+            <path d="M43 34 C32 44, 22 38, 43 34" fill="oklch(0.35 0.14 330)" />
+            <path d="M43 34 C54 44, 64 38, 43 34" fill="oklch(0.35 0.14 330)" />
+          </g>
+          <path
+            d="M43 34 C28 18, 16 26, 43 34"
+            fill={`url(#${id}-bow)`}
+            stroke="oklch(0.42 0.16 330)"
+            strokeWidth="0.5"
           />
-          <motion.path
-            d="M88 62 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 l3 -1 z"
-            fill="oklch(0.95 0.1 85)"
-            animate={{ opacity: [0.2, 0.95, 0.2], scale: [0.7, 1.2, 0.7] }}
-            transition={{ duration: 2.3, repeat: Infinity, repeatDelay: 0.5, delay: 1.5 }}
+          <path
+            d="M43 34 C58 18, 70 26, 43 34"
+            fill={`url(#${id}-bow)`}
+            stroke="oklch(0.42 0.16 330)"
+            strokeWidth="0.5"
           />
-        </g>
+          <path
+            d="M43 34 C32 44, 22 38, 43 34"
+            fill={`url(#${id}-bow)`}
+            stroke="oklch(0.42 0.16 330)"
+            strokeWidth="0.5"
+            opacity="0.95"
+          />
+          <path
+            d="M43 34 C54 44, 64 38, 43 34"
+            fill={`url(#${id}-bow)`}
+            stroke="oklch(0.42 0.16 330)"
+            strokeWidth="0.5"
+            opacity="0.95"
+          />
+          {/* Bow center detail */}
+          <circle cx="43" cy="34" r="3.5" fill="oklch(0.55 0.2 330)" />
 
-        {/* Box back / side face (3D depth) */}
-        <path
-          d="M28 34 L58 34 L68 26 L38 26 Z"
-          fill="url(#goldSide)"
-          opacity="0.9"
-        />
-        <path
-          d="M58 34 L58 72 L68 64 L68 26 Z"
-          fill="url(#goldSide)"
-          opacity="0.75"
-        />
+          {/* Shine sweep animation */}
+          <motion.rect
+            x="-20"
+            y="40"
+            width="22"
+            height="42"
+            fill={`url(#${id}-shine)`}
+            opacity="0.5"
+            animate={{ x: [-20, 90] }}
+            transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 2.5, ease: "easeInOut" }}
+            style={{ mixBlendMode: "overlay" }}
+          />
 
-        {/* Box front face */}
-        <rect x="22" y="34" width="42" height="42" rx="3" fill="url(#goldBody)" />
+          {/* Floating sparkles / particles */}
+          <g>
+            {[...Array(6)].map((_, i) => {
+              const positions = [
+                [14, 22, 3], [82, 18, 4], [10, 56, 2.5], [88, 60, 3.5], [24, 12, 2], [72, 78, 3]
+              ];
+              const [x, y, s] = positions[i];
+              return (
+                <motion.path
+                  key={i}
+                  d={`M${x} ${y} l${s * 0.3} ${s} ${s} ${s * 0.3} l-${s} ${s * 0.3} l-${s * 0.3} ${s} l-${s * 0.3}-${s} l-${s}-${s * 0.3} l${s}-${s * 0.3} z`}
+                  fill="oklch(0.96 0.1 85)"
+                  animate={{
+                    opacity: [0.2, 1, 0.2],
+                    scale: [0.7, 1.25, 0.7],
+                    y: [0, -3, 0],
+                  }}
+                  transition={{
+                    duration: 2 + i * 0.3,
+                    repeat: Infinity,
+                    repeatDelay: 0.4,
+                    delay: i * 0.35,
+                  }}
+                />
+              );
+            })}
+          </g>
 
-        {/* Vertical ribbon */}
-        <rect x="39" y="34" width="8" height="42" fill="url(#ribbonV)" />
+          {/* Edge highlights */}
+          <path
+            d="M20 42 Q34 42 44 50"
+            fill="none"
+            stroke="oklch(1 0 0 / 0.6)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <path
+            d="M20 78 L64 78"
+            fill="none"
+            stroke="oklch(0.45 0.08 80 / 0.35)"
+            strokeWidth="1"
+            strokeLinecap="round"
+          />
+        </svg>
 
-        {/* Horizontal ribbon */}
-        <rect x="22" y="51" width="42" height="8" fill="url(#ribbonH)" />
+        {/* Premium golden seal badge */}
+        {hasBoxes && (
+          <div className="absolute -top-1.5 -right-1.5 z-10">
+            <div className="relative w-7 h-7 flex items-center justify-center">
+              <svg viewBox="0 0 28 28" className="absolute inset-0 w-full h-full drop-shadow-md">
+                <polygon
+                  points="14,1.5 17.5,10.5 26.5,14 17.5,17.5 14,26.5 10.5,17.5 1.5,14 10.5,10.5"
+                  fill="url(#sealGrad)"
+                />
+                <defs>
+                  <linearGradient id="sealGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="oklch(0.92 0.12 85)" />
+                    <stop offset="50%" stopColor="oklch(0.82 0.16 80)" />
+                    <stop offset="100%" stopColor="oklch(0.65 0.14 75)" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <span className="relative z-10 text-[10px] font-black text-purple-900 leading-none">
+                {unopened}
+              </span>
+            </div>
+          </div>
+        )}
+      </motion.div>
 
-        {/* Ribbon knot center */}
-        <circle cx="43" cy="55" r="5.5" fill="url(#bow)" />
-
-        {/* Lid top face */}
-        <path
-          d="M18 34 L60 34 L70 26 L28 26 Z"
-          fill="url(#goldLid)"
-        />
-        {/* Lid front edge */}
-        <rect x="18" y="34" width="44" height="8" rx="2" fill="url(#goldLid)" />
-        {/* Lid ribbon vertical */}
-        <rect x="37" y="26" width="8" height="16" fill="url(#ribbonV)" />
-
-        {/* Bow loops */}
-        <path
-          d="M43 34 C28 20, 20 28, 43 34"
-          fill="url(#bow)"
-          stroke="oklch(0.45 0.18 330)"
-          strokeWidth="0.5"
-        />
-        <path
-          d="M43 34 C58 20, 66 28, 43 34"
-          fill="url(#bow)"
-          stroke="oklch(0.45 0.18 330)"
-          strokeWidth="0.5"
-        />
-        <path
-          d="M43 34 C32 42, 24 36, 43 34"
-          fill="url(#bow)"
-          opacity="0.9"
-        />
-        <path
-          d="M43 34 C54 42, 62 36, 43 34"
-          fill="url(#bow)"
-          opacity="0.9"
-        />
-
-        {/* Highlight shine */}
-        <path
-          d="M24 38 Q32 38 38 44"
-          fill="none"
-          stroke="oklch(1 0 0 / 0.55)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-
-      {/* Count badge as golden seal */}
+      {/* Wiggle on boxes available */}
       {hasBoxes && (
-        <div className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1 rounded-full bg-gradient-to-br from-amber-200 to-amber-500 text-purple-900 text-[11px] font-extrabold flex items-center justify-center ring-[2.5px] ring-white/90 shadow-lg">
-          {unopened}
-        </div>
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          animate={{ rotate: [0, -4, 4, -4, 0] }}
+          transition={{ duration: 2, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
+          style={{ width: size, height: size }}
+        />
       )}
-    </motion.div>
+    </div>
   );
 }
 
