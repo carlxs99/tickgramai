@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logoAsset from "@/assets/logo.png.asset.json";
+import { isAppReady, onAppReady } from "@/lib/app-ready";
 
 interface SplashScreenProps {
   minimumDisplayMs?: number;
@@ -8,20 +9,31 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ minimumDisplayMs = 2000, children }: SplashScreenProps) {
+  const [minElapsed, setMinElapsed] = useState(false);
+  const [appReady, setAppReady] = useState(() => isAppReady());
   const [isReady, setIsReady] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setHasLoaded(true), minimumDisplayMs);
+    const timer = setTimeout(() => setMinElapsed(true), minimumDisplayMs);
     return () => clearTimeout(timer);
   }, [minimumDisplayMs]);
 
   useEffect(() => {
-    if (hasLoaded) {
+    const off = onAppReady(() => setAppReady(true));
+    // Failsafe: never keep the splash forever if something goes wrong.
+    const failsafe = setTimeout(() => setAppReady(true), 12000);
+    return () => {
+      off();
+      clearTimeout(failsafe);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (minElapsed && appReady) {
       const raf = requestAnimationFrame(() => setIsReady(true));
       return () => cancelAnimationFrame(raf);
     }
-  }, [hasLoaded]);
+  }, [minElapsed, appReady]);
 
   return (
     <>
@@ -71,7 +83,8 @@ export function SplashScreen({ minimumDisplayMs = 2000, children }: SplashScreen
           </motion.div>
         )}
       </AnimatePresence>
-      {isReady && children}
+      {/* Children render underneath the splash so the app loads while it's visible */}
+      {children}
     </>
   );
 }
