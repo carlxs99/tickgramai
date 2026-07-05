@@ -622,7 +622,7 @@ const hi: Dict = {
   "partner.kind_link": "लिंक",
 
   "friends.title": "मित्र",
-  "friends.subtitle": "दोस्तों को आमंत्रित करें और उनके जमा का 10% हमेशा के लिए कमाएँ।",,
+  "friends.subtitle": "दोस्तों को आमंत्रित करें और उनके जमा का 10% हमेशा के लिए कमाएँ।",
   "friends.your_invite": "आपका आमंत्रण लिंक",
   "friends.your_friends": "आपके मित्र ({count})",
   "friends.no_referrals": "अभी कोई रेफरल नहीं।",
