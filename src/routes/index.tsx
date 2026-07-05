@@ -16,6 +16,7 @@ import { getTelegram, restoreSession } from "@/lib/telegram";
 import { formatGram, formatReward } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { LanguageProvider, LanguageSwitcher, useT } from "@/i18n";
+import treasureChestImg from "@/assets/treasure-chest.png";
 
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
