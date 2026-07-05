@@ -272,7 +272,7 @@ const es: Dict = {
   "partner.kind_link": "Enlace",
 
   "friends.title": "Amigos",
-  "friends.subtitle": "Invita amigos y gana el 10% de su minado para siempre.",
+  "friends.subtitle": "Invita amigos y gana el 10% de sus depósitos para siempre.",
   "friends.your_invite": "Tu enlace de invitación",
   "friends.your_friends": "Tus amigos ({count})",
   "friends.no_referrals": "Aún no tienes referidos.",
@@ -447,7 +447,7 @@ const ru: Dict = {
   "partner.kind_link": "Ссылка",
 
   "friends.title": "Друзья",
-  "friends.subtitle": "Приглашайте друзей и получайте 10% с их майнинга навсегда.",
+  "friends.subtitle": "Приглашайте друзей и получайте 10% с их депозитов навсегда.",
   "friends.your_invite": "Ваша ссылка-приглашение",
   "friends.your_friends": "Ваши друзья ({count})",
   "friends.no_referrals": "Пока нет рефералов.",
@@ -622,7 +622,7 @@ const hi: Dict = {
   "partner.kind_link": "लिंक",
 
   "friends.title": "मित्र",
-  "friends.subtitle": "दोस्तों को आमंत्रित करें और उनकी माइनिंग का 10% हमेशा के लिए कमाएँ।",
+  "friends.subtitle": "दोस्तों को आमंत्रित करें और उनके जमा का 10% हमेशा के लिए कमाएँ।",
   "friends.your_invite": "आपका आमंत्रण लिंक",
   "friends.your_friends": "आपके मित्र ({count})",
   "friends.no_referrals": "अभी कोई रेफरल नहीं।",
