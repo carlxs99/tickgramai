@@ -43,11 +43,32 @@ function MinerAppInner() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("mine");
   const authFn = useServerFn(authWithTelegram);
+  const meFn = useServerFn(getMe);
+  const tasksFn = useServerFn(listTasks);
+  const partnersFn = useServerFn(listPartnerTasks);
+  const giftFn = useServerFn(listGiftBoxes);
+  const priceFn = useServerFn(getTonPrice);
+  const qc = useQueryClient();
   const attempted = useRef(false);
 
   useEffect(() => {
     if (attempted.current) return;
     attempted.current = true;
+
+    // Preload all the data the app needs so that when the splash screen
+    // disappears the user sees a fully rendered app (no extra loading).
+    const finishBoot = async () => {
+      await Promise.allSettled([
+        qc.prefetchQuery({ queryKey: ["me"], queryFn: () => meFn() }),
+        qc.prefetchQuery({ queryKey: ["me-header"], queryFn: () => meFn() }),
+        qc.prefetchQuery({ queryKey: ["tasks"], queryFn: () => tasksFn() }),
+        qc.prefetchQuery({ queryKey: ["partner-tasks"], queryFn: () => partnersFn() }),
+        qc.prefetchQuery({ queryKey: ["gift-boxes"], queryFn: () => giftFn() }),
+        qc.prefetchQuery({ queryKey: ["ton-price"], queryFn: () => priceFn() }),
+      ]);
+      setReady(true);
+      markAppReady();
+    };
 
     (async () => {
       try {
@@ -73,29 +94,31 @@ function MinerAppInner() {
           if (existing.session) await supabase.auth.signOut();
           const tokens = await authFn({ data: { initData } });
           await restoreSession(tokens);
-          setReady(true);
+          await finishBoot();
           return;
         }
 
         // No real initData. Reuse existing session if present.
-        if (existing.session) { setReady(true); return; }
+        if (existing.session) { await finishBoot(); return; }
 
         // Outside Telegram (dev/browser) → demo. Inside Telegram without
         // initData → the Mini App was opened without a WebApp button.
         if (insideTelegram) {
           setError(t("auth.telegram_no_identity"));
+          markAppReady();
           return;
         }
 
         const demoId = Math.floor(1_000_000 + Math.random() * 9_000_000);
         const tokens = await authFn({ data: { demoId } });
         await restoreSession(tokens);
-        setReady(true);
+        await finishBoot();
       } catch (e: any) {
         setError(e?.message ?? t("auth.failed"));
+        markAppReady();
       }
     })();
-  }, [authFn, t]);
+  }, [authFn, t, qc, meFn, tasksFn, partnersFn, giftFn, priceFn]);
 
   if (error) {
     return (
