@@ -1308,8 +1308,8 @@ function FriendsTab() {
               <span className="text-lg font-semibold tabular-nums">{formatGram(s.total_earned ?? 0, 8)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-white/90">{t("friends.refback_paid")}</span>
-              <span className="text-lg font-semibold tabular-nums">{formatGram(s.refback_paid ?? 0, 8)}</span>
+              <span className="text-sm text-white/90">{t("friends.commission_rate")}</span>
+              <span className="text-lg font-semibold tabular-nums">10%</span>
             </div>
           </div>
         </div>
