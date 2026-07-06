@@ -276,8 +276,8 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
           <img src={tickgramLogoImg.url} alt="TickGram" className="w-full h-full object-contain" />
         </div>
         <div className="min-w-0 overflow-hidden">
-          <p className="text-[10px] text-white/80 leading-snug">{t("header.ai_analyzing")}</p>
-          <p className="font-bold text-base sm:text-lg truncate leading-tight">{name}</p>
+          <p className="eyebrow text-white/85 leading-snug !text-[9px]">{t("header.ai_analyzing")}</p>
+          <p className="font-display font-bold text-lg sm:text-xl truncate leading-tight text-gradient-light text-glow-white">{name}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <LanguageSwitcher />
