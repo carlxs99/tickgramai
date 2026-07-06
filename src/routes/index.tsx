@@ -20,6 +20,7 @@ import { markAppReady } from "@/lib/app-ready";
 import { OnboardingTutorial, openTutorial } from "@/components/OnboardingTutorial";
 import treasureChestImg from "@/assets/treasure-chest.png";
 import coins3dImg from "@/assets/coins-3d.png.asset.json";
+import gramLogoImg from "@/assets/gram-logo.png.asset.json";
 
 
 
@@ -311,8 +312,8 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
         </button>
 
         <div className="h-12 rounded-full card-glass bg-white/10 flex items-center gap-2 px-3 min-w-0">
-          <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--success)] flex items-center justify-center shrink-0">
-            <Sparkles className="w-4 h-4 text-white" />
+          <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--success)] flex items-center justify-center shrink-0 overflow-hidden">
+            <img src={gramLogoImg.url} alt="GRAM" className="w-5 h-5 object-contain" />
           </span>
           <div className="flex flex-col min-w-0 leading-tight">
             <span className="font-bold text-sm tabular-nums truncate">{formatGram(bal, 4)} GRAM</span>
