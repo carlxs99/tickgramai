@@ -1763,14 +1763,61 @@ function WithdrawTab() {
       <div className="card-glass rounded-2xl p-4">
         <p className="font-semibold mb-2">{t("common.history")}</p>
         {!hist?.length && <p className="text-sm text-muted-foreground">{t("withdraw.none")}</p>}
-        {hist?.map((w: any) => (
-          <div key={w.id} className="flex justify-between text-sm py-1.5">
-            <span>{formatGram(w.amount)} GRAM</span>
-            <span className="text-muted-foreground">{w.status}</span>
-          </div>
-        ))}
+        {!!hist?.length && (
+          <PaginatedList
+            items={hist}
+            renderItem={(w: any) => (
+              <div key={w.id} className="flex justify-between text-sm py-1.5">
+                <span>{formatGram(w.amount)} GRAM</span>
+                <span className="text-muted-foreground">{w.status}</span>
+              </div>
+            )}
+          />
+        )}
       </div>
     </div>
+  );
+}
+
+function PaginatedList<T>({
+  items,
+  renderItem,
+  pageSize = 10,
+}: {
+  items: T[];
+  renderItem: (item: T, index: number) => React.ReactNode;
+  pageSize?: number;
+}) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const current = Math.min(page, totalPages);
+  const start = (current - 1) * pageSize;
+  const pageItems = items.slice(start, start + pageSize);
+  return (
+    <>
+      <div>{pageItems.map((it, i) => renderItem(it, start + i))}</div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-3 mt-2 border-t border-white/5">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={current === 1}
+            className="px-3 py-1 rounded-lg text-xs bg-white/5 disabled:opacity-40"
+          >
+            ‹
+          </button>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {current}/{totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={current === totalPages}
+            className="px-3 py-1 rounded-lg text-xs bg-white/5 disabled:opacity-40"
+          >
+            ›
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
