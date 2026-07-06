@@ -101,7 +101,7 @@ async function handleBroadcast(request: Request) {
   // Fire-and-forget: keep the worker alive with waitUntil so the broadcast
   // finishes after we return 202 immediately to the caller (avoids client timeouts).
   try {
-    const { waitUntil } = await import("cloudflare:workers");
+    const { waitUntil } = (await import("cloudflare:workers" as any)) as { waitUntil: (p: Promise<unknown>) => void };
     waitUntil(runBroadcast());
   } catch {
     // Fallback for environments without cloudflare:workers (e.g. local dev)
