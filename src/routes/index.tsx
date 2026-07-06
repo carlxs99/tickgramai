@@ -2093,8 +2093,6 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
     { id: "stats", label: t("nav.stats"), icon: <Activity className="w-5 h-5" /> },
     { id: "top", label: t("nav.top"), icon: <Trophy className="w-5 h-5" /> },
     { id: "friends", label: t("nav.friends"), icon: <Users className="w-5 h-5" /> },
-    { id: "deposit", label: t("nav.deposit"), icon: <ArrowDownToLine className="w-5 h-5" /> },
-    { id: "withdraw", label: t("nav.cash"), icon: <ArrowUpFromLine className="w-5 h-5" /> },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40">
