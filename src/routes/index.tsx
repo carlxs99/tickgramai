@@ -1889,7 +1889,7 @@ const STATS_COINS: TradeCoin[] = [
   { symbol: "TON",  binanceSymbol: "TONUSDT",  decimals: 2, logo: "https://assets.coingecko.com/coins/images/17980/large/ton_symbol.png" },
   { symbol: "TRX",  binanceSymbol: "TRXUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/1094/large/tron-logo.png" },
   { symbol: "LTC",  binanceSymbol: "LTCUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/2/large/litecoin.png" },
-  { symbol: "NOT",  binanceSymbol: "NOTUSDT",  decimals: 5, logo: "https://assets.coingecko.com/coins/images/33453/large/notcoin.png" },
+  { symbol: "NOT",  binanceSymbol: "NOTUSDT",  decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/28850.png" },
   { symbol: "DOGE", binanceSymbol: "DOGEUSDT", decimals: 4, logo: "https://assets.coingecko.com/coins/images/5/large/dogecoin.png" },
   { symbol: "ADA",  binanceSymbol: "ADAUSDT",  decimals: 3, logo: "https://assets.coingecko.com/coins/images/975/large/cardano.png" },
 ];
