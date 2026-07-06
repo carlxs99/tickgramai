@@ -2056,6 +2056,7 @@ function StatsTab() {
                   layout
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
+                  transition={{ layout: { type: "spring", stiffness: 350, damping: 30 } }}
                   className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
                 >
                   {/* official logo */}
