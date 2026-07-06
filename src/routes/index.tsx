@@ -366,10 +366,10 @@ function MineTab() {
             <Sparkles className="w-3.5 h-3.5" /> {t("mine.uncollected")}
           </div>
           <div className="mt-1 text-4xl sm:text-5xl font-black tabular-nums text-white leading-none drop-shadow-md">
-            ${usdt(live, price)}
+            {formatGram(live, 6)}
           </div>
           <div className="mt-1 text-[11px] text-emerald-200 tabular-nums font-semibold">
-            ≈ {formatGram(live, 6)} GRAM
+            ≈ ${usdt(live, price)} USDT
           </div>
 
           <div className="mt-4 flex items-center gap-2 max-w-[70%]">
