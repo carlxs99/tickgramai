@@ -245,7 +245,7 @@ const es: Dict = {
   "common.off": "off",
 
   "header.welcome": "Bienvenido",
-  "header.ai_analyzing": "¡Tu IA ya está analizando el mercado!",
+  "header.ai_analyzing": "Tu IA ya analiza el mercado",
   "header.admin_panel": "Panel de admin",
   "header.language": "Idioma",
 
