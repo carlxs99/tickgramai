@@ -455,8 +455,8 @@ function MineTab() {
 
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
-        <StatCard label={t("mine.deposits")} value={formatGram(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
+        <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} valueClassName="text-gradient-gold" />
+        <StatCard label={t("mine.deposits")} value={formatGram(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} valueClassName="text-gradient-gold" />
       </div>
 
       <GiftBoxesCard />
@@ -807,11 +807,11 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
 }
 
 
-function StatCard({ label, value, sub, icon }: { label: string; value: string; sub?: string; icon: React.ReactNode }) {
+function StatCard({ label, value, sub, icon, valueClassName }: { label: string; value: string; sub?: string; icon: React.ReactNode; valueClassName?: string }) {
   return (
     <div className="card-glass rounded-2xl p-4">
       <div className="flex items-center gap-1.5 eyebrow text-muted-foreground !text-[10px]">{icon}{label}</div>
-      <div className="mt-1 font-display text-xl font-bold text-gradient tabular-nums">{value}</div>
+      <div className={`mt-1 font-display text-xl font-bold tabular-nums ${valueClassName ?? "text-gradient"}`}>{value}</div>
       {sub && <div className="text-[10px] text-[color:var(--success)] tabular-nums font-semibold">{sub}</div>}
     </div>
   );
