@@ -153,6 +153,8 @@ function MinerAppInner() {
         <Toaster theme="dark" position="top-center" richColors />
         <OnboardingTutorial />
         <Header onAdminClick={() => setTab("admin")} />
+        <DepositWithdrawPills tab={tab} setTab={setTab} />
+
 
         <AnimatePresence mode="wait">
           <motion.main
