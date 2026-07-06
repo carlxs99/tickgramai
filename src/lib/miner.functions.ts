@@ -372,7 +372,7 @@ export const getMyRank = createServerFn({ method: "GET" })
       .select("user_id", { count: "exact", head: true })
       .gt("mining_rate_usd", myRate);
     if (adminIds.length > 0) {
-      query.not("user_id", "in", adminIds);
+      query.not("user_id", "in", `(${adminIds.join(",")})`);
     }
     const { count, error } = await query;
     if (error) throw error;
