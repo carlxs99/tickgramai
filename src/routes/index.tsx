@@ -2054,29 +2054,48 @@ const statsStore = (() => {
     feedId = setInterval(() => {
       if (state.rows.length === 0 && Object.keys(market).length === 0) return;
 
-      // Keep only 10 visible rows, but rotate through the full coin pool.
-      // Apply a small random drift so prices visibly move every tick,
-      // even if the Binance WS feed is momentarily quiet or blocked
-      // (some webviews block wss to external hosts).
       const previousRows = new Map(state.rows.map((row) => [row.symbol, row]));
-      const nextRows = getVisibleCoins(visibleCursor).map((coin) => {
-        const previous = previousRows.get(coin.symbol);
-        const q = market[coin.symbol];
-        const drift = (Math.random() - 0.5) * 0.0015; // ±0.075%
-        const changeDrift = (Math.random() - 0.5) * 0.05; // ±0.05 pp
-        const basePrice = q ? q.price : (previous?.price ?? 0);
-        const baseChange = q ? q.changePct : (previous?.changePct ?? 0);
-        return {
-          id: coin.symbol,
-          symbol: coin.symbol,
-          image: coin.logo,
-          price: basePrice * (1 + drift),
-          changePct: baseChange + changeDrift,
-          decimals: coin.decimals,
-        };
-      });
-      visibleCursor = (visibleCursor + 1) % STATS_COINS.length;
-      setState({ ...state, rows: nextRows });
+      const shouldRotate = ticksUntilRotation === 0;
+
+      if (state.rows.length === 0 || shouldRotate) {
+        // Show a new set of coins. Update all rows at once so there are no
+        // temporary duplicates during the transition.
+        visibleCursor = (visibleCursor + 1) % STATS_COINS.length;
+        const coins = getVisibleCoins(visibleCursor);
+        const nextRows = coins.map((coin) => {
+          const previous = previousRows.get(coin.symbol);
+          const q = market[coin.symbol];
+          return buildRow(
+            coin,
+            q ? q.price : (previous?.price ?? 0),
+            q ? q.changePct : (previous?.changePct ?? 0),
+          );
+        });
+        clearStagger();
+        setState({ ...state, rows: nextRows });
+      } else {
+        // Same 10 coins, but update their prices row by row from top to bottom
+        // so the refresh feels directional.
+        const coins = getVisibleCoins(visibleCursor);
+        clearStagger();
+        coins.forEach((coin, index) => {
+          const timeout = setTimeout(() => {
+            const currentRows = state.rows;
+            const previous = currentRows[index] ?? previousRows.get(coin.symbol);
+            const q = market[coin.symbol];
+            const newRow = buildRow(
+              coin,
+              q ? q.price : (previous?.price ?? 0),
+              q ? q.changePct : (previous?.changePct ?? 0),
+            );
+            const nextRows = currentRows.map((row, i) => (i === index ? newRow : row));
+            setState({ ...state, rows: nextRows });
+          }, index * 120);
+          staggerTimeouts.push(timeout);
+        });
+      }
+
+      ticksUntilRotation = (ticksUntilRotation + 1) % ROTATE_EVERY;
     }, 3000);
 
     splitId = setInterval(() => {
