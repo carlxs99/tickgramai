@@ -340,50 +340,82 @@ function MineTab() {
   return (
     <div className="space-y-4">
       <motion.div
-        className="rounded-3xl card-glass p-6 text-center glow-primary relative overflow-hidden"
+        className="relative rounded-3xl p-5 overflow-hidden shadow-xl"
         initial={{ scale: 0.96 }} animate={{ scale: 1 }}
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.48 0.22 295) 0%, oklch(0.55 0.24 285) 45%, oklch(0.62 0.20 270) 100%)",
+        }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/10 pointer-events-none" />
-        <div className="relative">
-          <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs uppercase tracking-widest">
+        {/* Ambient glow blobs */}
+        <div className="absolute -top-16 -left-10 w-56 h-56 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -right-10 w-64 h-64 rounded-full bg-fuchsia-400/20 blur-3xl pointer-events-none" />
+
+        {/* 3D coins cluster */}
+        <img
+          src={coins3dImg}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          className="absolute -right-6 top-1/2 -translate-y-1/2 w-[62%] max-w-[240px] pointer-events-none select-none opacity-95"
+          style={{ filter: "drop-shadow(0 12px 24px oklch(0.30 0.14 300 / 0.55))" }}
+        />
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 text-white/80 text-[11px] uppercase tracking-widest font-semibold">
             <Sparkles className="w-3.5 h-3.5" /> {t("mine.uncollected")}
           </div>
-          <div className="mt-2 text-5xl font-extrabold tabular-nums">
-            {formatGram(live, 6)}
+          <div className="mt-1 text-4xl sm:text-5xl font-black tabular-nums text-white leading-none drop-shadow-md">
+            ${usdt(live, price)}
           </div>
-          <div className="text-xs text-[color:var(--success)] tabular-nums mt-0.5">
-            ≈ ${usdt(live, price)} USDT
+          <div className="mt-1 text-[11px] text-emerald-200 tabular-nums font-semibold">
+            ≈ {formatGram(live, 6)} GRAM
           </div>
-          <div className="mt-2 text-sm text-muted-foreground">
+
+          <div className="mt-4 flex items-center gap-2 max-w-[70%]">
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                try {
+                  const key = "collect_ad_counter";
+                  const n = (parseInt(localStorage.getItem(key) || "0", 10) || 0) + 1;
+                  localStorage.setItem(key, String(n));
+                  if (n % 2 === 0 && typeof (window as any).show_11237001 === "function") {
+                    (window as any).show_11237001().then(() => {
+                      collect.mutate();
+                    }).catch(() => {
+                      collect.mutate();
+                    });
+                    return;
+                  }
+                } catch {}
+                collect.mutate();
+              }}
+              disabled={collect.isPending}
+              className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 rounded-full bg-white text-purple-900 font-bold text-[13px] shadow-lg disabled:opacity-60 whitespace-nowrap"
+            >
+              <span className="w-5 h-5 rounded-full bg-purple-600 text-white grid place-items-center shrink-0">
+                <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+              </span>
+              {collect.isPending ? t("mine.collecting") : t("mine.collect")}
+            </motion.button>
+
+            {rateUsd > 0 && (
+              <div className="flex items-center gap-1 px-2.5 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums whitespace-nowrap">
+                <Coins className="w-3.5 h-3.5 text-amber-200" />
+                +${(rateUsd / 24).toFixed(5)}/h
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 text-[11px] text-white/70 max-w-[65%]">
             {rateUsd > 0
-              ? <>${rateUsd.toFixed(5)} {t("mine.per_day_suffix")} <span className="text-muted-foreground/70">(≈ {formatGram(rate, 5)} {t("mine.per_day")})</span></>
+              ? <>${rateUsd.toFixed(5)} {t("mine.per_day_suffix")}</>
               : t("mine.deposit_to_start")}
           </div>
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={() => {
-              try {
-                const key = "collect_ad_counter";
-                const n = (parseInt(localStorage.getItem(key) || "0", 10) || 0) + 1;
-                localStorage.setItem(key, String(n));
-                if (n % 2 === 0 && typeof (window as any).show_11237001 === "function") {
-                  (window as any).show_11237001().then(() => {
-                    collect.mutate();
-                  }).catch(() => {
-                    collect.mutate();
-                  });
-                  return;
-                }
-              } catch {}
-              collect.mutate();
-            }}
-            disabled={collect.isPending}
-            className="mt-5 w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-accent font-bold text-primary-foreground disabled:opacity-50 shadow-lg"
-          >
-            {collect.isPending ? t("mine.collecting") : t("mine.collect")}
-          </motion.button>
         </div>
       </motion.div>
+
 
       <div className="grid grid-cols-2 gap-3">
         <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} />
