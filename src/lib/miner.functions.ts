@@ -347,6 +347,7 @@ export const getTopMiners = createServerFn({ method: "GET" })
   });
 
 // Returns the current user's global rank based on mining_rate_usd.
+// Admins are excluded from the ranking to keep the leaderboard focused on users.
 export const getMyRank = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -361,7 +362,10 @@ export const getMyRank = createServerFn({ method: "GET" })
     const { count, error } = await supabaseAdmin
       .from("profiles")
       .select("user_id", { count: "exact", head: true })
-      .gt("mining_rate_usd", myRate);
+      .gt("mining_rate_usd", myRate)
+      .not("user_id", "in", (
+        supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin")
+      ) as any);
     if (error) throw error;
     return { rank: (count ?? 0) + 1, rate_usd: myRate };
   });
