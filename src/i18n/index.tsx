@@ -30,7 +30,7 @@ const en: Dict = {
   "header.admin_panel": "Admin panel",
   "header.language": "Language",
 
-  "mine.uncollected": "Uncollected",
+  "mine.uncollected": "Your earnings",
   "mine.per_day": "GRAM/day",
   "mine.per_day_suffix": "/day",
   "mine.deposit_to_start": "Deposit GRAM to start mining",
@@ -242,7 +242,7 @@ const es: Dict = {
   "header.admin_panel": "Panel de admin",
   "header.language": "Idioma",
 
-  "mine.uncollected": "Sin recoger",
+  "mine.uncollected": "Tus ganancias",
   "mine.per_day": "GRAM/día",
   "mine.per_day_suffix": "/día",
   "mine.deposit_to_start": "Deposita GRAM para empezar a minar",
@@ -454,7 +454,7 @@ const ru: Dict = {
   "header.admin_panel": "Панель админа",
   "header.language": "Язык",
 
-  "mine.uncollected": "Не собрано",
+  "mine.uncollected": "Твои доходы",
   "mine.per_day": "GRAM/день",
   "mine.per_day_suffix": "/день",
   "mine.deposit_to_start": "Внесите GRAM, чтобы начать майнить",
@@ -666,7 +666,7 @@ const hi: Dict = {
   "header.admin_panel": "एडमिन पैनल",
   "header.language": "भाषा",
 
-  "mine.uncollected": "अनसंग्रहित",
+  "mine.uncollected": "आपकी कमाई",
   "mine.per_day": "GRAM/दिन",
   "mine.per_day_suffix": "/दिन",
   "mine.deposit_to_start": "माइनिंग शुरू करने के लिए GRAM जमा करें",
