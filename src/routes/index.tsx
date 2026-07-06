@@ -1925,8 +1925,11 @@ function formatPrice(v: number, decimals: number) {
   return dec ? `${withSep}.${dec}` : withSep;
 }
 
-// Initial snapshot from Binance REST
-async function fetchBinanceSnapshot(): Promise<TickRow[]> {
+type MarketQuote = { price: number; changePct: number };
+type MarketMap = Record<string, MarketQuote>;
+
+// Initial snapshot from Binance REST — returns per-symbol quotes
+async function fetchBinanceSnapshot(): Promise<MarketMap> {
   const symbolsParam = encodeURIComponent(
     JSON.stringify(STATS_COINS.map((c) => c.binanceSymbol)),
   );
@@ -1938,16 +1941,15 @@ async function fetchBinanceSnapshot(): Promise<TickRow[]> {
     lastPrice: string;
     priceChangePercent: string;
   }>;
-  return STATS_COINS.map((c) => {
+  const map: MarketMap = {};
+  for (const c of STATS_COINS) {
     const m = data.find((d) => d.symbol === c.binanceSymbol);
-    return {
-      symbol: c.symbol,
-      image: c.logo,
+    map[c.symbol] = {
       price: m ? parseFloat(m.lastPrice) : 0,
       changePct: m ? parseFloat(m.priceChangePercent) : 0,
-      decimals: c.decimals,
     };
-  });
+  }
+  return map;
 }
 
 function StatsTab() {
