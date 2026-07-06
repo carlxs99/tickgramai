@@ -1972,7 +1972,6 @@ const statsStore = (() => {
   };
   const listeners = new Set<() => void>();
   const market: MarketMap = {};
-  let idCounter = 0;
   let started = false;
   let ws: WebSocket | null = null;
   let feedId: ReturnType<typeof setInterval> | null = null;
