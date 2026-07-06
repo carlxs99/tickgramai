@@ -1977,6 +1977,26 @@ const statsStore = (() => {
   let feedId: ReturnType<typeof setInterval> | null = null;
   let splitId: ReturnType<typeof setInterval> | null = null;
   let visibleCursor = 0;
+  let ticksUntilRotation = 0;
+  let staggerTimeouts: ReturnType<typeof setTimeout>[] = [];
+  const ROTATE_EVERY = 5;
+
+  function buildRow(
+    coin: TradeCoin,
+    basePrice: number,
+    baseChange: number,
+  ): TickRow {
+    const drift = (Math.random() - 0.5) * 0.0015; // ±0.075%
+    const changeDrift = (Math.random() - 0.5) * 0.05; // ±0.05 pp
+    return {
+      id: coin.symbol,
+      symbol: coin.symbol,
+      image: coin.logo,
+      price: basePrice * (1 + drift),
+      changePct: baseChange + changeDrift,
+      decimals: coin.decimals,
+    };
+  }
 
   function emit() {
     for (const l of listeners) l();
