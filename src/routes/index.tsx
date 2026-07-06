@@ -2046,7 +2046,8 @@ function StatsTab() {
           </div>
         ) : (
           <AnimatePresence initial={false}>
-            {rows.map((r) => {
+            {[...rows].sort((a, b) => b.changePct - a.changePct).map((r) => {
+
               const isLong = r.changePct >= 0;
               const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
               return (
@@ -2055,6 +2056,7 @@ function StatsTab() {
                   layout
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
+                  transition={{ layout: { type: "spring", stiffness: 350, damping: 30 } }}
                   className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
                 >
                   {/* official logo */}
@@ -2087,10 +2089,17 @@ function StatsTab() {
                   {/* symbol + price */}
                   <div className="min-w-0 flex items-baseline gap-2">
                     <span className="font-bold text-sm">{r.symbol}</span>
-                    <span className="text-[13px] text-muted-foreground truncate">
+                    <motion.span
+                      key={`${r.symbol}-${r.price}`}
+                      initial={{ color: isLong ? "#7aa7ff" : "#ff8a6e" }}
+                      animate={{ color: "hsl(var(--muted-foreground))" }}
+                      transition={{ duration: 0.6 }}
+                      className="text-[13px] truncate"
+                    >
                       $ {formatPrice(r.price, r.decimals)}
-                    </span>
+                    </motion.span>
                   </div>
+
 
                   {/* % change */}
                   <div
