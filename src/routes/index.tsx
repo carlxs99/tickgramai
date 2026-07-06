@@ -1845,24 +1845,25 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-// ============ Stats (live trading report) ============
+// ============ Stats (live trading report — Binance) ============
 type TradeCoin = {
-  symbol: string;      // display symbol (SOL, BTC, …)
-  coingeckoId: string; // id for CoinGecko markets endpoint
+  symbol: string;       // display symbol (BTC, ETH, …)
+  binanceSymbol: string; // Binance pair, e.g. BTCUSDT
+  logo: string;          // stable CDN logo URL
   decimals: number;
 };
 
 const STATS_COINS: TradeCoin[] = [
-  { symbol: "BTC",  coingeckoId: "bitcoin",           decimals: 0 },
-  { symbol: "ETH",  coingeckoId: "ethereum",          decimals: 0 },
-  { symbol: "SOL",  coingeckoId: "solana",            decimals: 1 },
-  { symbol: "XRP",  coingeckoId: "ripple",            decimals: 4 },
-  { symbol: "TON",  coingeckoId: "the-open-network",  decimals: 2 },
-  { symbol: "TRX",  coingeckoId: "tron",              decimals: 4 },
-  { symbol: "LTC",  coingeckoId: "litecoin",          decimals: 1 },
-  { symbol: "NOT",  coingeckoId: "notcoin",           decimals: 5 },
-  { symbol: "DOGE", coingeckoId: "dogecoin",          decimals: 4 },
-  { symbol: "ADA",  coingeckoId: "cardano",           decimals: 3 },
+  { symbol: "BTC",  binanceSymbol: "BTCUSDT",  decimals: 0, logo: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png" },
+  { symbol: "ETH",  binanceSymbol: "ETHUSDT",  decimals: 0, logo: "https://assets.coingecko.com/coins/images/279/large/ethereum.png" },
+  { symbol: "SOL",  binanceSymbol: "SOLUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/4128/large/solana.png" },
+  { symbol: "XRP",  binanceSymbol: "XRPUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png" },
+  { symbol: "TON",  binanceSymbol: "TONUSDT",  decimals: 2, logo: "https://assets.coingecko.com/coins/images/17980/large/ton_symbol.png" },
+  { symbol: "TRX",  binanceSymbol: "TRXUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/1094/large/tron-logo.png" },
+  { symbol: "LTC",  binanceSymbol: "LTCUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/2/large/litecoin.png" },
+  { symbol: "NOT",  binanceSymbol: "NOTUSDT",  decimals: 5, logo: "https://assets.coingecko.com/coins/images/33453/large/notcoin.png" },
+  { symbol: "DOGE", binanceSymbol: "DOGEUSDT", decimals: 4, logo: "https://assets.coingecko.com/coins/images/5/large/dogecoin.png" },
+  { symbol: "ADA",  binanceSymbol: "ADAUSDT",  decimals: 3, logo: "https://assets.coingecko.com/coins/images/975/large/cardano.png" },
 ];
 
 type TickRow = {
@@ -1880,26 +1881,26 @@ function formatPrice(v: number, decimals: number) {
   return dec ? `${withSep}.${dec}` : withSep;
 }
 
-// Fetch real prices + logos from CoinGecko public API
-async function fetchCryptoMarkets(): Promise<TickRow[]> {
-  const ids = STATS_COINS.map((c) => c.coingeckoId).join(",");
-  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h`;
+// Initial snapshot from Binance REST
+async function fetchBinanceSnapshot(): Promise<TickRow[]> {
+  const symbolsParam = encodeURIComponent(
+    JSON.stringify(STATS_COINS.map((c) => c.binanceSymbol)),
+  );
+  const url = `https://api.binance.com/api/v3/ticker/24hr?symbols=${symbolsParam}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`CoinGecko ${res.status}`);
+  if (!res.ok) throw new Error(`Binance ${res.status}`);
   const data = (await res.json()) as Array<{
-    id: string;
     symbol: string;
-    image: string;
-    current_price: number;
-    price_change_percentage_24h: number | null;
+    lastPrice: string;
+    priceChangePercent: string;
   }>;
   return STATS_COINS.map((c) => {
-    const m = data.find((d) => d.id === c.coingeckoId);
+    const m = data.find((d) => d.symbol === c.binanceSymbol);
     return {
       symbol: c.symbol,
-      image: m?.image ?? null,
-      price: m?.current_price ?? 0,
-      changePct: m?.price_change_percentage_24h ?? 0,
+      image: c.logo,
+      price: m ? parseFloat(m.lastPrice) : 0,
+      changePct: m ? parseFloat(m.priceChangePercent) : 0,
       decimals: c.decimals,
     };
   });
@@ -1909,11 +1910,11 @@ function StatsTab() {
   const { t } = useT();
 
   const { data: marketRows } = useQuery({
-    queryKey: ["crypto-markets"],
-    queryFn: fetchCryptoMarkets,
-    refetchInterval: 20_000,
+    queryKey: ["binance-snapshot"],
+    queryFn: fetchBinanceSnapshot,
+    refetchInterval: 60_000,
     refetchIntervalInBackground: false,
-    staleTime: 10_000,
+    staleTime: 30_000,
     gcTime: 5 * 60_000,
     retry: 1,
   });
@@ -1924,28 +1925,53 @@ function StatsTab() {
     return { long, short: 100 - long };
   });
 
-  // Sync rows with fetched market data
+  // Sync rows with snapshot
   useEffect(() => {
-    if (marketRows) setRows(marketRows);
+    if (marketRows) {
+      setRows((prev) => {
+        if (prev.length === 0) return marketRows;
+        // Merge: keep live prices from WS if already set
+        return marketRows.map((m) => {
+          const existing = prev.find((p) => p.symbol === m.symbol);
+          return existing ? { ...m, price: existing.price, changePct: existing.changePct } : m;
+        });
+      });
+    }
   }, [marketRows]);
 
-  // Simulate live micro-movements between refetches so numbers feel real-time
+  // Real-time Binance WebSocket ticker stream
   useEffect(() => {
-    const id = setInterval(() => {
-      setRows((prev) =>
-        prev.map((r) => {
-          const drift = (Math.random() - 0.5) * 0.0025; // ±0.125% jitter
-          const nextPrice = r.price * (1 + drift);
-          const nextChange = r.changePct + (Math.random() - 0.5) * 0.08;
-          return { ...r, price: nextPrice, changePct: Math.max(-15, Math.min(15, nextChange)) };
-        }),
-      );
-      setSplit(() => {
-        const long = 45 + Math.random() * 10;
-        return { long, short: 100 - long };
-      });
-    }, 2500);
-    return () => clearInterval(id);
+    const streams = STATS_COINS.map((c) => `${c.binanceSymbol.toLowerCase()}@ticker`).join("/");
+    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+    const bySymbol = new Map(STATS_COINS.map((c) => [c.binanceSymbol, c]));
+
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        const d = msg?.data;
+        if (!d?.s) return;
+        const coin = bySymbol.get(d.s);
+        if (!coin) return;
+        const price = parseFloat(d.c);
+        const changePct = parseFloat(d.P);
+        setRows((prev) =>
+          prev.map((r) => (r.symbol === coin.symbol ? { ...r, price, changePct } : r)),
+        );
+      } catch {
+        /* ignore */
+      }
+    };
+
+    // Refresh LONG/SHORT split occasionally
+    const splitId = setInterval(() => {
+      const long = 45 + Math.random() * 10;
+      setSplit({ long, short: 100 - long });
+    }, 4000);
+
+    return () => {
+      clearInterval(splitId);
+      try { ws.close(); } catch { /* noop */ }
+    };
   }, []);
 
   return (
