@@ -242,6 +242,7 @@ export type Database = {
           is_premium: boolean
           language_code: string | null
           last_collect_at: string
+          last_daily_gift_at: string | null
           last_name: string | null
           memo_tag: string
           mining_rate: number
@@ -265,6 +266,7 @@ export type Database = {
           is_premium?: boolean
           language_code?: string | null
           last_collect_at?: string
+          last_daily_gift_at?: string | null
           last_name?: string | null
           memo_tag?: string
           mining_rate?: number
@@ -288,6 +290,7 @@ export type Database = {
           is_premium?: boolean
           language_code?: string | null
           last_collect_at?: string
+          last_daily_gift_at?: string | null
           last_name?: string | null
           memo_tag?: string
           mining_rate?: number
@@ -529,6 +532,13 @@ export type Database = {
       atomic_decrement_balance: {
         Args: { _amount: number; _user_id: string }
         Returns: number
+      }
+      claim_daily_gift_box: {
+        Args: { _user_id: string }
+        Returns: {
+          box_id: string
+          next_claim_at: string
+        }[]
       }
       complete_partner_task: {
         Args: { _partner_task_id: string; _user_id: string }
