@@ -276,8 +276,8 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
           <img src={tickgramLogoImg.url} alt="TickGram" className="w-full h-full object-contain" />
         </div>
         <div className="min-w-0 overflow-hidden">
-          <p className="text-[10px] text-white/80 leading-snug">{t("header.ai_analyzing")}</p>
-          <p className="font-bold text-base sm:text-lg truncate leading-tight">{name}</p>
+          <p className="eyebrow text-white/85 leading-snug !text-[9px]">{t("header.ai_analyzing")}</p>
+          <p className="font-display font-bold text-lg sm:text-xl truncate leading-tight text-gradient-light text-glow-white">{name}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <LanguageSwitcher />
@@ -394,10 +394,10 @@ function MineTab() {
         />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-white/80 text-[11px] uppercase tracking-widest font-semibold">
+          <div className="flex items-center gap-2 text-white/90 eyebrow">
             <Sparkles className="w-3.5 h-3.5" /> {t("mine.uncollected")}
           </div>
-          <div className="mt-1 text-4xl sm:text-5xl font-black tabular-nums text-white leading-none drop-shadow-md">
+          <div className="mt-1 font-display text-4xl sm:text-5xl font-bold tabular-nums text-white leading-none text-glow-white">
             {formatGram(live, 6)}
           </div>
           <div className="mt-1 text-[11px] text-emerald-200 tabular-nums font-semibold">
@@ -805,9 +805,9 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
 function StatCard({ label, value, sub, icon }: { label: string; value: string; sub?: string; icon: React.ReactNode }) {
   return (
     <div className="card-glass rounded-2xl p-4">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">{icon}{label}</div>
-      <div className="mt-1 text-lg font-bold">{value}</div>
-      {sub && <div className="text-[10px] text-[color:var(--success)] tabular-nums">{sub}</div>}
+      <div className="flex items-center gap-1.5 eyebrow text-muted-foreground !text-[10px]">{icon}{label}</div>
+      <div className="mt-1 font-display text-xl font-bold text-gradient tabular-nums">{value}</div>
+      {sub && <div className="text-[10px] text-[color:var(--success)] tabular-nums font-semibold">{sub}</div>}
     </div>
   );
 }
