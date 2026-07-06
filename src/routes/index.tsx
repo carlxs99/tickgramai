@@ -1976,7 +1976,6 @@ const statsStore = (() => {
   let ws: WebSocket | null = null;
   let feedId: ReturnType<typeof setInterval> | null = null;
   let splitId: ReturnType<typeof setInterval> | null = null;
-  let rowUpdateIndex = 0;
   let nextCoinCursor = MAX_STATS_ROWS % STATS_COINS.length;
 
   function buildRow(
@@ -2063,18 +2062,15 @@ const statsStore = (() => {
           );
         });
         setState({ ...state, rows: nextRows });
-        rowUpdateIndex = 0;
         nextCoinCursor = MAX_STATS_ROWS % STATS_COINS.length;
       } else {
-        // Update one row per tick, moving from top to bottom. This keeps the
-        // stream sequential instead of replacing the whole stats block at once.
+        // Add one fresh coin at the top on each tick, pushing the existing
+        // rows down and dropping the last one — matching the reference motion.
         const currentRows = state.rows;
-        const index = rowUpdateIndex % currentRows.length;
         const currentSymbols = new Set(currentRows.map((row) => row.symbol));
-        const previous = currentRows[index];
         let coin = STATS_COINS[nextCoinCursor % STATS_COINS.length];
         let guard = 0;
-        while (currentSymbols.has(coin.symbol) && coin.symbol !== previous.symbol && guard < STATS_COINS.length) {
+        while (currentSymbols.has(coin.symbol) && guard < STATS_COINS.length) {
           nextCoinCursor = (nextCoinCursor + 1) % STATS_COINS.length;
           coin = STATS_COINS[nextCoinCursor % STATS_COINS.length];
           guard += 1;
@@ -2082,13 +2078,12 @@ const statsStore = (() => {
         const q = market[coin.symbol];
         const newRow = buildRow(
           coin,
-          q ? q.price : (coin.symbol === previous.symbol ? previous.price : 0),
-          q ? q.changePct : (coin.symbol === previous.symbol ? previous.changePct : 0),
+          q ? q.price : 0,
+          q ? q.changePct : 0,
         );
-        const nextRows = currentRows.map((row, i) => (i === index ? newRow : row));
+        const nextRows = [newRow, ...currentRows].slice(0, MAX_STATS_ROWS);
         setState({ ...state, rows: nextRows });
         nextCoinCursor = (nextCoinCursor + 1) % STATS_COINS.length;
-        rowUpdateIndex = (rowUpdateIndex + 1) % currentRows.length;
       }
     }, 3000);
 
