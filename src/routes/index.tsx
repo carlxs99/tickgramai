@@ -1976,10 +1976,8 @@ const statsStore = (() => {
   let ws: WebSocket | null = null;
   let feedId: ReturnType<typeof setInterval> | null = null;
   let splitId: ReturnType<typeof setInterval> | null = null;
-  let visibleCursor = 0;
-  let ticksUntilRotation = 0;
-  let staggerTimeouts: ReturnType<typeof setTimeout>[] = [];
-  const ROTATE_EVERY = 1;
+  let rowUpdateIndex = 0;
+  let nextCoinCursor = MAX_STATS_ROWS % STATS_COINS.length;
 
   function buildRow(
     coin: TradeCoin,
@@ -1996,11 +1994,6 @@ const statsStore = (() => {
       changePct: baseChange + changeDrift,
       decimals: coin.decimals,
     };
-  }
-
-  function clearStagger() {
-    staggerTimeouts.forEach(clearTimeout);
-    staggerTimeouts = [];
   }
 
   function emit() {
@@ -2059,48 +2052,44 @@ const statsStore = (() => {
     feedId = setInterval(() => {
       if (state.rows.length === 0 && Object.keys(market).length === 0) return;
 
-      const previousRows = new Map(state.rows.map((row) => [row.symbol, row]));
-      const shouldRotate = ticksUntilRotation === 0;
-
-      if (state.rows.length === 0 || shouldRotate) {
-        // Show a new set of coins. Update all rows at once so there are no
-        // temporary duplicates during the transition.
-        visibleCursor = (visibleCursor + 1) % STATS_COINS.length;
-        const coins = getVisibleCoins(visibleCursor);
+      if (state.rows.length === 0) {
+        const coins = getVisibleCoins(0);
         const nextRows = coins.map((coin) => {
-          const previous = previousRows.get(coin.symbol);
           const q = market[coin.symbol];
           return buildRow(
             coin,
-            q ? q.price : (previous?.price ?? 0),
-            q ? q.changePct : (previous?.changePct ?? 0),
+            q ? q.price : 0,
+            q ? q.changePct : 0,
           );
         });
-        clearStagger();
         setState({ ...state, rows: nextRows });
+        rowUpdateIndex = 0;
+        nextCoinCursor = MAX_STATS_ROWS % STATS_COINS.length;
       } else {
-        // Same 10 coins, but update their prices row by row from top to bottom
-        // so the refresh feels directional.
-        const coins = getVisibleCoins(visibleCursor);
-        clearStagger();
-        coins.forEach((coin, index) => {
-          const timeout = setTimeout(() => {
-            const currentRows = state.rows;
-            const previous = currentRows[index] ?? previousRows.get(coin.symbol);
-            const q = market[coin.symbol];
-            const newRow = buildRow(
-              coin,
-              q ? q.price : (previous?.price ?? 0),
-              q ? q.changePct : (previous?.changePct ?? 0),
-            );
-            const nextRows = currentRows.map((row, i) => (i === index ? newRow : row));
-            setState({ ...state, rows: nextRows });
-          }, index * 120);
-          staggerTimeouts.push(timeout);
-        });
+        // Update one row per tick, moving from top to bottom. This keeps the
+        // stream sequential instead of replacing the whole stats block at once.
+        const currentRows = state.rows;
+        const index = rowUpdateIndex % currentRows.length;
+        const currentSymbols = new Set(currentRows.map((row) => row.symbol));
+        const previous = currentRows[index];
+        let coin = STATS_COINS[nextCoinCursor % STATS_COINS.length];
+        let guard = 0;
+        while (currentSymbols.has(coin.symbol) && coin.symbol !== previous.symbol && guard < STATS_COINS.length) {
+          nextCoinCursor = (nextCoinCursor + 1) % STATS_COINS.length;
+          coin = STATS_COINS[nextCoinCursor % STATS_COINS.length];
+          guard += 1;
+        }
+        const q = market[coin.symbol];
+        const newRow = buildRow(
+          coin,
+          q ? q.price : (coin.symbol === previous.symbol ? previous.price : 0),
+          q ? q.changePct : (coin.symbol === previous.symbol ? previous.changePct : 0),
+        );
+        const nextRows = currentRows.map((row, i) => (i === index ? newRow : row));
+        setState({ ...state, rows: nextRows });
+        nextCoinCursor = (nextCoinCursor + 1) % STATS_COINS.length;
+        rowUpdateIndex = (rowUpdateIndex + 1) % currentRows.length;
       }
-
-      ticksUntilRotation = (ticksUntilRotation + 1) % ROTATE_EVERY;
     }, 3000);
 
     splitId = setInterval(() => {
