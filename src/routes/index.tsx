@@ -2156,22 +2156,14 @@ function StatsTab() {
 
       {/* Live rows */}
       <div className="space-y-2">
-        <AnimatePresence initial={false}>
-          {rows.map((r) => {
-
-
-              const isLong = r.changePct >= 0;
-              const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
-              return (
-                <motion.div
-                  key={r.id}
-                  layout
-                  initial={{ opacity: 0, y: -20, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.96 }}
-                  transition={{ layout: { type: "spring", stiffness: 400, damping: 32 }, duration: 0.35 }}
-                  className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
-                >
+        {rows.map((r) => {
+          const isLong = r.changePct >= 0;
+          const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
+          return (
+            <div
+              key={r.id}
+              className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
+            >
                   {/* official logo */}
                   <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-white/10">
                     {r.image ? (
