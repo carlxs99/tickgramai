@@ -857,7 +857,7 @@ function LeaderboardTab() {
   const rankFn = useServerFn(getMyRank);
   const price = useTonPrice();
   const { data } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
-  const { data: myRank } = useQuery({ queryKey: ["myRank"], queryFn: () => rankFn(), refetchInterval: 60_000 });
+  const { data: myRank, isLoading: isMyRankLoading, isError: isMyRankError } = useQuery({ queryKey: ["myRank"], queryFn: () => rankFn(), refetchInterval: 60_000 });
   const list = (data ?? []) as any[];
   const top3 = [list[0], list[1], list[2]];
   const rest = list.slice(3);
@@ -868,15 +868,15 @@ function LeaderboardTab() {
         <p className="text-xs text-muted-foreground">{t("leaderboard.subtitle")}</p>
       </div>
 
-      {myRank && (
-        <div className="card-glass rounded-2xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-[color:var(--gold)]" />
-            <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Your rank</span>
-          </div>
-          <span className="text-lg font-bold tabular-nums">#{(myRank as any).rank}</span>
+      <div className="card-glass rounded-2xl px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-[color:var(--gold)]" />
+          <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Your rank</span>
         </div>
-      )}
+        <span className="text-lg font-bold tabular-nums">
+          {isMyRankLoading ? "..." : isMyRankError ? "—" : `#${(myRank as any)?.rank ?? "—"}`}
+        </span>
+      </div>
 
       <div className="card-glass rounded-3xl p-4 overflow-hidden relative">
         <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ background: "radial-gradient(600px 200px at 50% -20%, color-mix(in oklab, var(--gold) 30%, transparent), transparent)" }} />
