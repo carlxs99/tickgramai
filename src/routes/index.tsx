@@ -1288,20 +1288,6 @@ function FriendsTab() {
             <span className="text-sm font-medium text-white/90">{t("friends.total_referrals")}</span>
             <span className="text-3xl font-extrabold tabular-nums">{s.total_referrals ?? 0}</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="rounded-2xl bg-white/15 backdrop-blur-sm p-2 text-center">
-              <p className="text-[10px] text-white/80">{t("friends.level1")}</p>
-              <p className="text-xl font-bold tabular-nums">{s.level1 ?? 0}</p>
-            </div>
-            <div className="rounded-2xl bg-white/15 backdrop-blur-sm p-2 text-center">
-              <p className="text-[10px] text-white/80">{t("friends.level2")}</p>
-              <p className="text-xl font-bold tabular-nums">{s.level2 ?? 0}</p>
-            </div>
-            <div className="rounded-2xl bg-white/15 backdrop-blur-sm p-2 text-center">
-              <p className="text-[10px] text-white/80">{t("friends.level3")}</p>
-              <p className="text-xl font-bold tabular-nums">{s.level3 ?? 0}</p>
-            </div>
-          </div>
           <div className="space-y-2 border-t border-white/20 pt-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-white/90">{t("friends.total_earned")}</span>
