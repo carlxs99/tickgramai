@@ -805,9 +805,9 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
 function StatCard({ label, value, sub, icon }: { label: string; value: string; sub?: string; icon: React.ReactNode }) {
   return (
     <div className="card-glass rounded-2xl p-4">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">{icon}{label}</div>
-      <div className="mt-1 text-lg font-bold">{value}</div>
-      {sub && <div className="text-[10px] text-[color:var(--success)] tabular-nums">{sub}</div>}
+      <div className="flex items-center gap-1.5 eyebrow text-muted-foreground !text-[10px]">{icon}{label}</div>
+      <div className="mt-1 font-display text-xl font-bold text-gradient tabular-nums">{value}</div>
+      {sub && <div className="text-[10px] text-[color:var(--success)] tabular-nums font-semibold">{sub}</div>}
     </div>
   );
 }
