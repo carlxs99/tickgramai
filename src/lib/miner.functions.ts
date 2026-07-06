@@ -359,13 +359,22 @@ export const getMyRank = createServerFn({ method: "GET" })
       .maybeSingle();
     if (meErr) throw meErr;
     const myRate = Number((me as any)?.mining_rate_usd ?? 0);
-    const { count, error } = await supabaseAdmin
+
+    // Exclude admins from the rank calculation, matching the top-miners list.
+    const { data: adminRoles } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const adminIds = (adminRoles ?? []).map((r) => r.user_id).filter(Boolean);
+
+    const query = supabaseAdmin
       .from("profiles")
       .select("user_id", { count: "exact", head: true })
-      .gt("mining_rate_usd", myRate)
-      .not("user_id", "in", (
-        supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin")
-      ) as any);
+      .gt("mining_rate_usd", myRate);
+    if (adminIds.length > 0) {
+      query.not("user_id", "in", adminIds);
+    }
+    const { count, error } = await query;
     if (error) throw error;
     return { rank: (count ?? 0) + 1, rate_usd: myRate };
   });
