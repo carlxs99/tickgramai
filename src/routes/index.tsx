@@ -60,6 +60,11 @@ function MinerAppInner() {
     if (attempted.current) return;
     attempted.current = true;
 
+    // Start the stats stream on app boot so it's already populated
+    // whenever the user opens the Stats tab — no loading spinner.
+    statsStore.start();
+
+
     // Preload all the data the app needs so that when the splash screen
     // disappears the user sees a fully rendered app (no extra loading).
     const finishBoot = async () => {
