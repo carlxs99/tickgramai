@@ -1887,6 +1887,8 @@ type TradeCoin = {
   decimals: number;
 };
 
+const MAX_STATS_ROWS = 10;
+
 const STATS_COINS: TradeCoin[] = [
   { symbol: "BTC",   binanceSymbol: "BTCUSDT",   decimals: 0, logo: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png" },
   { symbol: "ETH",   binanceSymbol: "ETHUSDT",   decimals: 0, logo: "https://assets.coingecko.com/coins/images/279/large/ethereum.png" },
