@@ -15,6 +15,7 @@ import { Route as ApiPublicVerifyDepositsRouteImport } from './routes/api/public
 import { Route as ApiPublicProcessWithdrawalsRouteImport } from './routes/api/public/process-withdrawals'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicHooksDailyGiftBroadcastRouteImport } from './routes/api/public/hooks/daily-gift-broadcast'
+import { Route as ApiPublicHooksDailyCheckinBroadcastRouteImport } from './routes/api/public/hooks/daily-checkin-broadcast'
 
 const TonconnectManifestDotjsonRoute =
   TonconnectManifestDotjsonRouteImport.update({
@@ -50,12 +51,19 @@ const ApiPublicHooksDailyGiftBroadcastRoute =
     path: '/api/public/hooks/daily-gift-broadcast',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksDailyCheckinBroadcastRoute =
+  ApiPublicHooksDailyCheckinBroadcastRouteImport.update({
+    id: '/api/public/hooks/daily-checkin-broadcast',
+    path: '/api/public/hooks/daily-checkin-broadcast',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
+  '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -64,6 +72,7 @@ export interface FileRoutesByTo {
   '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
+  '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -73,6 +82,7 @@ export interface FileRoutesById {
   '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
+  '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -83,6 +93,7 @@ export interface FileRouteTypes {
     | '/tonconnect-manifest.json'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
+    | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -91,6 +102,7 @@ export interface FileRouteTypes {
     | '/tonconnect-manifest.json'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
+    | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
     | '/api/public/telegram/webhook'
   id:
@@ -99,6 +111,7 @@ export interface FileRouteTypes {
     | '/tonconnect-manifest.json'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
+    | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
@@ -108,6 +121,7 @@ export interface RootRouteChildren {
   TonconnectManifestDotjsonRoute: typeof TonconnectManifestDotjsonRoute
   ApiPublicProcessWithdrawalsRoute: typeof ApiPublicProcessWithdrawalsRoute
   ApiPublicVerifyDepositsRoute: typeof ApiPublicVerifyDepositsRoute
+  ApiPublicHooksDailyCheckinBroadcastRoute: typeof ApiPublicHooksDailyCheckinBroadcastRoute
   ApiPublicHooksDailyGiftBroadcastRoute: typeof ApiPublicHooksDailyGiftBroadcastRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
@@ -156,6 +170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailyGiftBroadcastRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/daily-checkin-broadcast': {
+      id: '/api/public/hooks/daily-checkin-broadcast'
+      path: '/api/public/hooks/daily-checkin-broadcast'
+      fullPath: '/api/public/hooks/daily-checkin-broadcast'
+      preLoaderRoute: typeof ApiPublicHooksDailyCheckinBroadcastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -164,19 +185,11 @@ const rootRouteChildren: RootRouteChildren = {
   TonconnectManifestDotjsonRoute: TonconnectManifestDotjsonRoute,
   ApiPublicProcessWithdrawalsRoute: ApiPublicProcessWithdrawalsRoute,
   ApiPublicVerifyDepositsRoute: ApiPublicVerifyDepositsRoute,
+  ApiPublicHooksDailyCheckinBroadcastRoute:
+    ApiPublicHooksDailyCheckinBroadcastRoute,
   ApiPublicHooksDailyGiftBroadcastRoute: ApiPublicHooksDailyGiftBroadcastRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
