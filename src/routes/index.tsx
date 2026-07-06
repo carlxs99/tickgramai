@@ -264,18 +264,18 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
   const bal = Number(data?.profile.balance ?? 0);
   return (
     <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-white/5">
-      <div className="flex items-center gap-3 px-4 py-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-primary-foreground">
+      <div className="flex items-center gap-2 px-3 py-3">
+        <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-primary-foreground text-sm">
           {initial}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground">{t("header.welcome")}</p>
-          <p className="font-semibold truncate">{name}</p>
+          <p className="text-[10px] text-muted-foreground leading-tight">{t("header.welcome")}</p>
+          <p className="font-semibold text-sm truncate leading-tight">{name}</p>
         </div>
         <LanguageSwitcher />
         <button
           onClick={() => openTutorial()}
-          className="shrink-0 h-9 w-9 rounded-xl card-glass text-primary flex items-center justify-center"
+          className="shrink-0 h-8 w-8 rounded-lg card-glass text-primary flex items-center justify-center"
           aria-label={t("tutorial.help")}
         >
           <HelpCircle className="w-4 h-4" />
@@ -283,21 +283,22 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
         {data?.isAdmin && (
           <button
             onClick={onAdminClick}
-            className="p-2 rounded-xl card-glass text-primary"
+            className="shrink-0 h-8 w-8 rounded-lg card-glass text-primary flex items-center justify-center"
             aria-label={t("header.admin_panel")}
           >
             <Shield className="w-4 h-4" />
           </button>
         )}
 
-        <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 rounded-2xl card-glass">
+        <div className="shrink-0 flex flex-col items-end gap-0.5 px-2.5 py-1 rounded-xl card-glass">
           <div className="flex items-center gap-1">
-            <Coins className="w-3.5 h-3.5 text-[color:var(--gold)]" />
-            <span className="font-semibold text-sm tabular-nums">{formatGram(bal, 6)}</span>
-            <span className="text-[10px] text-muted-foreground">GRAM</span>
+            <Coins className="w-3 h-3 text-[color:var(--gold)]" />
+            <span className="font-semibold text-xs tabular-nums">{formatGram(bal, 4)}</span>
+            <span className="text-[9px] text-muted-foreground">GRAM</span>
           </div>
-          <span className="text-[10px] text-[color:var(--success)] tabular-nums">≈ ${usdt(bal, price)} USDT</span>
+          <span className="text-[9px] text-[color:var(--success)] tabular-nums">≈ ${usdt(bal, price)}</span>
         </div>
+
       </div>
     </header>
   );
