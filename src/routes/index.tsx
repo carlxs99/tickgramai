@@ -1847,65 +1847,97 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 // ============ Stats (live trading report) ============
 type TradeCoin = {
-  symbol: string;
-  color: string;      // background for the round badge
-  glyph?: string;     // short glyph to render in the badge (fallback to first letter)
-  basePrice: number;
+  symbol: string;      // display symbol (SOL, BTC, …)
+  coingeckoId: string; // id for CoinGecko markets endpoint
   decimals: number;
 };
 
 const STATS_COINS: TradeCoin[] = [
-  { symbol: "SOL",  color: "#14F195", glyph: "◎",  basePrice: 172.4,   decimals: 1 },
-  { symbol: "BTC",  color: "#F7931A", glyph: "₿",  basePrice: 96_240,  decimals: 0 },
-  { symbol: "ETH",  color: "#627EEA", glyph: "◆",  basePrice: 3_320,   decimals: 0 },
-  { symbol: "XRP",  color: "#111111", glyph: "✕",  basePrice: 2.32,    decimals: 4 },
-  { symbol: "TON",  color: "#0098EA", glyph: "◆",  basePrice: 5.42,    decimals: 2 },
-  { symbol: "TRX",  color: "#E30613", glyph: "◈",  basePrice: 0.2451,  decimals: 4 },
-  { symbol: "LTC",  color: "#B8B8B8", glyph: "Ł",  basePrice: 108.7,   decimals: 1 },
-  { symbol: "NOT",  color: "#000000", glyph: "!",  basePrice: 0.00042, decimals: 5 },
-  { symbol: "DOGE", color: "#C2A633", glyph: "Ð",  basePrice: 0.331,   decimals: 4 },
-  { symbol: "ADA",  color: "#0033AD", glyph: "₳",  basePrice: 1.02,    decimals: 3 },
+  { symbol: "BTC",  coingeckoId: "bitcoin",           decimals: 0 },
+  { symbol: "ETH",  coingeckoId: "ethereum",          decimals: 0 },
+  { symbol: "SOL",  coingeckoId: "solana",            decimals: 1 },
+  { symbol: "XRP",  coingeckoId: "ripple",            decimals: 4 },
+  { symbol: "TON",  coingeckoId: "the-open-network",  decimals: 2 },
+  { symbol: "TRX",  coingeckoId: "tron",              decimals: 4 },
+  { symbol: "LTC",  coingeckoId: "litecoin",          decimals: 1 },
+  { symbol: "NOT",  coingeckoId: "notcoin",           decimals: 5 },
+  { symbol: "DOGE", coingeckoId: "dogecoin",          decimals: 4 },
+  { symbol: "ADA",  coingeckoId: "cardano",           decimals: 3 },
 ];
 
-type TickRow = { symbol: string; color: string; glyph?: string; price: number; changePct: number; decimals: number };
+type TickRow = {
+  symbol: string;
+  image: string | null;
+  price: number;
+  changePct: number;
+  decimals: number;
+};
 
 function formatPrice(v: number, decimals: number) {
   const fixed = v.toFixed(decimals);
-  // insert thin space thousands separators for large numbers
   const [ints, dec] = fixed.split(".");
   const withSep = ints.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   return dec ? `${withSep}.${dec}` : withSep;
 }
 
+// Fetch real prices + logos from CoinGecko public API
+async function fetchCryptoMarkets(): Promise<TickRow[]> {
+  const ids = STATS_COINS.map((c) => c.coingeckoId).join(",");
+  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=24h`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`CoinGecko ${res.status}`);
+  const data = (await res.json()) as Array<{
+    id: string;
+    symbol: string;
+    image: string;
+    current_price: number;
+    price_change_percentage_24h: number | null;
+  }>;
+  return STATS_COINS.map((c) => {
+    const m = data.find((d) => d.id === c.coingeckoId);
+    return {
+      symbol: c.symbol,
+      image: m?.image ?? null,
+      price: m?.current_price ?? 0,
+      changePct: m?.price_change_percentage_24h ?? 0,
+      decimals: c.decimals,
+    };
+  });
+}
+
 function StatsTab() {
   const { t } = useT();
 
-  const genRows = useMemo<() => TickRow[]>(() => {
-    return () =>
-      STATS_COINS.map((c) => {
-        // Fluctuate price ±0.5% per tick
-        const drift = (Math.random() - 0.5) * 0.01;
-        const price = c.basePrice * (1 + drift);
-        // % change vs "reference" — biased slightly around 0
-        const changePct = (Math.random() - 0.48) * 10; // roughly -4.8% .. +5.2%
-        return { symbol: c.symbol, color: c.color, glyph: c.glyph, price, changePct, decimals: c.decimals };
-      });
-  }, []);
+  const { data: marketRows } = useQuery({
+    queryKey: ["crypto-markets"],
+    queryFn: fetchCryptoMarkets,
+    refetchInterval: 20_000,
+    refetchIntervalInBackground: false,
+    staleTime: 10_000,
+    gcTime: 5 * 60_000,
+    retry: 1,
+  });
 
-  const [rows, setRows] = useState<TickRow[]>(() => genRows());
+  const [rows, setRows] = useState<TickRow[]>([]);
   const [split, setSplit] = useState<{ long: number; short: number }>(() => {
-    const long = 45 + Math.random() * 10; // 45..55
+    const long = 45 + Math.random() * 10;
     return { long, short: 100 - long };
   });
 
+  // Sync rows with fetched market data
+  useEffect(() => {
+    if (marketRows) setRows(marketRows);
+  }, [marketRows]);
+
+  // Simulate live micro-movements between refetches so numbers feel real-time
   useEffect(() => {
     const id = setInterval(() => {
       setRows((prev) =>
         prev.map((r) => {
-          const drift = (Math.random() - 0.5) * 0.006;
+          const drift = (Math.random() - 0.5) * 0.0025; // ±0.125% jitter
           const nextPrice = r.price * (1 + drift);
-          const nextChange = r.changePct + (Math.random() - 0.5) * 0.6;
-          return { ...r, price: nextPrice, changePct: Math.max(-9.9, Math.min(9.9, nextChange)) };
+          const nextChange = r.changePct + (Math.random() - 0.5) * 0.08;
+          return { ...r, price: nextPrice, changePct: Math.max(-15, Math.min(15, nextChange)) };
         }),
       );
       setSplit(() => {
@@ -1954,65 +1986,78 @@ function StatsTab() {
 
       {/* Live rows */}
       <div className="space-y-2">
-        <AnimatePresence initial={false}>
-          {rows.map((r) => {
-            const isLong = r.changePct >= 0;
-            const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
-            return (
-              <motion.div
-                key={r.symbol}
-                layout
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
-              >
-                {/* icon */}
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-                  style={{ background: r.color }}
+        {rows.length === 0 ? (
+          <div className="flex items-center justify-center py-10 text-muted-foreground text-sm">
+            <Loader2 className="w-4 h-4 animate-spin mr-2" /> …
+          </div>
+        ) : (
+          <AnimatePresence initial={false}>
+            {rows.map((r) => {
+              const isLong = r.changePct >= 0;
+              const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
+              return (
+                <motion.div
+                  key={r.symbol}
+                  layout
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
                 >
-                  {r.glyph ?? r.symbol[0]}
-                </div>
+                  {/* official logo */}
+                  <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-white/10">
+                    {r.image ? (
+                      <img
+                        src={r.image}
+                        alt={r.symbol}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-xs font-bold">{r.symbol[0]}</span>
+                    )}
+                  </div>
 
-                {/* symbol + price */}
-                <div className="min-w-0 flex items-baseline gap-2">
-                  <span className="font-bold text-sm">{r.symbol}</span>
-                  <span className="text-[13px] text-muted-foreground truncate">
-                    $ {formatPrice(r.price, r.decimals)}
-                  </span>
-                </div>
+                  {/* symbol + price */}
+                  <div className="min-w-0 flex items-baseline gap-2">
+                    <span className="font-bold text-sm">{r.symbol}</span>
+                    <span className="text-[13px] text-muted-foreground truncate">
+                      $ {formatPrice(r.price, r.decimals)}
+                    </span>
+                  </div>
 
-                {/* % change */}
-                <div
-                  className="text-xs font-bold px-2 py-1 rounded-md text-foreground"
-                  style={{
-                    background: isLong
-                      ? "linear-gradient(90deg, rgba(122,167,255,0.05), rgba(122,167,255,0.25))"
-                      : "linear-gradient(90deg, rgba(255,138,110,0.05), rgba(255,77,46,0.25))",
-                  }}
-                >
-                  {pctStr}
-                </div>
+                  {/* % change */}
+                  <div
+                    className="text-xs font-bold px-2 py-1 rounded-md text-foreground"
+                    style={{
+                      background: isLong
+                        ? "linear-gradient(90deg, rgba(122,167,255,0.05), rgba(122,167,255,0.25))"
+                        : "linear-gradient(90deg, rgba(255,138,110,0.05), rgba(255,77,46,0.25))",
+                    }}
+                  >
+                    {pctStr}
+                  </div>
 
-                {/* pill badge */}
-                <div
-                  className="text-[11px] font-bold text-white px-3 py-1.5 rounded-full shrink-0"
-                  style={{
-                    background: isLong
-                      ? "linear-gradient(90deg, #b6d4ff, #7aa7ff)"
-                      : "linear-gradient(90deg, #ff8a6e, #ff4d2e)",
-                  }}
-                >
-                  {isLong ? t("stats.long") : t("stats.short")}
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                  {/* pill badge */}
+                  <div
+                    className="text-[11px] font-bold text-white px-3 py-1.5 rounded-full shrink-0"
+                    style={{
+                      background: isLong
+                        ? "linear-gradient(90deg, #b6d4ff, #7aa7ff)"
+                        : "linear-gradient(90deg, #ff8a6e, #ff4d2e)",
+                    }}
+                  >
+                    {isLong ? t("stats.long") : t("stats.short")}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        )}
       </div>
     </div>
   );
 }
+
 
 function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const { t } = useT();
