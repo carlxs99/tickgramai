@@ -49,7 +49,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               : `https://t.me/Tickgramaibot/app`;
             await sendMessage(
               chatId,
-              `🤖 <b>TickGram AI</b>\n\n¡Hola de nuevo! Tu agente de IA no ha dejado de analizar el mercado ni un instante. Abre la app para consultar tus informes y ganancias actualizadas.\n\n📍 Ingresos sin inversión\n📍 Ganancias cada segundo`,
+              `🤖 <b>TickGram AI</b>\n\nWelcome back! Your AI agent has never stopped analyzing the market. Open the app to view your updated reports and earnings.\n\n📍 Income without investment\n📍 Earnings every second`,
               {
                 reply_markup: {
                   inline_keyboard: [[
