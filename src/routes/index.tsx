@@ -1976,6 +1976,7 @@ const statsStore = (() => {
   let ws: WebSocket | null = null;
   let feedId: ReturnType<typeof setInterval> | null = null;
   let splitId: ReturnType<typeof setInterval> | null = null;
+  let visibleCursor = 0;
 
   function emit() {
     for (const l of listeners) l();
@@ -1983,6 +1984,12 @@ const statsStore = (() => {
   function setState(next: StatsStoreState) {
     state = next;
     emit();
+  }
+
+  function getVisibleCoins(cursor: number) {
+    return Array.from({ length: Math.min(MAX_STATS_ROWS, STATS_COINS.length) }, (_, i) => (
+      STATS_COINS[(cursor + i) % STATS_COINS.length]
+    ));
   }
 
   async function seedFromRest() {
@@ -2025,41 +2032,30 @@ const statsStore = (() => {
     connectWs();
 
     feedId = setInterval(() => {
-      if (Object.keys(market).length === 0) return;
+      if (state.rows.length === 0 && Object.keys(market).length === 0) return;
 
-      // First time: create a fixed list of up to 10 coins.
-      if (state.rows.length === 0) {
-        const initial = STATS_COINS.slice(0, MAX_STATS_ROWS).map((coin) => {
-          const q = market[coin.symbol] ?? { price: 0, changePct: 0 };
-          return {
-            id: coin.symbol,
-            symbol: coin.symbol,
-            image: coin.logo,
-            price: q.price,
-            changePct: q.changePct,
-            decimals: coin.decimals,
-          };
-        });
-        setState({ ...state, rows: initial });
-        return;
-      }
-
-      // Update the existing rows in place (no infinite queue).
+      // Keep only 10 visible rows, but rotate through the full coin pool.
       // Apply a small random drift so prices visibly move every tick,
       // even if the Binance WS feed is momentarily quiet or blocked
       // (some webviews block wss to external hosts).
-      const nextRows = state.rows.map((row) => {
-        const q = market[row.symbol];
+      const previousRows = new Map(state.rows.map((row) => [row.symbol, row]));
+      const nextRows = getVisibleCoins(visibleCursor).map((coin) => {
+        const previous = previousRows.get(coin.symbol);
+        const q = market[coin.symbol];
         const drift = (Math.random() - 0.5) * 0.0015; // ±0.075%
         const changeDrift = (Math.random() - 0.5) * 0.05; // ±0.05 pp
-        const basePrice = q ? q.price : row.price;
-        const baseChange = q ? q.changePct : row.changePct;
+        const basePrice = q ? q.price : (previous?.price ?? 0);
+        const baseChange = q ? q.changePct : (previous?.changePct ?? 0);
         return {
-          ...row,
+          id: coin.symbol,
+          symbol: coin.symbol,
+          image: coin.logo,
           price: basePrice * (1 + drift),
           changePct: baseChange + changeDrift,
+          decimals: coin.decimals,
         };
       });
+      visibleCursor = (visibleCursor + 1) % STATS_COINS.length;
       setState({ ...state, rows: nextRows });
     }, 3000);
 
