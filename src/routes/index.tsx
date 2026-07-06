@@ -2192,7 +2192,7 @@ function StatsTab() {
               );
             })}
           </AnimatePresence>
-        )}
+
       </div>
     </div>
   );
