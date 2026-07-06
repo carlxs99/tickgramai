@@ -1998,6 +1998,11 @@ const statsStore = (() => {
     };
   }
 
+  function clearStagger() {
+    staggerTimeouts.forEach(clearTimeout);
+    staggerTimeouts = [];
+  }
+
   function emit() {
     for (const l of listeners) l();
   }
