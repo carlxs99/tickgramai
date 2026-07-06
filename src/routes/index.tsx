@@ -2089,10 +2089,17 @@ function StatsTab() {
                   {/* symbol + price */}
                   <div className="min-w-0 flex items-baseline gap-2">
                     <span className="font-bold text-sm">{r.symbol}</span>
-                    <span className="text-[13px] text-muted-foreground truncate">
+                    <motion.span
+                      key={`${r.symbol}-${r.price}`}
+                      initial={{ color: isLong ? "#7aa7ff" : "#ff8a6e" }}
+                      animate={{ color: "hsl(var(--muted-foreground))" }}
+                      transition={{ duration: 0.6 }}
+                      className="text-[13px] truncate"
+                    >
                       $ {formatPrice(r.price, r.decimals)}
-                    </span>
+                    </motion.span>
                   </div>
+
 
                   {/* % change */}
                   <div
