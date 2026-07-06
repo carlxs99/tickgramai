@@ -1496,7 +1496,7 @@ function DepositTab() {
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("deposit.current_rate")}</span>
-          <span className="font-semibold">${Number((me.profile as any).mining_rate_usd ?? 0).toFixed(4)} {t("mine.per_day_suffix")}</span>
+          <span className="font-semibold tabular-nums">{formatGram(Number((me.profile as any).mining_rate ?? 0), 6)} GRAM {t("mine.per_day_suffix")}</span>
         </div>
         <div className="flex justify-between text-sm items-center">
           <span className="text-muted-foreground">{t("deposit.your_memo")}</span>
