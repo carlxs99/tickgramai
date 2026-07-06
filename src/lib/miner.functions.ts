@@ -341,9 +341,29 @@ export const getTopMiners = createServerFn({ method: "GET" })
     // exposing only the safe columns. Authenticated users cannot call the
     // underlying SECURITY DEFINER function directly.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.rpc("get_top_miners", { _limit: 30 });
+    const { data, error } = await supabaseAdmin.rpc("get_top_miners", { _limit: 100 });
     if (error) throw error;
     return data ?? [];
+  });
+
+// Returns the current user's global rank based on mining_rate_usd.
+export const getMyRank = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: me, error: meErr } = await supabaseAdmin
+      .from("profiles")
+      .select("mining_rate_usd")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (meErr) throw meErr;
+    const myRate = Number((me as any)?.mining_rate_usd ?? 0);
+    const { count, error } = await supabaseAdmin
+      .from("profiles")
+      .select("user_id", { count: "exact", head: true })
+      .gt("mining_rate_usd", myRate);
+    if (error) throw error;
+    return { rank: (count ?? 0) + 1, rate_usd: myRate };
   });
 
 export const getFriends = createServerFn({ method: "GET" })
