@@ -103,9 +103,22 @@ const en: Dict = {
 
   "friends.title": "Friends",
   "friends.subtitle": "Invite friends and earn 10% of their deposits forever.",
+  "friends.invited_by": "Invited by",
+  "friends.refback_title": "Partner refback",
+  "friends.refback_body": "Get additional USDT cashback when you deposit from your sponsor.",
+  "friends.total_referrals": "Total referrals",
+  "friends.level1": "1 Level",
+  "friends.level2": "2 Level",
+  "friends.level3": "3 Level",
+  "friends.total_earned": "Total earned",
+  "friends.refback_paid": "refback paid",
+  "friends.your_link": "Your referral link",
+  "friends.share_telegram": "Telegram",
+  "friends.copy": "Copy",
   "friends.your_invite": "Your invite link",
   "friends.your_friends": "Your friends ({count})",
   "friends.no_referrals": "No referrals yet.",
+
 
   "deposit.title": "Deposit",
   "deposit.subtitle":
@@ -305,9 +318,22 @@ const es: Dict = {
 
   "friends.title": "Amigos",
   "friends.subtitle": "Invita amigos y gana el 10% de sus depósitos para siempre.",
+  "friends.invited_by": "Invitado por",
+  "friends.refback_title": "Refback del socio",
+  "friends.refback_body": "Obtendrá cashback adicional en USDT al depositar desde su patrocinador.",
+  "friends.total_referrals": "Total de referidos",
+  "friends.level1": "1 Nivel",
+  "friends.level2": "2 Nivel",
+  "friends.level3": "3 Nivel",
+  "friends.total_earned": "Total ganado",
+  "friends.refback_paid": "refback_paid",
+  "friends.your_link": "Tu enlace de referido",
+  "friends.share_telegram": "Telegram",
+  "friends.copy": "Copiar",
   "friends.your_invite": "Tu enlace de invitación",
   "friends.your_friends": "Tus amigos ({count})",
   "friends.no_referrals": "Aún no tienes referidos.",
+
 
   "deposit.title": "Depósito",
   "deposit.subtitle":
@@ -507,9 +533,22 @@ const ru: Dict = {
 
   "friends.title": "Друзья",
   "friends.subtitle": "Приглашайте друзей и получайте 10% с их депозитов навсегда.",
+  "friends.invited_by": "Пригласил",
+  "friends.refback_title": "Рефбэк партнёра",
+  "friends.refback_body": "Получите дополнительный кэшбэк в USDT при депозите от спонсора.",
+  "friends.total_referrals": "Всего рефералов",
+  "friends.level1": "1 Уровень",
+  "friends.level2": "2 Уровень",
+  "friends.level3": "3 Уровень",
+  "friends.total_earned": "Всего заработано",
+  "friends.refback_paid": "выплачено рефбэка",
+  "friends.your_link": "Ваша реферальная ссылка",
+  "friends.share_telegram": "Telegram",
+  "friends.copy": "Копировать",
   "friends.your_invite": "Ваша ссылка-приглашение",
   "friends.your_friends": "Ваши друзья ({count})",
   "friends.no_referrals": "Пока нет рефералов.",
+
 
   "deposit.title": "Депозит",
   "deposit.subtitle":
@@ -709,9 +748,22 @@ const hi: Dict = {
 
   "friends.title": "मित्र",
   "friends.subtitle": "दोस्तों को आमंत्रित करें और उनके जमा का 10% हमेशा के लिए कमाएँ।",
+  "friends.invited_by": "आमंत्रित किया",
+  "friends.refback_title": "पार्टनर रिफबैक",
+  "friends.refback_body": "अपने स्पॉन्सर से जमा करने पर अतिरिक्त USDT कैशबैक पाएँ।",
+  "friends.total_referrals": "कुल रेफरल",
+  "friends.level1": "स्तर 1",
+  "friends.level2": "स्तर 2",
+  "friends.level3": "स्तर 3",
+  "friends.total_earned": "कुल कमाई",
+  "friends.refback_paid": "रिफबैक दिया",
+  "friends.your_link": "आपका रेफरल लिंक",
+  "friends.share_telegram": "Telegram",
+  "friends.copy": "कॉपी करें",
   "friends.your_invite": "आपका आमंत्रण लिंक",
   "friends.your_friends": "आपके मित्र ({count})",
   "friends.no_referrals": "अभी कोई रेफरल नहीं।",
+
 
   "deposit.title": "जमा",
   "deposit.subtitle":

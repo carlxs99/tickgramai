@@ -367,6 +367,30 @@ export const getFriends = createServerFn({ method: "GET" })
     }));
   });
 
+export const getReferralStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("get_referral_stats" as never, { _user_id: context.userId } as never);
+    if (error) throw error;
+    return (data ?? {}) as {
+      inviter: {
+        user_id: string;
+        username: string | null;
+        first_name: string | null;
+        last_name: string | null;
+        avatar_url: string | null;
+      } | null;
+      level1: number;
+      level2: number;
+      level3: number;
+      total_referrals: number;
+      total_earned: number;
+      refback_paid: number;
+      refback_rate: number;
+    };
+  });
+
+
 
 // ============= Partner Tasks =============
 // Users create promoted tasks (channel/group/bot/link) and pay via TON to

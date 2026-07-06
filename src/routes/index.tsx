@@ -3,12 +3,12 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
-import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
+import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getFriends, getReferralStats, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
@@ -1223,28 +1223,149 @@ function FriendsTab() {
   const { t } = useT();
   const meFn = useServerFn(getMe);
   const frFn = useServerFn(getFriends);
+  const statsFn = useServerFn(getReferralStats);
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
   const { data: friends } = useQuery({ queryKey: ["friends"], queryFn: () => frFn() });
+  const { data: stats } = useQuery({ queryKey: ["referral-stats"], queryFn: () => statsFn() });
   const code = me.profile.referral_code as string;
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
+  const shareText = t("tasks.share_default");
+  const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(shareText)}`;
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(1);
   const list = friends ?? [];
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageItems = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const s = (stats ?? {}) as {
+    inviter?: { user_id: string; username: string | null; first_name: string | null; last_name: string | null; avatar_url: string | null } | null;
+    level1?: number;
+    level2?: number;
+    level3?: number;
+    total_referrals?: number;
+    total_earned?: number;
+    refback_paid?: number;
+    refback_rate?: number;
+  };
+
+  const inviter = s.inviter;
+  const inviterName = inviter ? [inviter.first_name, inviter.last_name].filter(Boolean).join(" ") || inviter.username || t("leaderboard.anon") : null;
+
+  const copyInvite = () => {
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success(t("common.copied"));
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <h2 className="text-2xl font-bold">{t("friends.title")}</h2>
-      <p className="text-sm text-muted-foreground">{t("friends.subtitle")}</p>
-      <div className="card-glass rounded-2xl p-4">
-        <p className="text-xs text-muted-foreground">{t("friends.your_invite")}</p>
-        <div className="mt-2 flex items-center gap-2">
-          <code className="text-xs flex-1 truncate">{inviteUrl}</code>
-          <button onClick={() => { navigator.clipboard.writeText(inviteUrl); toast.success(t("common.copied")); }}
-            className="p-2 rounded-lg bg-primary/20 text-primary"><Copy className="w-4 h-4" /></button>
+
+      {/* Invited by */}
+      {inviterName && (
+        <div className="flex items-center gap-3 rounded-2xl card-glass p-4">
+          {inviter?.avatar_url ? (
+            <img src={inviter.avatar_url} alt={inviterName} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-semibold shrink-0">
+              {inviterName.slice(0, 1).toUpperCase()}
+            </div>
+          )}
+
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">{t("friends.invited_by")}</p>
+            <p className="text-sm font-semibold truncate">{inviterName}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Partner refback */}
+      <div className="rounded-2xl bg-[color:var(--success)]/10 border border-[color:var(--success)]/20 p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[color:var(--success)]/20 text-[color:var(--success)] flex items-center justify-center shrink-0">
+            <Coins className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-semibold text-sm">{t("friends.refback_title")}</p>
+              <span className="text-lg font-bold text-[color:var(--success)]">{(s.refback_rate ?? 0.05) * 100}%</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{t("friends.refback_body")}</p>
+          </div>
         </div>
       </div>
+
+      {/* Main stats card */}
+      <div className="rounded-3xl p-5 text-white relative overflow-hidden bg-gradient-to-br from-primary to-accent">
+        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none" />
+        <div className="relative">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-white/90">{t("friends.total_referrals")}</span>
+            <span className="text-3xl font-extrabold tabular-nums">{s.total_referrals ?? 0}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="rounded-2xl bg-white/15 backdrop-blur-sm p-2 text-center">
+              <p className="text-[10px] text-white/80">{t("friends.level1")}</p>
+              <p className="text-xl font-bold tabular-nums">{s.level1 ?? 0}</p>
+            </div>
+            <div className="rounded-2xl bg-white/15 backdrop-blur-sm p-2 text-center">
+              <p className="text-[10px] text-white/80">{t("friends.level2")}</p>
+              <p className="text-xl font-bold tabular-nums">{s.level2 ?? 0}</p>
+            </div>
+            <div className="rounded-2xl bg-white/15 backdrop-blur-sm p-2 text-center">
+              <p className="text-[10px] text-white/80">{t("friends.level3")}</p>
+              <p className="text-xl font-bold tabular-nums">{s.level3 ?? 0}</p>
+            </div>
+          </div>
+          <div className="space-y-2 border-t border-white/20 pt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-white/90">{t("friends.total_earned")}</span>
+              <span className="text-lg font-semibold tabular-nums">{formatGram(s.total_earned ?? 0, 8)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-white/90">{t("friends.refback_paid")}</span>
+              <span className="text-lg font-semibold tabular-nums">{formatGram(s.refback_paid ?? 0, 8)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Referral link */}
+      <div className="card-glass rounded-2xl p-4 space-y-3">
+        <p className="text-sm font-semibold">{t("friends.your_link")}</p>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0 rounded-xl bg-background/50 border border-white/10 px-3 py-2.5 text-xs truncate">
+            {inviteUrl}
+          </div>
+          <button
+            onClick={copyInvite}
+            className="shrink-0 h-9 w-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center"
+            aria-label={t("friends.copy")}
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <a
+            href={telegramShareUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#229ED9] text-white font-semibold text-sm"
+          >
+            <Send className="w-4 h-4" />
+            {t("friends.share_telegram")}
+          </a>
+          <button
+            onClick={copyInvite}
+            className="flex items-center justify-center gap-2 py-3 rounded-xl bg-muted text-foreground font-semibold text-sm"
+          >
+            <Copy className="w-4 h-4" />
+            {t("friends.copy")}
+          </button>
+        </div>
+      </div>
+
+      {/* Friends list */}
       <div className="card-glass rounded-2xl p-4">
         <p className="font-semibold mb-2">{t("friends.your_friends", { count: list.length })}</p>
         {list.length === 0 && <p className="text-sm text-muted-foreground">{t("friends.no_referrals")}</p>}
@@ -1288,6 +1409,7 @@ function FriendsTab() {
     </div>
   );
 }
+
 
 function DepositTab() {
   const { t } = useT();

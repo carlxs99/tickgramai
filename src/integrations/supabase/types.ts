@@ -248,6 +248,8 @@ export type Database = {
           mining_rate: number
           mining_rate_usd: number
           mining_rate_usdt: number
+          refback_paid: number
+          refback_rate: number
           referral_code: string | null
           referred_by: string | null
           telegram_id: number | null
@@ -272,6 +274,8 @@ export type Database = {
           mining_rate?: number
           mining_rate_usd?: number
           mining_rate_usdt?: number
+          refback_paid?: number
+          refback_rate?: number
           referral_code?: string | null
           referred_by?: string | null
           telegram_id?: number | null
@@ -296,6 +300,8 @@ export type Database = {
           mining_rate?: number
           mining_rate_usd?: number
           mining_rate_usdt?: number
+          refback_paid?: number
+          refback_rate?: number
           referral_code?: string | null
           referred_by?: string | null
           telegram_id?: number | null
@@ -562,6 +568,7 @@ export type Database = {
       expire_stale_pending_deposits: { Args: never; Returns: number }
       generate_memo_tag: { Args: never; Returns: string }
       generate_partner_memo: { Args: never; Returns: string }
+      get_referral_stats: { Args: { _user_id: string }; Returns: Json }
       get_top_miners: {
         Args: { _limit?: number }
         Returns: {
