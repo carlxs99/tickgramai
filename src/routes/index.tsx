@@ -705,7 +705,7 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
         <div className="mt-4 text-xs font-bold tracking-widest text-amber-200 uppercase">{t("gift.prize_title")}</div>
         <div className="mt-1 text-3xl font-extrabold text-white tabular-nums">
           {isGram
-            ? `+${prize.prizeAmount.toFixed(8).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
+            ? `+${(prize.prizeAmount * 0.033).toFixed(10).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
             : `+${prize.prizeAmount.toFixed(2)}%`}
         </div>
         <div className="text-xs text-white/70 mt-1">
