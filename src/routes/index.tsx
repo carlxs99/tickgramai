@@ -1971,21 +1971,18 @@ function StatsTab() {
     return { long, short: 100 - long };
   });
 
-  // Sync rows with snapshot
+  // Live per-symbol quotes (updated by WS, seeded by REST snapshot)
+  const marketRef = useRef<MarketMap>({});
+  const idCounterRef = useRef(0);
+
+  // Seed the market map from REST snapshot
   useEffect(() => {
     if (marketRows) {
-      setRows((prev) => {
-        if (prev.length === 0) return marketRows;
-        // Merge: keep live prices from WS if already set
-        return marketRows.map((m) => {
-          const existing = prev.find((p) => p.symbol === m.symbol);
-          return existing ? { ...m, price: existing.price, changePct: existing.changePct } : m;
-        });
-      });
+      marketRef.current = { ...marketRef.current, ...marketRows };
     }
   }, [marketRows]);
 
-  // Real-time Binance WebSocket ticker stream
+  // Real-time Binance WebSocket ticker stream — updates the market map only
   useEffect(() => {
     const streams = STATS_COINS.map((c) => `${c.binanceSymbol.toLowerCase()}@ticker`).join("/");
     const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
@@ -1998,15 +1995,32 @@ function StatsTab() {
         if (!d?.s) return;
         const coin = bySymbol.get(d.s);
         if (!coin) return;
-        const price = parseFloat(d.c);
-        const changePct = parseFloat(d.P);
-        setRows((prev) =>
-          prev.map((r) => (r.symbol === coin.symbol ? { ...r, price, changePct } : r)),
-        );
+        marketRef.current[coin.symbol] = {
+          price: parseFloat(d.c),
+          changePct: parseFloat(d.P),
+        };
       } catch {
         /* ignore */
       }
     };
+
+    // Emit a new feed event every second: pick a random coin, prepend row
+    const feedId = setInterval(() => {
+      const pool = STATS_COINS.filter((c) => marketRef.current[c.symbol]?.price);
+      if (pool.length === 0) return;
+      const coin = pool[Math.floor(Math.random() * pool.length)];
+      const q = marketRef.current[coin.symbol];
+      idCounterRef.current += 1;
+      const newRow: TickRow = {
+        id: `${coin.symbol}-${Date.now()}-${idCounterRef.current}`,
+        symbol: coin.symbol,
+        image: coin.logo,
+        price: q.price,
+        changePct: q.changePct,
+        decimals: coin.decimals,
+      };
+      setRows((prev) => [newRow, ...prev].slice(0, 20));
+    }, 1000);
 
     // Refresh LONG/SHORT split occasionally
     const splitId = setInterval(() => {
@@ -2015,6 +2029,7 @@ function StatsTab() {
     }, 4000);
 
     return () => {
+      clearInterval(feedId);
       clearInterval(splitId);
       try { ws.close(); } catch { /* noop */ }
     };
