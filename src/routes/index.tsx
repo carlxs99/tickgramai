@@ -2065,6 +2065,19 @@ function StatsTab() {
                         alt={r.symbol}
                         className="w-full h-full object-cover"
                         loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          const el = e.currentTarget;
+                          el.style.display = "none";
+                          const parent = el.parentElement;
+                          if (parent && !parent.querySelector("[data-fallback]")) {
+                            const span = document.createElement("span");
+                            span.setAttribute("data-fallback", "");
+                            span.className = "text-xs font-bold";
+                            span.textContent = r.symbol[0];
+                            parent.appendChild(span);
+                          }
+                        }}
                       />
                     ) : (
                       <span className="text-xs font-bold">{r.symbol[0]}</span>
