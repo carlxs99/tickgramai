@@ -2014,7 +2014,7 @@ function StatsTab() {
   );
 }
 
-
+function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const { t } = useT();
   const items: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "mine", label: t("nav.mine"), icon: <Pickaxe className="w-5 h-5" /> },
