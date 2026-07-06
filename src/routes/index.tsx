@@ -152,8 +152,8 @@ function MinerAppInner() {
       <div className="min-h-screen pb-24 max-w-md mx-auto">
         <Toaster theme="dark" position="top-center" richColors />
         <OnboardingTutorial />
-        <Header onAdminClick={() => setTab("admin")} />
-        <DepositWithdrawPills tab={tab} setTab={setTab} />
+        <Header onAdminClick={() => setTab("admin")} setTab={setTab} />
+
 
 
         <AnimatePresence mode="wait">
@@ -258,7 +258,7 @@ function usdt(gram: number, price: number) {
   return v.toFixed(6);
 }
 
-function Header({ onAdminClick }: { onAdminClick: () => void }) {
+function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t: Tab) => void }) {
   const { t } = useT();
   const meFn = useServerFn(getMe);
   const { data } = useQuery({ queryKey: ["me-header"], queryFn: () => meFn(), refetchInterval: 15000 });
@@ -268,45 +268,71 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
   const bal = Number(data?.profile.balance ?? 0);
   return (
     <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-white/5">
-      <div className="flex items-center gap-2 px-3 py-3">
-        <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-primary-foreground text-sm">
+      {/* Row 1 — welcome + name + right-side actions */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 pt-3">
+        <div className="w-11 h-11 shrink-0 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-primary-foreground text-base ring-2 ring-white/20">
           {initial}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-muted-foreground leading-tight">{t("header.welcome")}</p>
-          <p className="font-semibold text-sm truncate leading-tight">{name}</p>
+        <div className="min-w-0">
+          <p className="text-[11px] text-white/80 leading-tight truncate">{t("header.ai_analyzing")}</p>
+          <p className="font-bold text-lg truncate leading-tight">{name}</p>
         </div>
-        <LanguageSwitcher />
-        <button
-          onClick={() => openTutorial()}
-          className="shrink-0 h-8 w-8 rounded-lg card-glass text-primary flex items-center justify-center"
-          aria-label={t("tutorial.help")}
-        >
-          <HelpCircle className="w-4 h-4" />
-        </button>
-        {data?.isAdmin && (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <LanguageSwitcher />
           <button
-            onClick={onAdminClick}
-            className="shrink-0 h-8 w-8 rounded-lg card-glass text-primary flex items-center justify-center"
-            aria-label={t("header.admin_panel")}
+            onClick={() => openTutorial()}
+            className="h-8 w-8 rounded-lg card-glass text-primary flex items-center justify-center"
+            aria-label={t("tutorial.help")}
           >
-            <Shield className="w-4 h-4" />
+            <HelpCircle className="w-4 h-4" />
           </button>
-        )}
+          {data?.isAdmin && (
+            <button
+              onClick={onAdminClick}
+              className="h-8 w-8 rounded-lg card-glass text-primary flex items-center justify-center"
+              aria-label={t("header.admin_panel")}
+            >
+              <Shield className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
 
-        <div className="shrink-0 flex flex-col items-end gap-0.5 px-2.5 py-1 rounded-xl card-glass">
-          <div className="flex items-center gap-1">
-            <Coins className="w-3 h-3 text-[color:var(--gold)]" />
-            <span className="font-semibold text-xs tabular-nums">{formatGram(bal, 4)}</span>
-            <span className="text-[9px] text-muted-foreground">GRAM</span>
-          </div>
-          <span className="text-[9px] text-[color:var(--success)] tabular-nums">≈ ${usdt(bal, price)}</span>
+      {/* Row 2 — Deposit | Balance chip | Withdraw */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-3">
+        <button
+          onClick={() => { setTab("deposit"); getTelegram()?.HapticFeedback?.impactOccurred("light"); }}
+          className="h-10 pl-1.5 pr-3.5 rounded-full bg-white text-[#1a1240] font-semibold text-[13px] flex items-center gap-1.5 shadow-md shadow-black/10 active:scale-95 transition"
+        >
+          <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+            <Plus className="w-4 h-4" strokeWidth={3} />
+          </span>
+          {t("nav.deposit")}
+        </button>
+
+        <div className="h-10 rounded-full card-glass bg-white/10 flex items-center justify-center gap-1.5 px-2 min-w-0">
+          <span className="w-5 h-5 rounded-full bg-[color:var(--success)] flex items-center justify-center shrink-0">
+            <span className="text-[10px] font-black text-white leading-none">₮</span>
+          </span>
+          <span className="font-bold text-[13px] tabular-nums truncate">{formatGram(bal, 4)}</span>
+          <span className="text-[10px] shrink-0">⭐</span>
+          <span className="font-bold text-[13px] tabular-nums text-[color:var(--gold)] shrink-0">${usdt(bal, price)}</span>
         </div>
 
+        <button
+          onClick={() => { setTab("withdraw"); getTelegram()?.HapticFeedback?.impactOccurred("light"); }}
+          className="h-10 pl-1.5 pr-3.5 rounded-full bg-white text-[#1a1240] font-semibold text-[13px] flex items-center gap-1.5 shadow-md shadow-black/10 active:scale-95 transition"
+        >
+          <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+            <ArrowUpFromLine className="w-3.5 h-3.5" strokeWidth={3} />
+          </span>
+          {t("nav.cash")}
+        </button>
       </div>
     </header>
   );
 }
+
 
 const meQO = (fn: () => Promise<any>) => queryOptions({ queryKey: ["me"], queryFn: fn, refetchInterval: 30000 });
 
@@ -2116,33 +2142,6 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   );
 }
 
-function DepositWithdrawPills({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
-  const { t } = useT();
-  const activeDep = tab === "deposit";
-  const activeWd = tab === "withdraw";
-  return (
-    <div className="px-4 pt-3 flex items-center gap-2">
-      <button
-        onClick={() => { setTab(activeDep ? "mine" : "deposit"); getTelegram()?.HapticFeedback?.impactOccurred("light"); }}
-        className={`flex-1 h-11 rounded-full flex items-center justify-center gap-2 font-semibold text-sm transition ring-1 ${activeDep ? "bg-primary text-primary-foreground ring-primary/50 shadow-lg shadow-primary/30" : "bg-white text-[#1a1240] ring-white/60 hover:bg-white/90"}`}
-      >
-        <span className={`w-6 h-6 rounded-full flex items-center justify-center ${activeDep ? "bg-white/20" : "bg-primary/15 text-primary"}`}>
-          <Plus className="w-4 h-4" />
-        </span>
-        {t("nav.deposit")}
-      </button>
-      <button
-        onClick={() => { setTab(activeWd ? "mine" : "withdraw"); getTelegram()?.HapticFeedback?.impactOccurred("light"); }}
-        className={`flex-1 h-11 rounded-full flex items-center justify-center gap-2 font-semibold text-sm transition ring-1 ${activeWd ? "bg-primary text-primary-foreground ring-primary/50 shadow-lg shadow-primary/30" : "bg-white text-[#1a1240] ring-white/60 hover:bg-white/90"}`}
-      >
-        <span className={`w-6 h-6 rounded-full flex items-center justify-center ${activeWd ? "bg-white/20" : "bg-primary/15 text-primary"}`}>
-          <ArrowUpFromLine className="w-3.5 h-3.5" />
-        </span>
-        {t("nav.cash")}
-      </button>
-    </div>
-  );
-}
 
 
 
