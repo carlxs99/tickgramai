@@ -2026,20 +2026,32 @@ const statsStore = (() => {
     connectWs();
 
     feedId = setInterval(() => {
-      const pool = STATS_COINS.filter((c) => market[c.symbol]?.price);
-      if (pool.length === 0) return;
-      const coin = pool[Math.floor(Math.random() * pool.length)];
-      const q = market[coin.symbol];
-      idCounter += 1;
-      const newRow: TickRow = {
-        id: `${coin.symbol}-${Date.now()}-${idCounter}`,
-        symbol: coin.symbol,
-        image: coin.logo,
-        price: q.price,
-        changePct: q.changePct,
-        decimals: coin.decimals,
-      };
-      setState({ ...state, rows: [newRow, ...state.rows].slice(0, 20) });
+      if (Object.keys(market).length === 0) return;
+
+      // First time: create a fixed list of up to 10 coins.
+      if (state.rows.length === 0) {
+        const initial = STATS_COINS.slice(0, MAX_STATS_ROWS).map((coin) => {
+          const q = market[coin.symbol] ?? { price: 0, changePct: 0 };
+          return {
+            id: coin.symbol,
+            symbol: coin.symbol,
+            image: coin.logo,
+            price: q.price,
+            changePct: q.changePct,
+            decimals: coin.decimals,
+          };
+        });
+        setState({ ...state, rows: initial });
+        return;
+      }
+
+      // Update the existing rows in place (no infinite queue).
+      const nextRows = state.rows.map((row) => {
+        const q = market[row.symbol];
+        if (!q) return row;
+        return { ...row, price: q.price, changePct: q.changePct };
+      });
+      setState({ ...state, rows: nextRows });
     }, 3000);
 
     splitId = setInterval(() => {
