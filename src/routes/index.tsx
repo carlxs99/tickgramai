@@ -901,8 +901,8 @@ function LeaderboardTab() {
           <PaginatedList
             items={rest}
             pageSize={10}
-            renderItem={(m: any, idx: number, startIndex: number) => {
-              const rank = startIndex + idx + 4;
+            renderItem={(m: any, absIdx: number) => {
+              const rank = absIdx + 4;
               const name = m.first_name || m.username || t("leaderboard.anon");
               return (
                 <div key={rank} className="flex items-center gap-3 px-3 py-2.5">
