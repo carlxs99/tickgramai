@@ -165,6 +165,11 @@ const en: Dict = {
   "nav.friends": "Friends",
   "nav.deposit": "Deposit",
   "nav.cash": "Cash",
+  "nav.stats": "Stats",
+  "stats.title": "This page provides a live report of current trading operations",
+  "stats.desc": "Tickgram runs a grid trading algorithm. The agent automatically opens long and short positions with a minimum step of about 0.1%. This allows profits even from small price fluctuations.",
+  "stats.long": "LONG",
+  "stats.short": "SHORT",
 
   "admin.title": "Admin",
   "admin.users": "Users",
