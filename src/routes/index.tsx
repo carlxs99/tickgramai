@@ -2107,13 +2107,9 @@ function StatsTab() {
 
       {/* Live rows */}
       <div className="space-y-2">
-        {rows.length === 0 ? (
-          <div className="flex items-center justify-center py-10 text-muted-foreground text-sm">
-            <Loader2 className="w-4 h-4 animate-spin mr-2" /> …
-          </div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {rows.map((r) => {
+        <AnimatePresence initial={false}>
+          {rows.map((r) => {
+
 
               const isLong = r.changePct >= 0;
               const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
