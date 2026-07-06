@@ -153,6 +153,8 @@ function MinerAppInner() {
         <Toaster theme="dark" position="top-center" richColors />
         <OnboardingTutorial />
         <Header onAdminClick={() => setTab("admin")} />
+        <DepositWithdrawPills tab={tab} setTab={setTab} />
+
 
         <AnimatePresence mode="wait">
           <motion.main
@@ -2093,8 +2095,6 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
     { id: "stats", label: t("nav.stats"), icon: <Activity className="w-5 h-5" /> },
     { id: "top", label: t("nav.top"), icon: <Trophy className="w-5 h-5" /> },
     { id: "friends", label: t("nav.friends"), icon: <Users className="w-5 h-5" /> },
-    { id: "deposit", label: t("nav.deposit"), icon: <ArrowDownToLine className="w-5 h-5" /> },
-    { id: "withdraw", label: t("nav.cash"), icon: <ArrowUpFromLine className="w-5 h-5" /> },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40">
@@ -2115,6 +2115,36 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
     </nav>
   );
 }
+
+function DepositWithdrawPills({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
+  const { t } = useT();
+  const activeDep = tab === "deposit";
+  const activeWd = tab === "withdraw";
+  return (
+    <div className="px-4 pt-3 flex items-center gap-2">
+      <button
+        onClick={() => { setTab(activeDep ? "mine" : "deposit"); getTelegram()?.HapticFeedback?.impactOccurred("light"); }}
+        className={`flex-1 h-11 rounded-full flex items-center justify-center gap-2 font-semibold text-sm transition ring-1 ${activeDep ? "bg-primary text-primary-foreground ring-primary/50 shadow-lg shadow-primary/30" : "bg-white text-[#1a1240] ring-white/60 hover:bg-white/90"}`}
+      >
+        <span className={`w-6 h-6 rounded-full flex items-center justify-center ${activeDep ? "bg-white/20" : "bg-primary/15 text-primary"}`}>
+          <Plus className="w-4 h-4" />
+        </span>
+        {t("nav.deposit")}
+      </button>
+      <button
+        onClick={() => { setTab(activeWd ? "mine" : "withdraw"); getTelegram()?.HapticFeedback?.impactOccurred("light"); }}
+        className={`flex-1 h-11 rounded-full flex items-center justify-center gap-2 font-semibold text-sm transition ring-1 ${activeWd ? "bg-primary text-primary-foreground ring-primary/50 shadow-lg shadow-primary/30" : "bg-white text-[#1a1240] ring-white/60 hover:bg-white/90"}`}
+      >
+        <span className={`w-6 h-6 rounded-full flex items-center justify-center ${activeWd ? "bg-white/20" : "bg-primary/15 text-primary"}`}>
+          <ArrowUpFromLine className="w-3.5 h-3.5" />
+        </span>
+        {t("nav.cash")}
+      </button>
+    </div>
+  );
+}
+
+
 
 
 function AdminTab() {
