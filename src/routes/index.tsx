@@ -2038,12 +2038,12 @@ const statsStore = (() => {
         decimals: coin.decimals,
       };
       setState({ ...state, rows: [newRow, ...state.rows].slice(0, 20) });
-    }, 10000);
+    }, 3000);
 
     splitId = setInterval(() => {
       const long = 45 + Math.random() * 10;
       setState({ ...state, split: { long, short: 100 - long } });
-    }, 4000);
+    }, 3000);
   }
 
   return {
