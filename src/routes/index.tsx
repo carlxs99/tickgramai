@@ -272,8 +272,8 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
     <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-white/5">
       {/* Row 1 — welcome + name + right-side actions */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 pt-3">
-        <div className="w-11 h-11 shrink-0 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-primary-foreground text-base ring-2 ring-white/20">
-          {initial}
+        <div className="w-11 h-11 shrink-0 rounded-full bg-white flex items-center justify-center ring-2 ring-white/20 overflow-hidden">
+          <img src={tickgramLogoImg.url} alt="TickGram" className="w-full h-full object-contain" />
         </div>
         <div className="min-w-0 overflow-hidden">
           <p className="text-[10px] text-white/80 leading-snug">{t("header.ai_analyzing")}</p>
