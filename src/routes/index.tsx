@@ -402,10 +402,10 @@ function MineTab() {
               {collect.isPending ? t("mine.collecting") : t("mine.collect")}
             </motion.button>
 
-            {rateUsd > 0 && (
+            {rate > 0 && (
               <div className="flex items-center gap-1 px-2.5 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums whitespace-nowrap">
                 <Coins className="w-3.5 h-3.5 text-amber-200" />
-                +${(rateUsd / 24).toFixed(5)}/h
+                +{formatGram(rate / 24, 6)} GRAM/h
               </div>
             )}
           </div>
