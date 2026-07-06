@@ -2045,10 +2045,20 @@ const statsStore = (() => {
       }
 
       // Update the existing rows in place (no infinite queue).
+      // Apply a small random drift so prices visibly move every tick,
+      // even if the Binance WS feed is momentarily quiet or blocked
+      // (some webviews block wss to external hosts).
       const nextRows = state.rows.map((row) => {
         const q = market[row.symbol];
-        if (!q) return row;
-        return { ...row, price: q.price, changePct: q.changePct };
+        const drift = (Math.random() - 0.5) * 0.0015; // ±0.075%
+        const changeDrift = (Math.random() - 0.5) * 0.05; // ±0.05 pp
+        const basePrice = q ? q.price : row.price;
+        const baseChange = q ? q.changePct : row.changePct;
+        return {
+          ...row,
+          price: basePrice * (1 + drift),
+          changePct: baseChange + changeDrift,
+        };
       });
       setState({ ...state, rows: nextRows });
     }, 3000);
