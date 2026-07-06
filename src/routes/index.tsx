@@ -2086,7 +2086,23 @@ function useStatsStream() {
 function StatsTab() {
   const { t } = useT();
   const { rows, split } = useStatsStream();
+  const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (rows.length === 0) return;
+    let index = 0;
+    setHighlightIndex(0);
+    const id = setInterval(() => {
+      index += 1;
+      if (index >= rows.length) {
+        clearInterval(id);
+        setHighlightIndex(null);
+      } else {
+        setHighlightIndex(index);
+      }
+    }, 100);
+    return () => clearInterval(id);
+  }, [rows]);
 
   return (
     <div className="space-y-3 pb-4">
