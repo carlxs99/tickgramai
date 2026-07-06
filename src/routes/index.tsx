@@ -2142,13 +2142,17 @@ function StatsTab() {
 
       {/* Live rows */}
       <div className="space-y-2">
-        {rows.map((r) => {
+        {rows.map((r, index) => {
           const isLong = r.changePct >= 0;
           const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
+          const highlighted = highlightIndex === index;
           return (
             <div
               key={r.id}
-              className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
+              className={[
+                "card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 transition-all duration-200",
+                highlighted ? "ring-2 ring-white/30 scale-[1.02] bg-white/10" : "",
+              ].join(" ")}
             >
                   {/* official logo */}
                   <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-white/10">
