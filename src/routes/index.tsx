@@ -3,7 +3,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send, Activity } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
   component: MinerApp,
 });
 
-type Tab = "mine" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "admin";
+type Tab = "mine" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "stats" | "admin";
 
 function MinerApp() {
   return (
@@ -171,6 +171,7 @@ function MinerAppInner() {
               {tab === "friends" && <FriendsTab />}
               {tab === "deposit" && <DepositTab />}
               {tab === "withdraw" && <WithdrawTab />}
+              {tab === "stats" && <StatsTab />}
               {tab === "admin" && <AdminTab />}
             </Suspense>
           </motion.main>
@@ -1844,11 +1845,181 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+// ============ Stats (live trading report) ============
+type TradeCoin = {
+  symbol: string;
+  color: string;      // background for the round badge
+  glyph?: string;     // short glyph to render in the badge (fallback to first letter)
+  basePrice: number;
+  decimals: number;
+};
+
+const STATS_COINS: TradeCoin[] = [
+  { symbol: "SOL",  color: "#14F195", glyph: "◎",  basePrice: 172.4,   decimals: 1 },
+  { symbol: "BTC",  color: "#F7931A", glyph: "₿",  basePrice: 96_240,  decimals: 0 },
+  { symbol: "ETH",  color: "#627EEA", glyph: "◆",  basePrice: 3_320,   decimals: 0 },
+  { symbol: "XRP",  color: "#111111", glyph: "✕",  basePrice: 2.32,    decimals: 4 },
+  { symbol: "TON",  color: "#0098EA", glyph: "◆",  basePrice: 5.42,    decimals: 2 },
+  { symbol: "TRX",  color: "#E30613", glyph: "◈",  basePrice: 0.2451,  decimals: 4 },
+  { symbol: "LTC",  color: "#B8B8B8", glyph: "Ł",  basePrice: 108.7,   decimals: 1 },
+  { symbol: "NOT",  color: "#000000", glyph: "!",  basePrice: 0.00042, decimals: 5 },
+  { symbol: "DOGE", color: "#C2A633", glyph: "Ð",  basePrice: 0.331,   decimals: 4 },
+  { symbol: "ADA",  color: "#0033AD", glyph: "₳",  basePrice: 1.02,    decimals: 3 },
+];
+
+type TickRow = { symbol: string; color: string; glyph?: string; price: number; changePct: number; decimals: number };
+
+function formatPrice(v: number, decimals: number) {
+  const fixed = v.toFixed(decimals);
+  // insert thin space thousands separators for large numbers
+  const [ints, dec] = fixed.split(".");
+  const withSep = ints.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return dec ? `${withSep}.${dec}` : withSep;
+}
+
+function StatsTab() {
+  const { t } = useT();
+
+  const genRows = useMemo<() => TickRow[]>(() => {
+    return () =>
+      STATS_COINS.map((c) => {
+        // Fluctuate price ±0.5% per tick
+        const drift = (Math.random() - 0.5) * 0.01;
+        const price = c.basePrice * (1 + drift);
+        // % change vs "reference" — biased slightly around 0
+        const changePct = (Math.random() - 0.48) * 10; // roughly -4.8% .. +5.2%
+        return { symbol: c.symbol, color: c.color, glyph: c.glyph, price, changePct, decimals: c.decimals };
+      });
+  }, []);
+
+  const [rows, setRows] = useState<TickRow[]>(() => genRows());
+  const [split, setSplit] = useState<{ long: number; short: number }>(() => {
+    const long = 45 + Math.random() * 10; // 45..55
+    return { long, short: 100 - long };
+  });
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRows((prev) =>
+        prev.map((r) => {
+          const drift = (Math.random() - 0.5) * 0.006;
+          const nextPrice = r.price * (1 + drift);
+          const nextChange = r.changePct + (Math.random() - 0.5) * 0.6;
+          return { ...r, price: nextPrice, changePct: Math.max(-9.9, Math.min(9.9, nextChange)) };
+        }),
+      );
+      setSplit(() => {
+        const long = 45 + Math.random() * 10;
+        return { long, short: 100 - long };
+      });
+    }, 2500);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="space-y-3 pb-4">
+      {/* Intro card */}
+      <div className="card-glass rounded-2xl p-4 space-y-3">
+        <h2 className="font-bold text-base leading-snug">{t("stats.title")}</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">{t("stats.desc")}</p>
+
+        {/* LONG / SHORT split */}
+        <div className="relative h-11 rounded-full overflow-hidden ring-1 ring-white/10 flex">
+          <div
+            className="h-full flex items-center justify-center text-white font-bold text-sm"
+            style={{
+              width: `${split.long}%`,
+              background: "linear-gradient(90deg, #b6d4ff 0%, #7aa7ff 100%)",
+            }}
+          >
+            <div className="text-center leading-tight">
+              <div>{split.long.toFixed(2)}%</div>
+              <div className="text-[10px] font-semibold opacity-90">{t("stats.long")}</div>
+            </div>
+          </div>
+          <div
+            className="h-full flex items-center justify-center text-white font-bold text-sm"
+            style={{
+              width: `${split.short}%`,
+              background: "linear-gradient(90deg, #ff8a6e 0%, #ff4d2e 100%)",
+            }}
+          >
+            <div className="text-center leading-tight">
+              <div>{split.short.toFixed(2)}%</div>
+              <div className="text-[10px] font-semibold opacity-90">{t("stats.short")}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Live rows */}
+      <div className="space-y-2">
+        <AnimatePresence initial={false}>
+          {rows.map((r) => {
+            const isLong = r.changePct >= 0;
+            const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
+            return (
+              <motion.div
+                key={r.symbol}
+                layout
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
+              >
+                {/* icon */}
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                  style={{ background: r.color }}
+                >
+                  {r.glyph ?? r.symbol[0]}
+                </div>
+
+                {/* symbol + price */}
+                <div className="min-w-0 flex items-baseline gap-2">
+                  <span className="font-bold text-sm">{r.symbol}</span>
+                  <span className="text-[13px] text-muted-foreground truncate">
+                    $ {formatPrice(r.price, r.decimals)}
+                  </span>
+                </div>
+
+                {/* % change */}
+                <div
+                  className="text-xs font-bold px-2 py-1 rounded-md text-foreground"
+                  style={{
+                    background: isLong
+                      ? "linear-gradient(90deg, rgba(122,167,255,0.05), rgba(122,167,255,0.25))"
+                      : "linear-gradient(90deg, rgba(255,138,110,0.05), rgba(255,77,46,0.25))",
+                  }}
+                >
+                  {pctStr}
+                </div>
+
+                {/* pill badge */}
+                <div
+                  className="text-[11px] font-bold text-white px-3 py-1.5 rounded-full shrink-0"
+                  style={{
+                    background: isLong
+                      ? "linear-gradient(90deg, #b6d4ff, #7aa7ff)"
+                      : "linear-gradient(90deg, #ff8a6e, #ff4d2e)",
+                  }}
+                >
+                  {isLong ? t("stats.long") : t("stats.short")}
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
 function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const { t } = useT();
   const items: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "mine", label: t("nav.mine"), icon: <Pickaxe className="w-5 h-5" /> },
     { id: "tasks", label: t("nav.tasks"), icon: <ListChecks className="w-5 h-5" /> },
+    { id: "stats", label: t("nav.stats"), icon: <Activity className="w-5 h-5" /> },
     { id: "top", label: t("nav.top"), icon: <Trophy className="w-5 h-5" /> },
     { id: "friends", label: t("nav.friends"), icon: <Users className="w-5 h-5" /> },
     { id: "deposit", label: t("nav.deposit"), icon: <ArrowDownToLine className="w-5 h-5" /> },
@@ -1857,14 +2028,14 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40">
       <div className="max-w-md mx-auto px-3 pb-3">
-        <div className="card-glass rounded-2xl px-2 py-2 flex justify-between">
+        <div className="card-glass rounded-2xl px-1 py-2 flex justify-between">
           {items.map((it) => {
             const active = tab === it.id;
             return (
               <button key={it.id} onClick={() => { setTab(it.id); getTelegram()?.HapticFeedback?.impactOccurred("light"); }}
-                className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-xl transition ${active ? "text-primary" : "text-muted-foreground"}`}>
-                <div className={`p-1.5 rounded-lg ${active ? "bg-primary/15" : ""}`}>{it.icon}</div>
-                <span className="text-[10px] font-medium">{it.label}</span>
+                className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 py-1.5 rounded-xl transition ${active ? "text-primary" : "text-muted-foreground"}`}>
+                <div className={`p-1 rounded-lg ${active ? "bg-primary/15" : ""}`}>{it.icon}</div>
+                <span className="text-[9px] font-medium truncate max-w-full px-0.5">{it.label}</span>
               </button>
             );
           })}
