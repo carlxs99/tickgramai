@@ -494,6 +494,7 @@ function GiftBoxesCard() {
   const { t } = useT();
   const listFn = useServerFn(listGiftBoxes);
   const openFn = useServerFn(openGiftBox);
+  const claimDailyFn = useServerFn(claimDailyGiftBox);
   const qc = useQueryClient();
   const { data } = useQuery({
     queryKey: ["gift-boxes"],
@@ -502,6 +503,8 @@ function GiftBoxesCard() {
   });
   const unopened = data?.unopenedCount ?? 0;
   const activeBonus = data?.activeBonus as { percent: number; expires_at: string } | null | undefined;
+  const canClaimDaily = data?.canClaimDaily ?? false;
+  const nextDailyAt = data?.nextDailyAt ?? null;
   const [prize, setPrize] = useState<{ prizeType: string; prizeAmount: number } | null>(null);
 
   const firstUnopened = (data?.boxes ?? []).find((b: any) => b.status === "unopened");
@@ -511,6 +514,16 @@ function GiftBoxesCard() {
       getTelegram()?.HapticFeedback?.impactOccurred?.("heavy");
       setPrize({ prizeType: r.prizeType, prizeAmount: r.prizeAmount });
       qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+  });
+
+  const claimMut = useMutation({
+    mutationFn: () => claimDailyFn(),
+    onSuccess: () => {
+      getTelegram()?.HapticFeedback?.impactOccurred?.("medium");
+      toast.success(t("gift.daily_claimed"));
+      qc.invalidateQueries({ queryKey: ["gift-boxes"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
@@ -547,6 +560,30 @@ function GiftBoxesCard() {
               {t("gift.rewards_hint")}
             </div>
           </div>
+        </div>
+
+        {/* Daily free gift box */}
+        <div className="relative mt-3 rounded-xl bg-black/25 px-3 py-2 flex items-center gap-2">
+          <Gift className="w-4 h-4 text-emerald-300 shrink-0" />
+          <div className="flex-1 text-[11px] text-white leading-tight">
+            <div className="font-bold text-emerald-200">{t("gift.daily_title")}</div>
+            <div className="text-white/70">
+              {canClaimDaily
+                ? t("gift.daily_available")
+                : t("gift.daily_next_in")}
+            </div>
+          </div>
+          {canClaimDaily ? (
+            <button
+              onClick={() => !claimMut.isPending && claimMut.mutate()}
+              disabled={claimMut.isPending}
+              className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-400 text-emerald-950 disabled:opacity-60"
+            >
+              {claimMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : t("gift.daily_claim")}
+            </button>
+          ) : nextDailyAt ? (
+            <BonusCountdown expiresAt={nextDailyAt} />
+          ) : null}
         </div>
 
         {activeBonus && (
