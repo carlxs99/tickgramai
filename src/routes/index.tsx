@@ -153,7 +153,7 @@ function MinerAppInner() {
       <div className="min-h-screen pb-24 max-w-md mx-auto">
         <Toaster theme="dark" position="top-center" richColors />
         <OnboardingTutorial />
-        <Header onAdminClick={() => setTab("admin")} setTab={setTab} />
+        {tab === "mine" && <Header onAdminClick={() => setTab("admin")} setTab={setTab} />}
 
 
 
