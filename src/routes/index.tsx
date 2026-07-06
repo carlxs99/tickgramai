@@ -312,9 +312,7 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
         </button>
 
         <div className="h-12 rounded-full card-glass bg-white/10 flex items-center gap-2 px-3 min-w-0">
-          <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--success)] flex items-center justify-center shrink-0 overflow-hidden">
-            <img src={gramLogoImg.url} alt="GRAM" className="w-5 h-5 object-contain" />
-          </span>
+          <img src={gramLogoImg.url} alt="GRAM" className="w-8 h-8 rounded-full object-cover shrink-0" />
           <div className="flex flex-col min-w-0 leading-tight">
             <span className="font-bold text-sm tabular-nums truncate">{formatGram(bal, 4)} GRAM</span>
             <span className="text-[11px] tabular-nums text-[color:var(--gold)] truncate">${usdt(bal, price)}</span>
