@@ -1910,6 +1910,7 @@ const STATS_COINS: TradeCoin[] = [
 ];
 
 type TickRow = {
+  id: string;
   symbol: string;
   image: string | null;
   price: number;
@@ -1924,8 +1925,11 @@ function formatPrice(v: number, decimals: number) {
   return dec ? `${withSep}.${dec}` : withSep;
 }
 
-// Initial snapshot from Binance REST
-async function fetchBinanceSnapshot(): Promise<TickRow[]> {
+type MarketQuote = { price: number; changePct: number };
+type MarketMap = Record<string, MarketQuote>;
+
+// Initial snapshot from Binance REST — returns per-symbol quotes
+async function fetchBinanceSnapshot(): Promise<MarketMap> {
   const symbolsParam = encodeURIComponent(
     JSON.stringify(STATS_COINS.map((c) => c.binanceSymbol)),
   );
@@ -1937,16 +1941,15 @@ async function fetchBinanceSnapshot(): Promise<TickRow[]> {
     lastPrice: string;
     priceChangePercent: string;
   }>;
-  return STATS_COINS.map((c) => {
+  const map: MarketMap = {};
+  for (const c of STATS_COINS) {
     const m = data.find((d) => d.symbol === c.binanceSymbol);
-    return {
-      symbol: c.symbol,
-      image: c.logo,
+    map[c.symbol] = {
       price: m ? parseFloat(m.lastPrice) : 0,
       changePct: m ? parseFloat(m.priceChangePercent) : 0,
-      decimals: c.decimals,
     };
-  });
+  }
+  return map;
 }
 
 function StatsTab() {
@@ -1968,21 +1971,18 @@ function StatsTab() {
     return { long, short: 100 - long };
   });
 
-  // Sync rows with snapshot
+  // Live per-symbol quotes (updated by WS, seeded by REST snapshot)
+  const marketRef = useRef<MarketMap>({});
+  const idCounterRef = useRef(0);
+
+  // Seed the market map from REST snapshot
   useEffect(() => {
     if (marketRows) {
-      setRows((prev) => {
-        if (prev.length === 0) return marketRows;
-        // Merge: keep live prices from WS if already set
-        return marketRows.map((m) => {
-          const existing = prev.find((p) => p.symbol === m.symbol);
-          return existing ? { ...m, price: existing.price, changePct: existing.changePct } : m;
-        });
-      });
+      marketRef.current = { ...marketRef.current, ...marketRows };
     }
   }, [marketRows]);
 
-  // Real-time Binance WebSocket ticker stream
+  // Real-time Binance WebSocket ticker stream — updates the market map only
   useEffect(() => {
     const streams = STATS_COINS.map((c) => `${c.binanceSymbol.toLowerCase()}@ticker`).join("/");
     const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
@@ -1995,15 +1995,32 @@ function StatsTab() {
         if (!d?.s) return;
         const coin = bySymbol.get(d.s);
         if (!coin) return;
-        const price = parseFloat(d.c);
-        const changePct = parseFloat(d.P);
-        setRows((prev) =>
-          prev.map((r) => (r.symbol === coin.symbol ? { ...r, price, changePct } : r)),
-        );
+        marketRef.current[coin.symbol] = {
+          price: parseFloat(d.c),
+          changePct: parseFloat(d.P),
+        };
       } catch {
         /* ignore */
       }
     };
+
+    // Emit a new feed event every second: pick a random coin, prepend row
+    const feedId = setInterval(() => {
+      const pool = STATS_COINS.filter((c) => marketRef.current[c.symbol]?.price);
+      if (pool.length === 0) return;
+      const coin = pool[Math.floor(Math.random() * pool.length)];
+      const q = marketRef.current[coin.symbol];
+      idCounterRef.current += 1;
+      const newRow: TickRow = {
+        id: `${coin.symbol}-${Date.now()}-${idCounterRef.current}`,
+        symbol: coin.symbol,
+        image: coin.logo,
+        price: q.price,
+        changePct: q.changePct,
+        decimals: coin.decimals,
+      };
+      setRows((prev) => [newRow, ...prev].slice(0, 20));
+    }, 1000);
 
     // Refresh LONG/SHORT split occasionally
     const splitId = setInterval(() => {
@@ -2012,6 +2029,7 @@ function StatsTab() {
     }, 4000);
 
     return () => {
+      clearInterval(feedId);
       clearInterval(splitId);
       try { ws.close(); } catch { /* noop */ }
     };
@@ -2061,17 +2079,18 @@ function StatsTab() {
           </div>
         ) : (
           <AnimatePresence initial={false}>
-            {[...rows].sort((a, b) => b.changePct - a.changePct).map((r) => {
+            {rows.map((r) => {
 
               const isLong = r.changePct >= 0;
               const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
               return (
                 <motion.div
-                  key={r.symbol}
+                  key={r.id}
                   layout
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ layout: { type: "spring", stiffness: 350, damping: 30 } }}
+                  initial={{ opacity: 0, y: -20, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ layout: { type: "spring", stiffness: 400, damping: 32 }, duration: 0.35 }}
                   className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
                 >
                   {/* official logo */}
