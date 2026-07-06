@@ -60,6 +60,11 @@ function MinerAppInner() {
     if (attempted.current) return;
     attempted.current = true;
 
+    // Start the stats stream on app boot so it's already populated
+    // whenever the user opens the Stats tab — no loading spinner.
+    statsStore.start();
+
+
     // Preload all the data the app needs so that when the splash screen
     // disappears the user sees a fully rendered app (no extra loading).
     const finishBoot = async () => {
@@ -1953,42 +1958,48 @@ async function fetchBinanceSnapshot(): Promise<MarketMap> {
   return map;
 }
 
-function StatsTab() {
-  const { t } = useT();
+// ============= Global Stats Stream (runs indefinitely, survives tab switches) =============
+type StatsStoreState = { rows: TickRow[]; split: { long: number; short: number } };
+const statsStore = (() => {
+  let state: StatsStoreState = {
+    rows: [],
+    split: (() => {
+      const long = 45 + Math.random() * 10;
+      return { long, short: 100 - long };
+    })(),
+  };
+  const listeners = new Set<() => void>();
+  const market: MarketMap = {};
+  let idCounter = 0;
+  let started = false;
+  let ws: WebSocket | null = null;
+  let feedId: ReturnType<typeof setInterval> | null = null;
+  let splitId: ReturnType<typeof setInterval> | null = null;
 
-  const { data: marketRows } = useQuery({
-    queryKey: ["binance-snapshot"],
-    queryFn: fetchBinanceSnapshot,
-    refetchInterval: 60_000,
-    refetchIntervalInBackground: false,
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
-    retry: 1,
-  });
+  function emit() {
+    for (const l of listeners) l();
+  }
+  function setState(next: StatsStoreState) {
+    state = next;
+    emit();
+  }
 
-  const [rows, setRows] = useState<TickRow[]>([]);
-  const [split, setSplit] = useState<{ long: number; short: number }>(() => {
-    const long = 45 + Math.random() * 10;
-    return { long, short: 100 - long };
-  });
+  async function seedFromRest() {
+    try {
+      const snap = await fetchBinanceSnapshot();
+      Object.assign(market, snap);
+    } catch { /* ignore, WS will fill it */ }
+  }
 
-  // Live per-symbol quotes (updated by WS, seeded by REST snapshot)
-  const marketRef = useRef<MarketMap>({});
-  const idCounterRef = useRef(0);
-
-  // Seed the market map from REST snapshot
-  useEffect(() => {
-    if (marketRows) {
-      marketRef.current = { ...marketRef.current, ...marketRows };
-    }
-  }, [marketRows]);
-
-  // Real-time Binance WebSocket ticker stream — updates the market map only
-  useEffect(() => {
+  function connectWs() {
     const streams = STATS_COINS.map((c) => `${c.binanceSymbol.toLowerCase()}@ticker`).join("/");
-    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
     const bySymbol = new Map(STATS_COINS.map((c) => [c.binanceSymbol, c]));
-
+    try {
+      ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+    } catch {
+      ws = null;
+      return;
+    }
     ws.onmessage = (ev) => {
       try {
         const msg = JSON.parse(ev.data);
@@ -1996,45 +2007,67 @@ function StatsTab() {
         if (!d?.s) return;
         const coin = bySymbol.get(d.s);
         if (!coin) return;
-        marketRef.current[coin.symbol] = {
-          price: parseFloat(d.c),
-          changePct: parseFloat(d.P),
-        };
-      } catch {
-        /* ignore */
-      }
+        market[coin.symbol] = { price: parseFloat(d.c), changePct: parseFloat(d.P) };
+      } catch { /* ignore */ }
     };
+    ws.onclose = () => {
+      // Auto-reconnect after a short delay so the stream truly runs forever
+      setTimeout(() => { if (started) connectWs(); }, 3000);
+    };
+    ws.onerror = () => { try { ws?.close(); } catch { /* noop */ } };
+  }
 
-    // Emit a new feed event every 10 seconds: pick a random coin, prepend row
-    const feedId = setInterval(() => {
-      const pool = STATS_COINS.filter((c) => marketRef.current[c.symbol]?.price);
+  function start() {
+    if (started) return;
+    started = true;
+    seedFromRest();
+    connectWs();
+
+    feedId = setInterval(() => {
+      const pool = STATS_COINS.filter((c) => market[c.symbol]?.price);
       if (pool.length === 0) return;
       const coin = pool[Math.floor(Math.random() * pool.length)];
-      const q = marketRef.current[coin.symbol];
-      idCounterRef.current += 1;
+      const q = market[coin.symbol];
+      idCounter += 1;
       const newRow: TickRow = {
-        id: `${coin.symbol}-${Date.now()}-${idCounterRef.current}`,
+        id: `${coin.symbol}-${Date.now()}-${idCounter}`,
         symbol: coin.symbol,
         image: coin.logo,
         price: q.price,
         changePct: q.changePct,
         decimals: coin.decimals,
       };
-      setRows((prev) => [newRow, ...prev].slice(0, 20));
+      setState({ ...state, rows: [newRow, ...state.rows].slice(0, 20) });
     }, 10000);
 
-    // Refresh LONG/SHORT split occasionally
-    const splitId = setInterval(() => {
+    splitId = setInterval(() => {
       const long = 45 + Math.random() * 10;
-      setSplit({ long, short: 100 - long });
+      setState({ ...state, split: { long, short: 100 - long } });
     }, 4000);
+  }
 
-    return () => {
-      clearInterval(feedId);
-      clearInterval(splitId);
-      try { ws.close(); } catch { /* noop */ }
-    };
+  return {
+    start,
+    subscribe(l: () => void) { listeners.add(l); return () => listeners.delete(l); },
+    getSnapshot() { return state; },
+  };
+})();
+
+function useStatsStream() {
+  const [snap, setSnap] = useState(statsStore.getSnapshot());
+  useEffect(() => {
+    statsStore.start();
+    const unsub = statsStore.subscribe(() => setSnap(statsStore.getSnapshot()));
+    setSnap(statsStore.getSnapshot());
+    return () => { unsub(); };
   }, []);
+  return snap;
+}
+
+function StatsTab() {
+  const { t } = useT();
+  const { rows, split } = useStatsStream();
+
 
   return (
     <div className="space-y-3 pb-4">
@@ -2074,13 +2107,9 @@ function StatsTab() {
 
       {/* Live rows */}
       <div className="space-y-2">
-        {rows.length === 0 ? (
-          <div className="flex items-center justify-center py-10 text-muted-foreground text-sm">
-            <Loader2 className="w-4 h-4 animate-spin mr-2" /> …
-          </div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {rows.map((r) => {
+        <AnimatePresence initial={false}>
+          {rows.map((r) => {
+
 
               const isLong = r.changePct >= 0;
               const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
@@ -2163,7 +2192,7 @@ function StatsTab() {
               );
             })}
           </AnimatePresence>
-        )}
+
       </div>
     </div>
   );
