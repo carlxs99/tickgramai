@@ -275,8 +275,8 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
           {initial}
         </div>
         <div className="min-w-0 overflow-hidden">
-          <p className="text-[10px] text-white/80 leading-snug line-clamp-2">{t("header.ai_analyzing")}</p>
-          <p className="font-bold text-lg truncate leading-tight">{name}</p>
+          <p className="text-[10px] text-white/80 leading-snug">{t("header.ai_analyzing")}</p>
+          <p className="font-bold text-base sm:text-lg truncate leading-tight">{name}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <LanguageSwitcher />
