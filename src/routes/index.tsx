@@ -171,6 +171,7 @@ function MinerAppInner() {
               {tab === "friends" && <FriendsTab />}
               {tab === "deposit" && <DepositTab />}
               {tab === "withdraw" && <WithdrawTab />}
+              {tab === "stats" && <StatsTab />}
               {tab === "admin" && <AdminTab />}
             </Suspense>
           </motion.main>
