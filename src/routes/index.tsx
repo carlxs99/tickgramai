@@ -2004,7 +2004,7 @@ function StatsTab() {
       }
     };
 
-    // Emit a new feed event every second: pick a random coin, prepend row
+    // Emit a new feed event every 10 seconds: pick a random coin, prepend row
     const feedId = setInterval(() => {
       const pool = STATS_COINS.filter((c) => marketRef.current[c.symbol]?.price);
       if (pool.length === 0) return;
@@ -2020,7 +2020,7 @@ function StatsTab() {
         decimals: coin.decimals,
       };
       setRows((prev) => [newRow, ...prev].slice(0, 20));
-    }, 1000);
+    }, 10000);
 
     // Refresh LONG/SHORT split occasionally
     const splitId = setInterval(() => {
