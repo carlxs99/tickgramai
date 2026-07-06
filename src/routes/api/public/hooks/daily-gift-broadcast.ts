@@ -29,16 +29,7 @@ async function sendMessage(chatId: number | string, text: string, extra: Record<
   return { status: res.status, data: await res.json().catch(() => ({})) };
 }
 
-async function handleBroadcast(request: Request) {
-  const apiKey = request.headers.get("apikey") ?? request.headers.get("x-api-key") ?? "";
-  const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
-  if (!expected || apiKey !== expected) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  if (!process.env.LOVABLE_API_KEY || !process.env.TELEGRAM_API_KEY) {
-    return new Response("Telegram not configured", { status: 500 });
-  }
-
+async function runBroadcast() {
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -51,41 +42,73 @@ async function handleBroadcast(request: Request) {
     .not("telegram_id", "is", null);
 
   if (error) {
-    return Response.json({ ok: false, error: error.message }, { status: 500 });
+    console.error("[daily-gift-broadcast] fetch users error:", error.message);
+    return;
   }
 
   const reply_markup = {
     inline_keyboard: [[{ text: "🎁 Claim Free Gift Box", url: APP_URL }]],
   };
 
+  const list = (users ?? [])
+    .map((u: any) => u.telegram_id)
+    .filter((id: any) => id != null);
+
+  console.log(`[daily-gift-broadcast] starting broadcast to ${list.length} users`);
+
   let sent = 0;
   let failed = 0;
-  const errors: Array<{ chat_id: number; status: number }> = [];
+  const CONCURRENCY = 20;
 
-  for (const u of users ?? []) {
-    const chatId = (u as any).telegram_id;
-    if (!chatId) continue;
-    try {
-      const r = await sendMessage(chatId, BROADCAST_TEXT, { reply_markup });
-      if (r.status >= 200 && r.status < 300 && (r.data as any)?.ok !== false) {
-        sent++;
-      } else {
-        failed++;
-        if (errors.length < 10) errors.push({ chat_id: chatId, status: r.status });
-        // Handle rate limit
-        if (r.status === 429) {
-          const retryAfter = Number((r.data as any)?.parameters?.retry_after ?? 1);
-          await new Promise((res) => setTimeout(res, (retryAfter + 1) * 1000));
+  // Process in parallel batches to stay well under Telegram's 30 msg/s cap
+  // while completing quickly enough to avoid worker timeouts.
+  for (let i = 0; i < list.length; i += CONCURRENCY) {
+    const batch = list.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map(async (chatId) => {
+        try {
+          const r = await sendMessage(chatId, BROADCAST_TEXT, { reply_markup });
+          if (r.status === 429) {
+            const retryAfter = Number((r.data as any)?.parameters?.retry_after ?? 1);
+            await new Promise((res) => setTimeout(res, (retryAfter + 1) * 1000));
+            const r2 = await sendMessage(chatId, BROADCAST_TEXT, { reply_markup });
+            return r2.status >= 200 && r2.status < 300;
+          }
+          return r.status >= 200 && r.status < 300 && (r.data as any)?.ok !== false;
+        } catch {
+          return false;
         }
-      }
-    } catch {
-      failed++;
-    }
-    // ~25 msg/s to stay well under Telegram's 30 msg/s broadcast cap
-    await new Promise((res) => setTimeout(res, 40));
+      }),
+    );
+    for (const ok of results) ok ? sent++ : failed++;
+    // Small pause between batches to respect rate limit (~20 msg / 800ms = 25/s)
+    await new Promise((res) => setTimeout(res, 800));
   }
 
-  return Response.json({ ok: true, total: users?.length ?? 0, sent, failed, errors });
+  console.log(`[daily-gift-broadcast] done. sent=${sent} failed=${failed} total=${list.length}`);
+}
+
+async function handleBroadcast(request: Request) {
+  const apiKey = request.headers.get("apikey") ?? request.headers.get("x-api-key") ?? "";
+  const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
+  if (!expected || apiKey !== expected) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  if (!process.env.LOVABLE_API_KEY || !process.env.TELEGRAM_API_KEY) {
+    return new Response("Telegram not configured", { status: 500 });
+  }
+
+  // Fire-and-forget: keep the worker alive with waitUntil so the broadcast
+  // finishes after we return 202 immediately to the caller (avoids client timeouts).
+  try {
+    const { waitUntil } = (await import("cloudflare:workers" as any)) as { waitUntil: (p: Promise<unknown>) => void };
+    waitUntil(runBroadcast());
+  } catch {
+    // Fallback for environments without cloudflare:workers (e.g. local dev)
+    runBroadcast().catch((e) => console.error("[daily-gift-broadcast] error:", e));
+  }
+
+  return Response.json({ ok: true, status: "accepted" }, { status: 202 });
 }
 
 export const Route = createFileRoute("/api/public/hooks/daily-gift-broadcast")({
