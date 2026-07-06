@@ -353,10 +353,12 @@ function MineTab() {
 
         {/* 3D coins cluster */}
         <img
-          src={coins3dImg}
+          src={coins3dImg.url}
           alt=""
           aria-hidden="true"
           loading="lazy"
+          width={1024}
+          height={1024}
           className="absolute -right-6 top-1/2 -translate-y-1/2 w-[62%] max-w-[240px] pointer-events-none select-none opacity-95"
           style={{ filter: "drop-shadow(0 12px 24px oklch(0.30 0.14 300 / 0.55))" }}
         />
