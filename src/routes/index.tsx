@@ -854,17 +854,29 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
 function LeaderboardTab() {
   const { t } = useT();
   const fn = useServerFn(getTopMiners);
+  const rankFn = useServerFn(getMyRank);
   const price = useTonPrice();
   const { data } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
+  const { data: myRank } = useQuery({ queryKey: ["myRank"], queryFn: () => rankFn(), refetchInterval: 60_000 });
   const list = (data ?? []) as any[];
   const top3 = [list[0], list[1], list[2]];
-  const rest = list.slice(3, 10);
+  const rest = list.slice(3);
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold">{t("leaderboard.title")}</h2>
         <p className="text-xs text-muted-foreground">{t("leaderboard.subtitle")}</p>
       </div>
+
+      {myRank && (
+        <div className="card-glass rounded-2xl px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-[color:var(--gold)]" />
+            <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Your rank</span>
+          </div>
+          <span className="text-lg font-bold tabular-nums">#{(myRank as any).rank}</span>
+        </div>
+      )}
 
       <div className="card-glass rounded-3xl p-4 overflow-hidden relative">
         <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ background: "radial-gradient(600px 200px at 50% -20%, color-mix(in oklab, var(--gold) 30%, transparent), transparent)" }} />
@@ -886,13 +898,15 @@ function LeaderboardTab() {
         {rest.length === 0 && list.length <= 3 ? (
           <p className="p-4 text-sm text-muted-foreground text-center">{t("leaderboard.only_podium")}</p>
         ) : (
-          <div className="divide-y divide-white/5">
-            {rest.map((m, i) => {
-              const rank = i + 4;
+          <PaginatedList
+            items={rest}
+            pageSize={10}
+            renderItem={(m: any, idx: number, startIndex: number) => {
+              const rank = startIndex + idx + 4;
               const name = m.first_name || m.username || t("leaderboard.anon");
               return (
                 <div key={rank} className="flex items-center gap-3 px-3 py-2.5">
-                  <span className="w-6 text-center text-xs font-bold text-muted-foreground">#{rank}</span>
+                  <span className="w-8 text-center text-xs font-bold text-muted-foreground">#{rank}</span>
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/40 to-accent/40 flex items-center justify-center text-sm font-bold overflow-hidden">
                     {m.avatar_url ? <img src={m.avatar_url} alt={name} className="w-full h-full object-cover" /> : podiumInitial(m)}
                   </div>
@@ -903,8 +917,8 @@ function LeaderboardTab() {
                   <span className="text-sm tabular-nums text-[color:var(--success)] font-semibold">${Number(m.mining_rate_usd ?? 0).toFixed(5)}/d</span>
                 </div>
               );
-            })}
-          </div>
+            }}
+          />
         )}
       </div>
     </div>
