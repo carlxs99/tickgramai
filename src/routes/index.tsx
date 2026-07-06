@@ -1619,12 +1619,15 @@ function DepositTab() {
       {!!deposits?.length && (
         <div className="card-glass rounded-2xl p-4">
           <p className="font-semibold mb-2">{t("common.history")}</p>
-          {deposits.map((d: any) => (
-            <div key={d.id} className="flex justify-between text-sm py-1.5">
-              <span>{Number(d.amount_ton).toFixed(4)} GRAM</span>
-              <span className="text-muted-foreground">{d.status}</span>
-            </div>
-          ))}
+          <PaginatedList
+            items={deposits}
+            renderItem={(d: any) => (
+              <div key={d.id} className="flex justify-between text-sm py-1.5">
+                <span>{Number(d.amount_ton).toFixed(4)} GRAM</span>
+                <span className="text-muted-foreground">{d.status}</span>
+              </div>
+            )}
+          />
         </div>
       )}
     </div>
