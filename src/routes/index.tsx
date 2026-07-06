@@ -2061,7 +2061,7 @@ const statsStore = (() => {
 
       const previousRows = new Map(state.rows.map((row) => [row.symbol, row]));
       const shouldRotate = ticksUntilRotation === 0;
-      console.log("tick", { ticksUntilRotation, shouldRotate, rowsLen: state.rows.length });
+      console.log("tick", { ticksUntilRotation, shouldRotate, rowsLen: state.rows.length, visibleCursor });
 
       if (state.rows.length === 0 || shouldRotate) {
         // Show a new set of coins. Update all rows at once so there are no
