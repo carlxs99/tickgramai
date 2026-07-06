@@ -17,7 +17,9 @@ import { formatGram, formatReward } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { LanguageProvider, LanguageSwitcher, useT } from "@/i18n";
 import { markAppReady } from "@/lib/app-ready";
+import { OnboardingTutorial, openTutorial } from "@/components/OnboardingTutorial";
 import treasureChestImg from "@/assets/treasure-chest.png";
+
 
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
@@ -148,7 +150,9 @@ function MinerAppInner() {
     >
       <div className="min-h-screen pb-24 max-w-md mx-auto">
         <Toaster theme="dark" position="top-center" richColors />
+        <OnboardingTutorial />
         <Header onAdminClick={() => setTab("admin")} />
+
         <AnimatePresence mode="wait">
           <motion.main
             key={tab}
@@ -269,6 +273,13 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
           <p className="font-semibold truncate">{name}</p>
         </div>
         <LanguageSwitcher />
+        <button
+          onClick={() => openTutorial()}
+          className="shrink-0 h-9 w-9 rounded-xl card-glass text-primary flex items-center justify-center"
+          aria-label={t("tutorial.help")}
+        >
+          <HelpCircle className="w-4 h-4" />
+        </button>
         {data?.isAdmin && (
           <button
             onClick={onAdminClick}
@@ -278,6 +289,7 @@ function Header({ onAdminClick }: { onAdminClick: () => void }) {
             <Shield className="w-4 h-4" />
           </button>
         )}
+
         <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 rounded-2xl card-glass">
           <div className="flex items-center gap-1">
             <Coins className="w-3.5 h-3.5 text-[color:var(--gold)]" />
