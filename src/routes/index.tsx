@@ -899,8 +899,8 @@ function LeaderboardTab() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-bold">{t("leaderboard.title")}</h2>
-        <p className="text-xs text-muted-foreground">{t("leaderboard.subtitle")}</p>
+        <h2 className="text-2xl font-bold text-white text-glow-white">{t("leaderboard.title")}</h2>
+        <p className="text-xs text-white/80">{t("leaderboard.subtitle")}</p>
       </div>
 
       <div className="card-glass rounded-2xl px-4 py-3 flex items-center justify-between">
@@ -991,8 +991,8 @@ function TasksTab() {
   };
   return (
     <div className="space-y-3">
-      <h2 className="text-2xl font-bold">{tr("tasks.title")}</h2>
-      <p className="text-sm text-muted-foreground">{tr("tasks.subtitle")}</p>
+      <h2 className="text-2xl font-bold text-white text-glow-white">{tr("tasks.title")}</h2>
+      <p className="text-sm text-white/80">{tr("tasks.subtitle")}</p>
       <div className="space-y-2 mt-3">
         {data.map((t: any) => {
           const share = isShareTask(t);
@@ -1343,7 +1343,7 @@ function FriendsTab() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">{t("friends.title")}</h2>
+      <h2 className="text-2xl font-bold text-white text-glow-white">{t("friends.title")}</h2>
 
       {/* Invited by */}
       {inviterName && (
@@ -1532,8 +1532,8 @@ function DepositTab() {
 
   return (
     <div className="space-y-3 pb-2">
-      <h2 className="text-2xl font-bold">{t("deposit.title")}</h2>
-      <p className="text-sm text-muted-foreground">{t("deposit.subtitle")}</p>
+      <h2 className="text-2xl font-bold text-white text-glow-white">{t("deposit.title")}</h2>
+      <p className="text-sm text-white/80">{t("deposit.subtitle")}</p>
 
       <ActiveBonusBanner />
 
@@ -1778,8 +1778,8 @@ function WithdrawTab() {
   });
   return (
     <div className="space-y-3">
-      <h2 className="text-2xl font-bold">{t("withdraw.title")}</h2>
-      <p className="text-sm text-muted-foreground">{t("withdraw.subtitle", { amount: formatGram(minGram) })}</p>
+      <h2 className="text-2xl font-bold text-white text-glow-white">{t("withdraw.title")}</h2>
+      <p className="text-sm text-white/80">{t("withdraw.subtitle", { amount: formatGram(minGram) })}</p>
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.available")}</span>
