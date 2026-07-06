@@ -2079,7 +2079,7 @@ function StatsTab() {
           </div>
         ) : (
           <AnimatePresence initial={false}>
-            {[...rows].sort((a, b) => b.changePct - a.changePct).map((r) => {
+            {rows.map((r) => {
 
               const isLong = r.changePct >= 0;
               const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
