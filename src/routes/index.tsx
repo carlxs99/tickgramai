@@ -1279,21 +1279,6 @@ function FriendsTab() {
         </div>
       )}
 
-      {/* Partner refback */}
-      <div className="rounded-2xl bg-[color:var(--success)]/10 border border-[color:var(--success)]/20 p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[color:var(--success)]/20 text-[color:var(--success)] flex items-center justify-center shrink-0">
-            <Coins className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-semibold text-sm">{t("friends.refback_title")}</p>
-              <span className="text-lg font-bold text-[color:var(--success)]">{(s.refback_rate ?? 0.05) * 100}%</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{t("friends.refback_body")}</p>
-          </div>
-        </div>
-      </div>
 
       {/* Main stats card */}
       <div className="rounded-3xl p-5 text-white relative overflow-hidden bg-gradient-to-br from-primary to-accent">
@@ -1323,8 +1308,8 @@ function FriendsTab() {
               <span className="text-lg font-semibold tabular-nums">{formatGram(s.total_earned ?? 0, 8)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-white/90">{t("friends.refback_paid")}</span>
-              <span className="text-lg font-semibold tabular-nums">{formatGram(s.refback_paid ?? 0, 8)}</span>
+              <span className="text-sm text-white/90">{t("friends.commission_rate")}</span>
+              <span className="text-lg font-semibold tabular-nums">10%</span>
             </div>
           </div>
         </div>
