@@ -19,6 +19,7 @@ import { LanguageProvider, LanguageSwitcher, useT } from "@/i18n";
 import { markAppReady } from "@/lib/app-ready";
 import { OnboardingTutorial, openTutorial } from "@/components/OnboardingTutorial";
 import treasureChestImg from "@/assets/treasure-chest.png";
+import coins3dImg from "@/assets/coins-3d.png";
 
 
 
