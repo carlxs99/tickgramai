@@ -2085,11 +2085,12 @@ function StatsTab() {
               const pctStr = `${isLong ? "+" : ""}${r.changePct.toFixed(2)}%`;
               return (
                 <motion.div
-                  key={r.symbol}
+                  key={r.id}
                   layout
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ layout: { type: "spring", stiffness: 350, damping: 30 } }}
+                  initial={{ opacity: 0, y: -20, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ layout: { type: "spring", stiffness: 400, damping: 32 }, duration: 0.35 }}
                   className="card-glass rounded-2xl px-3 py-3 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2"
                 >
                   {/* official logo */}
