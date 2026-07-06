@@ -382,6 +382,11 @@ const es: Dict = {
   "nav.friends": "Amigos",
   "nav.deposit": "Depósito",
   "nav.cash": "Retirar",
+  "nav.stats": "Stats",
+  "stats.title": "Esta página proporciona un informe en vivo de las operaciones comerciales actuales",
+  "stats.desc": "Tickgram se basa en un algoritmo de trading en cuadrícula. El agente abre automáticamente posiciones largas y cortas con un paso mínimo de aproximadamente 0,1%. Esto permite obtener ganancias incluso de pequeñas fluctuaciones de precio.",
+  "stats.long": "LONG",
+  "stats.short": "SHORT",
 
   "admin.title": "Admin",
   "admin.users": "Usuarios",
