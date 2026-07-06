@@ -1979,7 +1979,7 @@ const statsStore = (() => {
   let visibleCursor = 0;
   let ticksUntilRotation = 0;
   let staggerTimeouts: ReturnType<typeof setTimeout>[] = [];
-  const ROTATE_EVERY = 5;
+  const ROTATE_EVERY = 1;
 
   function buildRow(
     coin: TradeCoin,
