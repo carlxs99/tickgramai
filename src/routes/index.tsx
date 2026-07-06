@@ -310,13 +310,14 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
           {t("nav.deposit")}
         </button>
 
-        <div className="h-10 rounded-full card-glass bg-white/10 flex items-center justify-center gap-1.5 px-2 min-w-0">
-          <span className="w-5 h-5 rounded-full bg-[color:var(--success)] flex items-center justify-center shrink-0">
-            <span className="text-[10px] font-black text-white leading-none">₮</span>
+        <div className="h-12 rounded-full card-glass bg-white/10 flex items-center gap-2 px-3 min-w-0">
+          <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--success)] flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4 text-white" />
           </span>
-          <span className="font-bold text-[13px] tabular-nums truncate">{formatGram(bal, 4)}</span>
-          <span className="text-[10px] shrink-0">⭐</span>
-          <span className="font-bold text-[13px] tabular-nums text-[color:var(--gold)] shrink-0">${usdt(bal, price)}</span>
+          <div className="flex flex-col min-w-0 leading-tight">
+            <span className="font-bold text-sm tabular-nums truncate">{formatGram(bal, 4)} GRAM</span>
+            <span className="text-[11px] tabular-nums text-[color:var(--gold)] truncate">${usdt(bal, price)}</span>
+          </div>
         </div>
 
         <button
