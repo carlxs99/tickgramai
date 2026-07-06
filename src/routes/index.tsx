@@ -1910,6 +1910,7 @@ const STATS_COINS: TradeCoin[] = [
 ];
 
 type TickRow = {
+  id: string;
   symbol: string;
   image: string | null;
   price: number;
