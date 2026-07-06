@@ -49,7 +49,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               : `https://t.me/Tickgramaibot/app`;
             await sendMessage(
               chatId,
-              `🤖 <b>TICK GRAM AI</b>\n\nWelcome to <b>TICK GRAM AI</b> — the smartest way to mine <b>GRAM</b> right inside Telegram.\n\n• Complete tasks and earn GRAM\n• Invite friends and earn 10% of every deposit they make\n• Deposit to boost your mining rate and earn passive income daily\n\nTap the button below to launch the app.`,
+              `🤖 <b>TickGram AI</b>\n\n¡Hola de nuevo! Tu agente de IA no ha dejado de analizar el mercado ni un instante. Abre la app para consultar tus informes y ganancias actualizadas.\n\n📍 Ingresos sin inversión\n📍 Ganancias cada segundo`,
               {
                 reply_markup: {
                   inline_keyboard: [[
