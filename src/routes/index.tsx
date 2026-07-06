@@ -410,7 +410,7 @@ function MineTab() {
 
           <div className="mt-3 text-[11px] text-white/70 max-w-[65%]">
             {rateUsd > 0
-              ? <>${rateUsd.toFixed(5)} {t("mine.per_day_suffix")}</>
+              ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
               : t("mine.deposit_to_start")}
           </div>
         </div>
