@@ -258,7 +258,7 @@ function usdt(gram: number, price: number) {
   return v.toFixed(6);
 }
 
-function Header({ onAdminClick }: { onAdminClick: () => void }) {
+function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t: Tab) => void }) {
   const { t } = useT();
   const meFn = useServerFn(getMe);
   const { data } = useQuery({ queryKey: ["me-header"], queryFn: () => meFn(), refetchInterval: 15000 });
