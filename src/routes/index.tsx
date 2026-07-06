@@ -1889,7 +1889,7 @@ const STATS_COINS: TradeCoin[] = [
   { symbol: "TON",  binanceSymbol: "TONUSDT",  decimals: 2, logo: "https://assets.coingecko.com/coins/images/17980/large/ton_symbol.png" },
   { symbol: "TRX",  binanceSymbol: "TRXUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/1094/large/tron-logo.png" },
   { symbol: "LTC",  binanceSymbol: "LTCUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/2/large/litecoin.png" },
-  { symbol: "NOT",  binanceSymbol: "NOTUSDT",  decimals: 5, logo: "https://assets.coingecko.com/coins/images/33453/large/notcoin.png" },
+  { symbol: "NOT",  binanceSymbol: "NOTUSDT",  decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/28850.png" },
   { symbol: "DOGE", binanceSymbol: "DOGEUSDT", decimals: 4, logo: "https://assets.coingecko.com/coins/images/5/large/dogecoin.png" },
   { symbol: "ADA",  binanceSymbol: "ADAUSDT",  decimals: 3, logo: "https://assets.coingecko.com/coins/images/975/large/cardano.png" },
 ];
@@ -2065,6 +2065,19 @@ function StatsTab() {
                         alt={r.symbol}
                         className="w-full h-full object-cover"
                         loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          const el = e.currentTarget;
+                          el.style.display = "none";
+                          const parent = el.parentElement;
+                          if (parent && !parent.querySelector("[data-fallback]")) {
+                            const span = document.createElement("span");
+                            span.setAttribute("data-fallback", "");
+                            span.className = "text-xs font-bold";
+                            span.textContent = r.symbol[0];
+                            parent.appendChild(span);
+                          }
+                        }}
                       />
                     ) : (
                       <span className="text-xs font-bold">{r.symbol[0]}</span>
