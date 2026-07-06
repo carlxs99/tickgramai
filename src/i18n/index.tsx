@@ -190,7 +190,29 @@ const en: Dict = {
   "admin.deleted": "Deleted",
   "admin.task_updated": "Task updated",
   "admin.task_created": "Task created",
+
+  "tutorial.help": "Show tutorial",
+  "tutorial.step_label": "Step {current} of {total}",
+  "tutorial.back": "Back",
+  "tutorial.next": "Next",
+  "tutorial.skip": "Skip",
+  "tutorial.start": "Let's start!",
+  "tutorial.s1.title": "Welcome to TICK GRAM AI",
+  "tutorial.s1.body": "Mine GRAM inside Telegram, complete tasks, invite friends and earn passive income every day.",
+  "tutorial.s2.title": "Mine GRAM 24/7",
+  "tutorial.s2.body": "Your miner runs non-stop. Tap “Collect Gram” to move mined GRAM into your balance whenever you want.",
+  "tutorial.s3.title": "Deposit to boost mining",
+  "tutorial.s3.body": "Connect your TON/GRAM wallet and deposit to increase your mining rate. The more you deposit, the more GRAM you earn per day.",
+  "tutorial.s4.title": "Free daily gift box",
+  "tutorial.s4.body": "Claim a free box every 24h and win extra GRAM/day or a deposit bonus. Invite friends to earn even more boxes.",
+  "tutorial.s5.title": "Complete tasks",
+  "tutorial.s5.body": "Join channels, follow partners and complete quick tasks to earn extra GRAM instantly.",
+  "tutorial.s6.title": "Invite friends, earn 10%",
+  "tutorial.s6.body": "Share your invite link and earn 10% of every deposit your friends make — forever.",
+  "tutorial.s7.title": "Withdraw your GRAM",
+  "tutorial.s7.body": "Once you reach the minimum balance, request a withdrawal to your GRAM wallet. Simple and fast.",
 };
+
 
 const es: Dict = {
   "auth.error": "Error de autenticación",
@@ -370,7 +392,29 @@ const es: Dict = {
   "admin.deleted": "Eliminada",
   "admin.task_updated": "Tarea actualizada",
   "admin.task_created": "Tarea creada",
+
+  "tutorial.help": "Ver tutorial",
+  "tutorial.step_label": "Paso {current} de {total}",
+  "tutorial.back": "Atrás",
+  "tutorial.next": "Siguiente",
+  "tutorial.skip": "Saltar",
+  "tutorial.start": "¡Empezar!",
+  "tutorial.s1.title": "Bienvenido a TICK GRAM AI",
+  "tutorial.s1.body": "Mina GRAM dentro de Telegram, completa tareas, invita amigos y gana ingresos pasivos todos los días.",
+  "tutorial.s2.title": "Mina GRAM 24/7",
+  "tutorial.s2.body": "Tu minero funciona sin parar. Pulsa “Recoger Gram” para pasar el GRAM minado a tu balance cuando quieras.",
+  "tutorial.s3.title": "Deposita para minar más",
+  "tutorial.s3.body": "Conecta tu wallet TON/GRAM y deposita para aumentar tu tasa de minería. Cuanto más depositas, más GRAM ganas al día.",
+  "tutorial.s4.title": "Caja diaria gratis",
+  "tutorial.s4.body": "Reclama una caja gratis cada 24h y gana GRAM/día extra o un bonus al depósito. Invita amigos para ganar aún más cajas.",
+  "tutorial.s5.title": "Completa tareas",
+  "tutorial.s5.body": "Únete a canales, sigue partners y completa tareas rápidas para ganar GRAM al instante.",
+  "tutorial.s6.title": "Invita amigos y gana 10%",
+  "tutorial.s6.body": "Comparte tu enlace y gana el 10% de cada depósito de tus amigos — para siempre.",
+  "tutorial.s7.title": "Retira tu GRAM",
+  "tutorial.s7.body": "Cuando alcances el mínimo, solicita un retiro a tu wallet GRAM. Rápido y sencillo.",
 };
+
 
 const ru: Dict = {
   "auth.error": "Ошибка авторизации",
@@ -550,7 +594,29 @@ const ru: Dict = {
   "admin.deleted": "Удалено",
   "admin.task_updated": "Задание обновлено",
   "admin.task_created": "Задание создано",
+
+  "tutorial.help": "Показать обучение",
+  "tutorial.step_label": "Шаг {current} из {total}",
+  "tutorial.back": "Назад",
+  "tutorial.next": "Далее",
+  "tutorial.skip": "Пропустить",
+  "tutorial.start": "Начнём!",
+  "tutorial.s1.title": "Добро пожаловать в TICK GRAM AI",
+  "tutorial.s1.body": "Майните GRAM прямо в Telegram, выполняйте задания, приглашайте друзей и получайте пассивный доход каждый день.",
+  "tutorial.s2.title": "Майнинг GRAM 24/7",
+  "tutorial.s2.body": "Ваш майнер работает без остановки. Нажимайте «Собрать Gram», чтобы переводить намайненное на баланс.",
+  "tutorial.s3.title": "Депозит увеличивает майнинг",
+  "tutorial.s3.body": "Подключите TON/GRAM-кошелёк и внесите депозит, чтобы повысить скорость майнинга. Чем больше депозит — тем больше GRAM в день.",
+  "tutorial.s4.title": "Бесплатный ежедневный бокс",
+  "tutorial.s4.body": "Забирайте бесплатный бокс каждые 24 часа: дополнительные GRAM/день или бонус к депозиту. Приглашайте друзей — получите ещё больше боксов.",
+  "tutorial.s5.title": "Выполняйте задания",
+  "tutorial.s5.body": "Подписывайтесь на каналы, следите за партнёрами и выполняйте быстрые задания, чтобы мгновенно получать GRAM.",
+  "tutorial.s6.title": "Приглашайте и получайте 10%",
+  "tutorial.s6.body": "Делитесь ссылкой и получайте 10% с каждого депозита ваших друзей — навсегда.",
+  "tutorial.s7.title": "Выводите GRAM",
+  "tutorial.s7.body": "Достигнув минимального баланса, запросите вывод на GRAM-кошелёк. Быстро и просто.",
 };
+
 
 const hi: Dict = {
   "auth.error": "प्रमाणीकरण त्रुटि",
@@ -730,7 +796,29 @@ const hi: Dict = {
   "admin.deleted": "हटाया गया",
   "admin.task_updated": "कार्य अपडेट किया",
   "admin.task_created": "कार्य बनाया",
+
+  "tutorial.help": "ट्यूटोरियल देखें",
+  "tutorial.step_label": "चरण {current} / {total}",
+  "tutorial.back": "पीछे",
+  "tutorial.next": "आगे",
+  "tutorial.skip": "छोड़ें",
+  "tutorial.start": "शुरू करें!",
+  "tutorial.s1.title": "TICK GRAM AI में आपका स्वागत है",
+  "tutorial.s1.body": "Telegram के अंदर GRAM माइन करें, कार्य पूरे करें, मित्रों को आमंत्रित करें और हर दिन निष्क्रिय आय कमाएँ।",
+  "tutorial.s2.title": "24/7 GRAM माइनिंग",
+  "tutorial.s2.body": "आपका माइनर बिना रुके चलता है। जब चाहें “GRAM लें” दबाकर माइन किया GRAM अपने बैलेंस में भेजें।",
+  "tutorial.s3.title": "जमा करें और माइनिंग बढ़ाएँ",
+  "tutorial.s3.body": "अपना TON/GRAM वॉलेट जोड़ें और जमा करके अपनी माइनिंग दर बढ़ाएँ। जितना अधिक जमा, उतना अधिक GRAM/दिन।",
+  "tutorial.s4.title": "मुफ़्त दैनिक बॉक्स",
+  "tutorial.s4.body": "हर 24 घंटे में मुफ़्त बॉक्स क्लेम करें और अतिरिक्त GRAM/दिन या डिपॉज़िट बोनस जीतें। दोस्तों को बुलाकर और भी बॉक्स पाएँ।",
+  "tutorial.s5.title": "कार्य पूरे करें",
+  "tutorial.s5.body": "चैनल जॉइन करें, पार्टनर्स को फ़ॉलो करें और तुरंत GRAM पाने के लिए त्वरित कार्य पूरे करें।",
+  "tutorial.s6.title": "मित्रों को बुलाएँ, 10% कमाएँ",
+  "tutorial.s6.body": "अपना आमंत्रण लिंक साझा करें और अपने दोस्तों की हर जमा राशि का 10% हमेशा के लिए कमाएँ।",
+  "tutorial.s7.title": "अपना GRAM निकालें",
+  "tutorial.s7.body": "न्यूनतम बैलेंस तक पहुँचने के बाद अपने GRAM वॉलेट में निकासी का अनुरोध करें। तेज़ और आसान।",
 };
+
 
 const DICTS: Record<Lang, Dict> = { en, es, ru, hi };
 
