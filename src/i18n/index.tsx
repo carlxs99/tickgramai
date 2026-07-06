@@ -28,6 +28,7 @@ const en: Dict = {
 
   "header.welcome": "Welcome",
   "header.admin_panel": "Admin panel",
+  "header.ai_analyzing": "Your AI is already analyzing the market!",
   "header.language": "Language",
 
   "mine.uncollected": "Your earnings",
@@ -244,6 +245,7 @@ const es: Dict = {
   "common.off": "off",
 
   "header.welcome": "Bienvenido",
+  "header.ai_analyzing": "__PLACEHOLDER__",
   "header.admin_panel": "Panel de admin",
   "header.language": "Idioma",
 
@@ -460,6 +462,7 @@ const ru: Dict = {
   "common.error": "Ошибка",
   "common.off": "выкл",
 
+  "header.ai_analyzing": "__PLACEHOLDER__",
   "header.welcome": "Добро пожаловать",
   "header.admin_panel": "Панель админа",
   "header.language": "Язык",
@@ -676,6 +679,7 @@ const hi: Dict = {
   "common.failed": "विफल",
   "common.error": "त्रुटि",
   "common.off": "बंद",
+  "header.ai_analyzing": "__PLACEHOLDER__",
 
   "header.welcome": "स्वागत है",
   "header.admin_panel": "एडमिन पैनल",
