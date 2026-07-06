@@ -1977,6 +1977,7 @@ const statsStore = (() => {
   let feedId: ReturnType<typeof setInterval> | null = null;
   let splitId: ReturnType<typeof setInterval> | null = null;
   let visibleCursor = 0;
+  let staggerTimeouts: ReturnType<typeof setTimeout>[] = [];
 
   function emit() {
     for (const l of listeners) l();
