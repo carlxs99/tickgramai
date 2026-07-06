@@ -909,10 +909,11 @@ export function LanguageSwitcher() {
       <button
         onClick={() => setOpen(true)}
         aria-label={t("header.language")}
-        className="shrink-0 h-9 w-9 rounded-xl card-glass text-base leading-none flex items-center justify-center"
+        className="shrink-0 h-8 w-8 rounded-lg card-glass text-sm leading-none flex items-center justify-center"
       >
         <span aria-hidden>{LANGS.find((l) => l.code === lang)?.flag ?? "🌐"}</span>
       </button>
+
       {modal}
     </>
   );
