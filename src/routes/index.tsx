@@ -2229,10 +2229,9 @@ function StatsTab() {
                   >
                     {isLong ? t("stats.long") : t("stats.short")}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
-          </AnimatePresence>
 
       </div>
     </div>
