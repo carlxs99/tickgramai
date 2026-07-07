@@ -106,7 +106,7 @@ async function processOne(row: any, supabaseAdmin: any) {
       `✅ <b>Withdraw Approved!</b>\n\n` +
       `👤 User: ${escapeHtml(handle)}\n\n` +
       `💰 Amount: ${amount} GRAM\n\n` +
-      `🔗 <a href="${explorerUrl}">View on GRAM Explorer →</a>`;
+      `🔗 <a href="${explorerUrl}">View on TONScan →</a>`;
     await sendTelegramMessage(WITHDRAWALS_CHAT, groupText);
 
     if (prof?.telegram_id) {
