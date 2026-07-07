@@ -1512,6 +1512,7 @@ function DepositTab() {
     mutationFn: async () => {
       if (!wallet) throw new Error(t("deposit.err_connect"));
       if (amountNum <= 0) throw new Error(t("deposit.err_amount"));
+      if (amountNum < 0.1) throw new Error(t("deposit.err_min"));
       if (!memoTag) throw new Error(t("deposit.err_memo"));
 
       const memoPayload = buildCommentPayload(memoTag);
