@@ -2802,19 +2802,25 @@ function AdminUsersSection() {
   }
 
   return (
-    <div className="card-glass rounded-2xl p-4 space-y-3">
-      <p className="font-semibold flex items-center gap-2">
-        <Users className="w-4 h-4 text-primary" /> Usuarios ({users?.length ?? 0})
-      </p>
-      <div className="relative">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por username, nombre o Telegram ID…"
-          className="w-full bg-background/60 rounded-xl pl-9 pr-3 py-2 text-sm border border-white/5"
-        />
+    <div className="card-glass rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/30">
+        <p className="font-semibold flex items-center gap-2 text-sm">
+          <Users className="w-3.5 h-3.5 text-primary" /> Users
+        </p>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-background/60 border border-white/5 tabular-nums font-semibold text-muted-foreground">
+          {users?.length ?? 0}
+        </span>
       </div>
+      <div className="p-3 space-y-3">
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search username, name or Telegram ID…"
+            className="w-full bg-background/60 rounded-lg pl-8 pr-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition"
+          />
+        </div>
       {isLoading ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
           <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
