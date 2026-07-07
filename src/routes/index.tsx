@@ -1890,12 +1890,24 @@ type TradeCoin = {
 const MAX_STATS_ROWS = 10;
 
 const STATS_COINS: TradeCoin[] = [
+  // TON ecosystem
   { symbol: "TON",   binanceSymbol: "TONUSDT",   decimals: 2, logo: "https://assets.coingecko.com/coins/images/17980/large/ton_symbol.png" },
   { symbol: "NOT",   binanceSymbol: "NOTUSDT",   decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/28850.png" },
   { symbol: "DOGS",  binanceSymbol: "DOGSUSDT",  decimals: 6, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32698.png" },
   { symbol: "HMSTR", binanceSymbol: "HMSTRUSDT", decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32195.png" },
   { symbol: "CATI",  binanceSymbol: "CATIUSDT",  decimals: 4, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32966.png" },
   { symbol: "GRAM",  binanceSymbol: "GRAMUSDT",  decimals: 2, logo: gramLogoImg.url },
+  // General market
+  { symbol: "BTC",  binanceSymbol: "BTCUSDT",  decimals: 0, logo: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png" },
+  { symbol: "ETH",  binanceSymbol: "ETHUSDT",  decimals: 0, logo: "https://assets.coingecko.com/coins/images/279/large/ethereum.png" },
+  { symbol: "BNB",  binanceSymbol: "BNBUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png" },
+  { symbol: "SOL",  binanceSymbol: "SOLUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/4128/large/solana.png" },
+  { symbol: "XRP",  binanceSymbol: "XRPUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png" },
+  { symbol: "TRX",  binanceSymbol: "TRXUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/1094/large/tron-logo.png" },
+  { symbol: "DOGE", binanceSymbol: "DOGEUSDT", decimals: 4, logo: "https://assets.coingecko.com/coins/images/5/large/dogecoin.png" },
+  { symbol: "ADA",  binanceSymbol: "ADAUSDT",  decimals: 3, logo: "https://assets.coingecko.com/coins/images/975/large/cardano.png" },
+  { symbol: "AVAX", binanceSymbol: "AVAXUSDT", decimals: 2, logo: "https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png" },
+  { symbol: "LINK", binanceSymbol: "LINKUSDT", decimals: 2, logo: "https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png" },
 ];
 
 type TickRow = {
