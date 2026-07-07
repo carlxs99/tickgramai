@@ -1601,7 +1601,7 @@ function DepositTab() {
         </div>
         {amountNum > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-            {t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: (amountNum * 0.033).toFixed(4) })}
+            {t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: formatReward(amountNum * 0.033) })}
           </p>
         )}
       </Field>
