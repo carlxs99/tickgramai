@@ -1892,9 +1892,9 @@ const MAX_STATS_ROWS = 10;
 const STATS_COINS: TradeCoin[] = [
   { symbol: "TON",   binanceSymbol: "TONUSDT",   decimals: 2, logo: "https://assets.coingecko.com/coins/images/17980/large/ton_symbol.png" },
   { symbol: "NOT",   binanceSymbol: "NOTUSDT",   decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/28850.png" },
-  { symbol: "DOGS",  binanceSymbol: "DOGSUSDT",  decimals: 6, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32452.png" },
-  { symbol: "HMSTR", binanceSymbol: "HMSTRUSDT", decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/30096.png" },
-  { symbol: "CATI",  binanceSymbol: "CATIUSDT",  decimals: 4, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32461.png" },
+  { symbol: "DOGS",  binanceSymbol: "DOGSUSDT",  decimals: 6, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32698.png" },
+  { symbol: "HMSTR", binanceSymbol: "HMSTRUSDT", decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32195.png" },
+  { symbol: "CATI",  binanceSymbol: "CATIUSDT",  decimals: 4, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32966.png" },
   { symbol: "GRAM",  binanceSymbol: "GRAMUSDT",  decimals: 2, logo: gramLogoImg.url },
 ];
 
