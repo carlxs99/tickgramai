@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from '@tanstack/react-router'
+import { formatReward } from "@/lib/format";
 
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
@@ -261,8 +262,8 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                 await sendTelegramMessage(
                   Number(referrerNotify.telegram_id),
                   `🎉 <b>Referral commission earned!</b>\n\n` +
-                    `Hi ${refName}, one of your referrals just made a deposit of <b>${amountTon.toFixed(4)} TON</b>.\n\n` +
-                    `💰 Your 10% commission: <b>+${referrerNotify.bonus.toFixed(4)} GRAM</b>\n\n` +
+                    `Hi ${refName}, one of your referrals just made a deposit of <b>${formatReward(amountTon)} GRAM</b>.\n\n` +
+                    `💰 Your 10% commission: <b>+${formatReward(referrerNotify.bonus)} GRAM</b>\n\n` +
                     `Keep inviting friends to earn more!`,
                 );
               }
