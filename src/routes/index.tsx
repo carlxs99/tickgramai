@@ -1512,6 +1512,7 @@ function DepositTab() {
     mutationFn: async () => {
       if (!wallet) throw new Error(t("deposit.err_connect"));
       if (amountNum <= 0) throw new Error(t("deposit.err_amount"));
+      if (amountNum < 0.1) throw new Error(t("deposit.err_min"));
       if (!memoTag) throw new Error(t("deposit.err_memo"));
 
       const memoPayload = buildCommentPayload(memoTag);
@@ -1604,11 +1605,15 @@ function DepositTab() {
             {t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: formatReward(amountNum * 0.033) })}
           </p>
         )}
+        <p className="text-[10px] text-muted-foreground mt-1">{t("deposit.min_hint")}</p>
+        {amountNum > 0 && amountNum < 0.1 && (
+          <p className="text-[11px] text-[color:var(--danger)] mt-1">{t("deposit.err_min")}</p>
+        )}
       </Field>
 
       <motion.button
         whileTap={{ scale: 0.97 }}
-        disabled={pay.isPending || amountNum <= 0 || !wallet}
+        disabled={pay.isPending || amountNum < 0.1 || !wallet}
         onClick={() => pay.mutate()}
         className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50 shadow-xl glow-primary"
       >

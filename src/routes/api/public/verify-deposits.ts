@@ -129,6 +129,12 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               continue;
             }
 
+            // Enforce minimum deposit of 0.1 GRAM (TON) for user deposits.
+            if (amountTon + 1e-9 < 0.1) {
+              results.push({ txHash, memo: comment, skipped: "below_min_deposit" });
+              continue;
+            }
+
             const { data: profile } = await supabaseAdmin
               .from("profiles").select("user_id, mining_rate, mining_rate_usd, memo_tag, referred_by, telegram_id, first_name")
               .eq("memo_tag", comment).maybeSingle();
