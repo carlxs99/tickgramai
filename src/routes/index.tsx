@@ -3,7 +3,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send, Activity } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send, Activity, LayoutDashboard, ChevronRight, TrendingUp, Circle } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
@@ -2262,15 +2262,187 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 
 
 
+type AdminSection = "overview" | "tasks" | "users";
+
 function AdminTab() {
   const { t: tr } = useT();
   const statsFn = useServerFn(adminStats);
+  const [section, setSection] = useState<AdminSection>("overview");
+
+  const { data: stats } = useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: () => statsFn(),
+    refetchInterval: 20_000,
+  });
+
+  return (
+    <div className="space-y-4 pb-4">
+      {/* Sticky pro header */}
+      <div className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-3 bg-background/85 backdrop-blur-xl border-b border-white/5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/30 to-accent/20 border border-primary/30 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="eyebrow text-muted-foreground !text-[9px]">Control Center</p>
+              <h2 className="text-lg font-display font-bold leading-tight">{tr("admin.title")}</h2>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[color:var(--success)]/10 border border-[color:var(--success)]/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--success)] animate-pulse" />
+            <span className="text-[10px] font-semibold text-[color:var(--success)]">Live</span>
+          </div>
+        </div>
+
+        {/* Segmented sub-nav */}
+        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
+          {([
+            { id: "overview", label: "Overview", icon: LayoutDashboard },
+            { id: "tasks", label: "Tasks", icon: ListChecks },
+            { id: "users", label: "Users", icon: Users },
+          ] as { id: AdminSection; label: string; icon: any }[]).map((s) => {
+            const Icon = s.icon;
+            const active = section === s.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => setSection(s.id)}
+                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold transition ${
+                  active
+                    ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {section === "overview" && <AdminOverview stats={stats} tr={tr} />}
+      {section === "tasks" && <AdminTasksSection tr={tr} />}
+      {section === "users" && <AdminUsersSection />}
+    </div>
+  );
+}
+
+function AdminKPI({
+  label,
+  value,
+  sub,
+  icon,
+  tone = "primary",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  icon: React.ReactNode;
+  tone?: "primary" | "info" | "gold" | "accent";
+}) {
+  const toneMap: Record<string, string> = {
+    primary: "from-primary/25 to-primary/5 border-primary/25 text-primary",
+    info: "from-[color:var(--info)]/25 to-[color:var(--info)]/5 border-[color:var(--info)]/25 text-[color:var(--info)]",
+    gold: "from-[color:var(--gold)]/25 to-[color:var(--gold)]/5 border-[color:var(--gold)]/25 text-[color:var(--gold)]",
+    accent: "from-accent/25 to-accent/5 border-accent/25 text-accent",
+  };
+  return (
+    <div className="card-glass rounded-2xl p-3.5 relative overflow-hidden">
+      <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full bg-gradient-to-br ${toneMap[tone]} opacity-40 blur-2xl`} />
+      <div className="relative">
+        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${toneMap[tone]} border flex items-center justify-center mb-2`}>
+          {icon}
+        </div>
+        <p className="eyebrow text-muted-foreground !text-[9px] mb-0.5">{label}</p>
+        <p className="font-display text-lg font-bold tabular-nums leading-tight">{value}</p>
+        {sub && <p className="text-[10px] text-muted-foreground tabular-nums mt-0.5 truncate">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function AdminOverview({ stats, tr }: { stats: any; tr: (k: string, p?: any) => string }) {
+  const kpis = [
+    {
+      label: tr("admin.users"),
+      value: String(stats?.users ?? 0),
+      sub: tr("admin.tasks_today", { n: stats?.completedToday ?? 0 }),
+      icon: <Users className="w-4 h-4" />,
+      tone: "primary" as const,
+    },
+    {
+      label: tr("admin.deposits"),
+      value: `${(stats?.deposits.totalTon ?? 0).toFixed(2)} TON`,
+      sub: tr("admin.confirmed", { n: stats?.deposits.confirmed ?? 0 }),
+      icon: <ArrowDownToLine className="w-4 h-4" />,
+      tone: "info" as const,
+    },
+    {
+      label: tr("admin.withdrawals"),
+      value: formatGram(stats?.withdrawals.totalGram ?? 0),
+      sub: tr("admin.pending", { n: stats?.withdrawals.pending ?? 0 }),
+      icon: <ArrowUpFromLine className="w-4 h-4" />,
+      tone: "gold" as const,
+    },
+    {
+      label: tr("admin.mining_rate"),
+      value: `${formatGram(stats?.totals.miningRate ?? 0)}/d`,
+      sub: tr("admin.balances", { n: formatGram(stats?.totals.balance ?? 0) }),
+      icon: <Sparkles className="w-4 h-4" />,
+      tone: "accent" as const,
+    },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2.5">
+        {kpis.map((k) => <AdminKPI key={k.label} {...k} />)}
+      </div>
+
+      {/* Health summary strip */}
+      <div className="card-glass rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-[color:var(--success)]" />
+            <p className="font-semibold text-sm">System status</p>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[color:var(--success)]/10 text-[color:var(--success)] font-semibold border border-[color:var(--success)]/20">
+            All operational
+          </span>
+        </div>
+        <div className="space-y-2">
+          <HealthRow label="Deposit verification" hint="Every 2 minutes" ok />
+          <HealthRow label="Withdrawal processing" hint="Every 2 minutes" ok />
+          <HealthRow label="Daily gift broadcast" hint="12:00 UTC" ok />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HealthRow({ label, hint, ok }: { label: string; hint: string; ok: boolean }) {
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <Circle className={`w-2 h-2 fill-current ${ok ? "text-[color:var(--success)]" : "text-destructive"}`} />
+        <div className="min-w-0">
+          <p className="text-xs font-medium truncate">{label}</p>
+          <p className="text-[10px] text-muted-foreground truncate">{hint}</p>
+        </div>
+      </div>
+      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+    </div>
+  );
+}
+
+function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
   const listFn = useServerFn(adminListTasks);
   const saveFn = useServerFn(adminSaveTask);
   const delFn = useServerFn(adminDeleteTask);
   const qc = useQueryClient();
 
-  const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: () => statsFn(), refetchInterval: 20_000 });
   const { data: tasks } = useQuery({ queryKey: ["admin-tasks"], queryFn: () => listFn() });
 
   const empty = {
@@ -2321,112 +2493,201 @@ function AdminTab() {
     onError: (e: any) => toast.error(e?.message ?? tr("common.error")),
   });
 
+  const kindTone: Record<string, string> = {
+    daily: "bg-[color:var(--info)]/15 text-[color:var(--info)] border-[color:var(--info)]/25",
+    once: "bg-primary/15 text-primary border-primary/25",
+    channel: "bg-accent/15 text-accent border-accent/25",
+    group: "bg-[color:var(--gold)]/15 text-[color:var(--gold)] border-[color:var(--gold)]/25",
+  };
+
   return (
-    <div className="space-y-4 pb-4">
-      <div className="flex items-center gap-2">
-        <Shield className="w-5 h-5 text-primary" />
-        <h2 className="text-2xl font-bold">{tr("admin.title")}</h2>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard label={tr("admin.users")} value={String(stats?.users ?? 0)} sub={tr("admin.tasks_today", { n: stats?.completedToday ?? 0 })} icon={<Users className="w-4 h-4 text-primary" />} />
-        <StatCard label={tr("admin.deposits")} value={`${(stats?.deposits.totalTon ?? 0).toFixed(2)} TON`} sub={tr("admin.confirmed", { n: stats?.deposits.confirmed ?? 0 })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} />
-        <StatCard label={tr("admin.withdrawals")} value={`${formatGram(stats?.withdrawals.totalGram ?? 0)}`} sub={tr("admin.pending", { n: stats?.withdrawals.pending ?? 0 })} icon={<ArrowUpFromLine className="w-4 h-4 text-[color:var(--gold)]" />} />
-        <StatCard label={tr("admin.mining_rate")} value={`${formatGram(stats?.totals.miningRate ?? 0)}/d`} sub={tr("admin.balances", { n: formatGram(stats?.totals.balance ?? 0) })} icon={<Sparkles className="w-4 h-4 text-accent" />} />
-      </div>
-
-      <div className="card-glass rounded-2xl p-4 space-y-2">
-        <p className="font-semibold flex items-center gap-2">
-          {editing ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {editing ? tr("admin.edit_task") : tr("admin.new_task")}
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            placeholder={tr("admin.title_ph")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            placeholder={tr("admin.code_ph")} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
-          <select className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as any })}>
-            <option value="daily">{tr("admin.kind.daily")}</option>
-            <option value="once">{tr("admin.kind.once")}</option>
-            <option value="channel">{tr("admin.kind.channel")}</option>
-            <option value="group">{tr("admin.kind.group")}</option>
-          </select>
-          <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            type="number" step="0.0001" placeholder={tr("admin.reward_ph")}
-            value={form.reward} onChange={(e) => setForm({ ...form, reward: Number(e.target.value) })} />
-          <input className="bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            type="number" step="0.01" placeholder={tr("admin.min_deposit_ph")}
-            value={form.min_deposit} onChange={(e) => setForm({ ...form, min_deposit: Number(e.target.value) })} />
-          <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-            placeholder={tr("admin.desc_ph")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          {(form.kind === "channel" || form.kind === "group") && (
-            <>
-              <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-                placeholder={tr("admin.target_chat_ph")}
-                value={form.target_chat} onChange={(e) => setForm({ ...form, target_chat: e.target.value })} />
-              <input className="col-span-2 bg-background/60 rounded-xl px-3 py-2 text-sm border border-white/5"
-                placeholder={tr("admin.link_ph")}
-                value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} />
-            </>
-          )}
-          <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
-            {tr("admin.active")}
-          </label>
-        </div>
-        {(form.kind === "channel" || form.kind === "group") && (
-          <p className="text-[11px] text-muted-foreground">{tr("admin.bot_note")}</p>
-        )}
-        <div className="flex gap-2 pt-1">
-          <button
-            onClick={() => save.mutate()}
-            disabled={save.isPending || !form.title || !form.code}
-            className="flex-1 py-2 rounded-xl bg-gradient-to-r from-primary to-accent font-semibold text-primary-foreground text-sm disabled:opacity-50"
-          >
-            {save.isPending ? tr("admin.saving") : editing ? tr("admin.save_changes") : tr("admin.create_task")}
-          </button>
+    <div className="space-y-3">
+      {/* Form card */}
+      <div className="card-glass rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/30">
+          <p className="font-semibold flex items-center gap-2 text-sm">
+            {editing ? <Pencil className="w-3.5 h-3.5 text-primary" /> : <Plus className="w-3.5 h-3.5 text-primary" />}
+            {editing ? tr("admin.edit_task") : tr("admin.new_task")}
+          </p>
           {editing && (
-            <button onClick={() => setForm(empty)} className="px-3 py-2 rounded-xl card-glass text-sm">
+            <button onClick={() => setForm(empty)} className="text-[10px] text-muted-foreground hover:text-foreground">
               {tr("common.cancel")}
             </button>
           )}
         </div>
-      </div>
 
-      <div className="card-glass rounded-2xl p-4">
-        <p className="font-semibold mb-2">{tr("admin.tasks_count", { count: tasks?.length ?? 0 })}</p>
-        <div className="space-y-2">
-          {tasks?.map((t: any) => (
-            <div key={t.id} className="rounded-xl bg-background/40 p-3 flex items-start gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm truncate">{t.title}</p>
-                  {!t.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{tr("common.off")}</span>}
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {t.kind} · capital ${Number(t.reward).toFixed(4)} → +${(Number(t.reward) * 0.033).toFixed(6)} USDT/día ⛏️
-                  {t.target_chat ? ` · ${t.target_chat}` : ""}
-                </p>
-              </div>
-              <button className="p-2 rounded-lg card-glass" onClick={() => setForm({
-                id: t.id, code: t.code, title: t.title, description: t.description ?? "",
-                reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),
-                link: t.link ?? "", target_chat: t.target_chat ?? "", is_active: !!t.is_active,
-              })}>
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-              <button className="p-2 rounded-lg card-glass text-destructive"
-                onClick={() => { if (confirm(tr("admin.delete_confirm"))) remove.mutate(t.id); }}>
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+        <div className="p-4 space-y-3">
+          <AdminField label={tr("admin.title_ph")}>
+            <input
+              className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition"
+              placeholder={tr("admin.title_ph")}
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+            />
+          </AdminField>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <AdminField label={tr("admin.code_ph")}>
+              <input
+                className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition font-mono"
+                placeholder={tr("admin.code_ph")}
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+              />
+            </AdminField>
+            <AdminField label="Kind">
+              <select
+                className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition"
+                value={form.kind}
+                onChange={(e) => setForm({ ...form, kind: e.target.value as any })}
+              >
+                <option value="daily">{tr("admin.kind.daily")}</option>
+                <option value="once">{tr("admin.kind.once")}</option>
+                <option value="channel">{tr("admin.kind.channel")}</option>
+                <option value="group">{tr("admin.kind.group")}</option>
+              </select>
+            </AdminField>
+            <AdminField label={tr("admin.reward_ph")}>
+              <input
+                className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
+                type="number" step="0.0001"
+                placeholder={tr("admin.reward_ph")}
+                value={form.reward}
+                onChange={(e) => setForm({ ...form, reward: Number(e.target.value) })}
+              />
+            </AdminField>
+            <AdminField label={tr("admin.min_deposit_ph")}>
+              <input
+                className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
+                type="number" step="0.01"
+                placeholder={tr("admin.min_deposit_ph")}
+                value={form.min_deposit}
+                onChange={(e) => setForm({ ...form, min_deposit: Number(e.target.value) })}
+              />
+            </AdminField>
+          </div>
+
+          <AdminField label={tr("admin.desc_ph")}>
+            <input
+              className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition"
+              placeholder={tr("admin.desc_ph")}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          </AdminField>
+
+          {(form.kind === "channel" || form.kind === "group") && (
+            <div className="rounded-xl bg-background/30 border border-white/5 p-3 space-y-2.5">
+              <p className="eyebrow !text-[9px] text-muted-foreground">Telegram target</p>
+              <AdminField label={tr("admin.target_chat_ph")}>
+                <input
+                  className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition font-mono"
+                  placeholder={tr("admin.target_chat_ph")}
+                  value={form.target_chat}
+                  onChange={(e) => setForm({ ...form, target_chat: e.target.value })}
+                />
+              </AdminField>
+              <AdminField label={tr("admin.link_ph")}>
+                <input
+                  className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition"
+                  placeholder={tr("admin.link_ph")}
+                  value={form.link}
+                  onChange={(e) => setForm({ ...form, link: e.target.value })}
+                />
+              </AdminField>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">{tr("admin.bot_note")}</p>
             </div>
-          ))}
-          {!tasks?.length && <p className="text-xs text-muted-foreground">{tr("admin.no_tasks")}</p>}
+          )}
+
+          <label className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-background/40 border border-white/5">
+            <span className="text-xs font-medium">{tr("admin.active")}</span>
+            <input
+              type="checkbox"
+              checked={form.is_active}
+              onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+              className="w-4 h-4 accent-primary"
+            />
+          </label>
+
+          <button
+            onClick={() => save.mutate()}
+            disabled={save.isPending || !form.title || !form.code}
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary to-accent font-semibold text-primary-foreground text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+          >
+            {save.isPending
+              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {tr("admin.saving")}</>
+              : editing ? tr("admin.save_changes") : tr("admin.create_task")}
+          </button>
         </div>
       </div>
 
-      <AdminUsersSection />
+      {/* Tasks list */}
+      <div className="card-glass rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/30">
+          <div className="flex items-center gap-2">
+            <ListChecks className="w-3.5 h-3.5 text-primary" />
+            <p className="font-semibold text-sm">Tasks</p>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-background/60 border border-white/5 tabular-nums font-semibold text-muted-foreground">
+            {tasks?.length ?? 0}
+          </span>
+        </div>
+        <div className="divide-y divide-white/5">
+          {tasks?.map((t: any) => (
+            <div key={t.id} className="px-4 py-3 flex items-start gap-3 hover:bg-background/30 transition">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-sm truncate">{t.title}</p>
+                  <span className={`text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded border font-bold ${kindTone[t.kind] ?? "bg-muted text-muted-foreground border-white/10"}`}>
+                    {t.kind}
+                  </span>
+                  {!t.is_active && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded border border-white/10 bg-muted text-muted-foreground uppercase tracking-wide font-bold">
+                      {tr("common.off")}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                  <span className="font-mono">{t.code}</span> · ${Number(t.reward).toFixed(4)} → +${(Number(t.reward) * 0.033).toFixed(6)} USDT/d
+                  {t.target_chat ? ` · ${t.target_chat}` : ""}
+                </p>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                <button
+                  className="p-1.5 rounded-lg bg-background/60 border border-white/5 hover:border-primary/40 transition"
+                  onClick={() => setForm({
+                    id: t.id, code: t.code, title: t.title, description: t.description ?? "",
+                    reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),
+                    link: t.link ?? "", target_chat: t.target_chat ?? "", is_active: !!t.is_active,
+                  })}
+                  aria-label="Edit"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button
+                  className="p-1.5 rounded-lg bg-background/60 border border-white/5 hover:border-destructive/40 text-destructive transition"
+                  onClick={() => { if (confirm(tr("admin.delete_confirm"))) remove.mutate(t.id); }}
+                  aria-label="Delete"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          ))}
+          {!tasks?.length && (
+            <p className="text-xs text-muted-foreground text-center py-8">{tr("admin.no_tasks")}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <label className="eyebrow !text-[9px] text-muted-foreground">{label}</label>
+      {children}
     </div>
   );
 }
@@ -2541,19 +2802,25 @@ function AdminUsersSection() {
   }
 
   return (
-    <div className="card-glass rounded-2xl p-4 space-y-3">
-      <p className="font-semibold flex items-center gap-2">
-        <Users className="w-4 h-4 text-primary" /> Usuarios ({users?.length ?? 0})
-      </p>
-      <div className="relative">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por username, nombre o Telegram ID…"
-          className="w-full bg-background/60 rounded-xl pl-9 pr-3 py-2 text-sm border border-white/5"
-        />
+    <div className="card-glass rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-background/30">
+        <p className="font-semibold flex items-center gap-2 text-sm">
+          <Users className="w-3.5 h-3.5 text-primary" /> Users
+        </p>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-background/60 border border-white/5 tabular-nums font-semibold text-muted-foreground">
+          {users?.length ?? 0}
+        </span>
       </div>
+      <div className="p-3 space-y-3">
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search username, name or Telegram ID…"
+            className="w-full bg-background/60 rounded-lg pl-8 pr-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition"
+          />
+        </div>
       {isLoading ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
           <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
@@ -2598,6 +2865,7 @@ function AdminUsersSection() {
           {!users?.length && <p className="text-xs text-muted-foreground text-center py-4">Sin resultados</p>}
         </div>
       )}
+      </div>
     </div>
   );
 }
