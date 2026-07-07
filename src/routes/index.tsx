@@ -456,7 +456,7 @@ function MineTab() {
 
       <div className="grid grid-cols-2 gap-3">
         <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} valueClassName="text-gradient-gold" />
-        <StatCard label={t("mine.deposits")} value={formatGram(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} valueClassName="text-gradient-gold" />
+        <StatCard label={t("mine.deposits")} value={formatReward(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} valueClassName="text-gradient-gold" />
       </div>
 
       <GiftBoxesCard />
@@ -1672,7 +1672,7 @@ function DepositTab() {
             items={deposits}
             renderItem={(d: any) => (
               <div key={d.id} className="flex justify-between text-sm py-1.5">
-                <span>{Number(d.amount_ton).toFixed(4)} GRAM</span>
+                <span>{formatReward(Number(d.amount_ton))} GRAM</span>
                 <span className="text-muted-foreground">{d.status}</span>
               </div>
             )}
