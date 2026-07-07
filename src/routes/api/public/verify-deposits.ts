@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { formatReward } from "@/lib/format";
 
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
