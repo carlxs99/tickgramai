@@ -357,6 +357,8 @@ const es: Dict = {
   "deposit.err_amount": "Introduce una cantidad",
   "deposit.err_memo": "Falta el memo",
   "deposit.err_failed": "Transacción fallida",
+  "deposit.err_min": "El depósito mínimo es 0.1 GRAM",
+  "deposit.min_hint": "Depósito mínimo: 0.1 GRAM",
   "deposit.reinvest_title": "Reinvertir",
   "deposit.reinvest_subtitle": "Reinvierte tu balance de GRAM y aumenta tu minería",
   "deposit.reinvest_amount": "Cantidad a reinvertir",
