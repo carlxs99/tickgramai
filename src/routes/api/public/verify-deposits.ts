@@ -243,20 +243,23 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             try {
               if (profile.telegram_id) {
                 const name = profile.first_name || "friend";
+                const gramPerDayStr = formatReward(gramPerDay);
                 const bonusLine = bonusPercent > 0
-                  ? `🎁 Deposit bonus: <b>+${bonusPercent.toFixed(2)}%</b> (+${bonusAmountTon.toFixed(4)} TON)\n` +
-                    `💎 Effective deposit: <b>${effectiveAmountTon.toFixed(4)} TON</b>\n`
+                  ? `🎁 Deposit bonus: <b>+${bonusPercent.toFixed(2)}%</b> (+${formatReward(bonusAmountTon)} TON)\n` +
+                    `💎 Effective deposit: <b>${formatReward(effectiveAmountTon)} TON</b>\n`
                   : "";
                 await sendTelegramMessage(
                   Number(profile.telegram_id),
                   `✅ <b>Deposit confirmed!</b>\n\n` +
-                    `Hi ${name}, we received your deposit of <b>${amountTon.toFixed(4)} TON</b>.\n\n` +
+                    `Hi ${name}, we received your deposit of <b>${formatReward(amountTon)} TON</b>.\n\n` +
                     bonusLine +
-                    `⚡ Mining rate added: <b>+$${usdPerDay.toFixed(4)} USDT/day</b>\n` +
+                    `⚡ Mining rate added: <b>+$${formatReward(usdPerDay)} USDT/day</b>\n` +
+                    `🪙 GRAM per day: <b>+${gramPerDayStr} GRAM</b>\n` +
                     `📈 Daily ROI: 3.3%\n\n` +
                     `Open TICK GRAM AI to check your balance.`,
                 );
               }
+
               if (referrerNotify?.telegram_id) {
                 const refName = referrerNotify.first_name || "friend";
                 await sendTelegramMessage(
