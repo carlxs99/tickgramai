@@ -797,6 +797,8 @@ const hi: Dict = {
   "deposit.err_amount": "राशि दर्ज करें",
   "deposit.err_memo": "Memo गुम है",
   "deposit.err_failed": "लेनदेन विफल",
+  "deposit.err_min": "न्यूनतम जमा 0.1 GRAM है",
+  "deposit.min_hint": "न्यूनतम जमा: 0.1 GRAM",
   "deposit.reinvest_title": "पुनर्निवेश",
   "deposit.reinvest_subtitle": "अपने GRAM बैलेंस को पुनर्निवेश करें और अधिक कमाई शुरू करें",
   "deposit.reinvest_amount": "पुनर्निवेश राशि",
