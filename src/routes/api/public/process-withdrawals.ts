@@ -114,7 +114,7 @@ async function processOne(row: any, supabaseAdmin: any) {
       const userText =
         `✅ <b>Withdrawal completed!</b>\n\n` +
         `Hi ${escapeHtml(name)}, your withdrawal of <b>${amount} GRAM</b> has been sent to your wallet.\n\n` +
-        `🔗 <a href="${explorerUrl}">View transaction on GRAM Explorer →</a>`;
+        `🔗 <a href="${explorerUrl}">View transaction on TONScan →</a>`;
       await sendTelegramMessage(Number(prof.telegram_id), userText);
     }
   } catch (e) {
