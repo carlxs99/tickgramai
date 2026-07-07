@@ -100,13 +100,13 @@ async function processOne(row: any, supabaseAdmin: any) {
     const handle = prof?.username ? `@${prof.username}` : (prof?.first_name || "user");
     const amount = Number(row.net_amount ?? row.amount).toFixed(2);
     const explorerUrl = txHashHex
-      ? `https://tonviewer.com/transaction/${txHashHex}`
-      : `https://tonviewer.com/${dest.toString({ urlSafe: true, bounceable: false })}`;
+      ? `https://tonscan.org/tx/${txHashHex}`
+      : `https://tonscan.org/address/${dest.toString({ urlSafe: true, bounceable: false })}`;
     const groupText =
       `✅ <b>Withdraw Approved!</b>\n\n` +
       `👤 User: ${escapeHtml(handle)}\n\n` +
       `💰 Amount: ${amount} GRAM\n\n` +
-      `🔗 <a href="${explorerUrl}">View on GRAM Explorer →</a>`;
+      `🔗 <a href="${explorerUrl}">View on TONScan →</a>`;
     await sendTelegramMessage(WITHDRAWALS_CHAT, groupText);
 
     if (prof?.telegram_id) {
@@ -114,7 +114,7 @@ async function processOne(row: any, supabaseAdmin: any) {
       const userText =
         `✅ <b>Withdrawal completed!</b>\n\n` +
         `Hi ${escapeHtml(name)}, your withdrawal of <b>${amount} GRAM</b> has been sent to your wallet.\n\n` +
-        `🔗 <a href="${explorerUrl}">View transaction on GRAM Explorer →</a>`;
+        `🔗 <a href="${explorerUrl}">View transaction on TONScan →</a>`;
       await sendTelegramMessage(Number(prof.telegram_id), userText);
     }
   } catch (e) {
