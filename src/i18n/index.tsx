@@ -137,6 +137,8 @@ const en: Dict = {
   "deposit.err_amount": "Enter an amount",
   "deposit.err_memo": "Missing memo",
   "deposit.err_failed": "Transaction failed",
+  "deposit.err_min": "Minimum deposit is 0.1 GRAM",
+  "deposit.min_hint": "Minimum deposit: 0.1 GRAM",
   "deposit.reinvest_title": "Reinvest",
   "deposit.reinvest_subtitle": "Reinvest your GRAM balance and boost your mining",
   "deposit.reinvest_amount": "Reinvestment amount",
