@@ -2865,6 +2865,7 @@ function AdminUsersSection() {
           {!users?.length && <p className="text-xs text-muted-foreground text-center py-4">Sin resultados</p>}
         </div>
       )}
+      </div>
     </div>
   );
 }
