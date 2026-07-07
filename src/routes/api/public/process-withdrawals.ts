@@ -100,8 +100,8 @@ async function processOne(row: any, supabaseAdmin: any) {
     const handle = prof?.username ? `@${prof.username}` : (prof?.first_name || "user");
     const amount = Number(row.net_amount ?? row.amount).toFixed(2);
     const explorerUrl = txHashHex
-      ? `https://tonviewer.com/transaction/${txHashHex}`
-      : `https://tonviewer.com/${dest.toString({ urlSafe: true, bounceable: false })}`;
+      ? `https://tonscan.org/tx/${txHashHex}`
+      : `https://tonscan.org/address/${dest.toString({ urlSafe: true, bounceable: false })}`;
     const groupText =
       `✅ <b>Withdraw Approved!</b>\n\n` +
       `👤 User: ${escapeHtml(handle)}\n\n` +
