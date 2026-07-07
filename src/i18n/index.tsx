@@ -577,6 +577,8 @@ const ru: Dict = {
   "deposit.err_amount": "Введите сумму",
   "deposit.err_memo": "Нет memo",
   "deposit.err_failed": "Транзакция не удалась",
+  "deposit.err_min": "Минимальный депозит 0.1 GRAM",
+  "deposit.min_hint": "Мин. депозит: 0.1 GRAM",
   "deposit.reinvest_title": "Реинвест",
   "deposit.reinvest_subtitle": "Реинвестируйте баланс GRAM и увеличьте свой доход",
   "deposit.reinvest_amount": "Сумма реинвеста",
