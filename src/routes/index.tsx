@@ -2054,14 +2054,29 @@ const statsStore = (() => {
 
   async function seedFromRest() {
     try {
-      const snap = await fetchBinanceSnapshot();
-      Object.assign(market, snap);
-    } catch { /* ignore, WS will fill it */ }
+      const [binance, mexc] = await Promise.all([
+        fetchBinanceSnapshot(),
+        fetchMexcSnapshot(),
+      ]);
+      Object.assign(market, binance, mexc);
+    } catch { /* ignore, WS/poll will fill it */ }
+  }
+
+  let mexcPollId: ReturnType<typeof setInterval> | null = null;
+  function startMexcPolling() {
+    if (mexcPollId || MEXC_COINS.length === 0) return;
+    mexcPollId = setInterval(async () => {
+      if (!started) return;
+      try {
+        const snap = await fetchMexcSnapshot();
+        Object.assign(market, snap);
+      } catch { /* ignore transient failures */ }
+    }, 5000);
   }
 
   function connectWs() {
-    const streams = STATS_COINS.map((c) => `${c.binanceSymbol.toLowerCase()}@ticker`).join("/");
-    const bySymbol = new Map(STATS_COINS.map((c) => [c.binanceSymbol, c]));
+    const streams = BINANCE_COINS.map((c) => `${c.pair.toLowerCase()}@ticker`).join("/");
+    const bySymbol = new Map(BINANCE_COINS.map((c) => [c.pair, c]));
     try {
       ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
     } catch {
@@ -2090,6 +2105,8 @@ const statsStore = (() => {
     started = true;
     seedFromRest();
     connectWs();
+    startMexcPolling();
+
 
     feedId = setInterval(() => {
       if (state.rows.length === 0 && Object.keys(market).length === 0) return;
