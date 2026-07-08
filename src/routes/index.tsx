@@ -1974,34 +1974,34 @@ async function fetchBinanceSnapshot(): Promise<MarketMap> {
   return map;
 }
 
-// MEXC REST snapshot — fetched in parallel per symbol (no batch endpoint).
-// Called on boot and then polled every 5s to keep TON tokens live.
+// MEXC snapshot via same-origin server proxy (MEXC does not send CORS headers,
+// so a direct browser fetch is blocked). The proxy returns a compact map keyed
+// by the exchange pair (e.g. MAJORUSDT) with `{ price, changePct }` already
+// normalized to percent.
 async function fetchMexcSnapshot(): Promise<MarketMap> {
-  const results = await Promise.all(
-    MEXC_COINS.map(async (c) => {
-      try {
-        const res = await fetch(
-          `https://api.mexc.com/api/v3/ticker/24hr?symbol=${c.pair}`,
-        );
-        if (!res.ok) throw new Error(`MEXC ${res.status}`);
-        const d = (await res.json()) as {
-          lastPrice: string;
-          priceChangePercent: string;
-        };
-        return [c.symbol, {
-          price: parseFloat(d.lastPrice),
-          // MEXC returns fraction (0.05 = 5%), Binance returns percent (5).
-          changePct: parseFloat(d.priceChangePercent) * 100,
-        }] as const;
-      } catch {
-        return [c.symbol, { price: 0, changePct: 0 }] as const;
-      }
-    }),
-  );
   const map: MarketMap = {};
-  for (const [k, v] of results) map[k] = v;
+  if (MEXC_COINS.length === 0) return map;
+  try {
+    const symbols = MEXC_COINS.map((c) => c.pair).join(",");
+    const res = await fetch(`/api/public/mexc-prices?symbols=${symbols}`);
+    if (!res.ok) throw new Error(`mexc-prices ${res.status}`);
+    const data = (await res.json()) as Record<
+      string,
+      { price: number; changePct: number }
+    >;
+    for (const c of MEXC_COINS) {
+      const q = data[c.pair];
+      map[c.symbol] = {
+        price: q ? Number(q.price) : 0,
+        changePct: q ? Number(q.changePct) : 0,
+      };
+    }
+  } catch {
+    for (const c of MEXC_COINS) map[c.symbol] = { price: 0, changePct: 0 };
+  }
   return map;
 }
+
 
 // ============= Global Stats Stream (runs indefinitely, survives tab switches) =============
 type StatsStoreState = { rows: TickRow[]; split: { long: number; short: number } };

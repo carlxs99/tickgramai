@@ -13,6 +13,7 @@ import { Route as TonconnectManifestDotjsonRouteImport } from './routes/tonconne
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicVerifyDepositsRouteImport } from './routes/api/public/verify-deposits'
 import { Route as ApiPublicProcessWithdrawalsRouteImport } from './routes/api/public/process-withdrawals'
+import { Route as ApiPublicMexcPricesRouteImport } from './routes/api/public/mexc-prices'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicHooksDailyGiftBroadcastRouteImport } from './routes/api/public/hooks/daily-gift-broadcast'
 import { Route as ApiPublicHooksDailyCheckinBroadcastRouteImport } from './routes/api/public/hooks/daily-checkin-broadcast'
@@ -39,6 +40,11 @@ const ApiPublicProcessWithdrawalsRoute =
     path: '/api/public/process-withdrawals',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMexcPricesRoute = ApiPublicMexcPricesRouteImport.update({
+  id: '/api/public/mexc-prices',
+  path: '/api/public/mexc-prices',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTelegramWebhookRoute =
   ApiPublicTelegramWebhookRouteImport.update({
     id: '/api/public/telegram/webhook',
@@ -61,6 +67,7 @@ const ApiPublicHooksDailyCheckinBroadcastRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
+  '/api/public/mexc-prices': typeof ApiPublicMexcPricesRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
+  '/api/public/mexc-prices': typeof ApiPublicMexcPricesRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
+  '/api/public/mexc-prices': typeof ApiPublicMexcPricesRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/tonconnect-manifest.json'
+    | '/api/public/mexc-prices'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
     | '/api/public/hooks/daily-checkin-broadcast'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/tonconnect-manifest.json'
+    | '/api/public/mexc-prices'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
     | '/api/public/hooks/daily-checkin-broadcast'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/tonconnect-manifest.json'
+    | '/api/public/mexc-prices'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
     | '/api/public/hooks/daily-checkin-broadcast'
@@ -119,6 +131,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   TonconnectManifestDotjsonRoute: typeof TonconnectManifestDotjsonRoute
+  ApiPublicMexcPricesRoute: typeof ApiPublicMexcPricesRoute
   ApiPublicProcessWithdrawalsRoute: typeof ApiPublicProcessWithdrawalsRoute
   ApiPublicVerifyDepositsRoute: typeof ApiPublicVerifyDepositsRoute
   ApiPublicHooksDailyCheckinBroadcastRoute: typeof ApiPublicHooksDailyCheckinBroadcastRoute
@@ -156,6 +169,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicProcessWithdrawalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mexc-prices': {
+      id: '/api/public/mexc-prices'
+      path: '/api/public/mexc-prices'
+      fullPath: '/api/public/mexc-prices'
+      preLoaderRoute: typeof ApiPublicMexcPricesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/telegram/webhook': {
       id: '/api/public/telegram/webhook'
       path: '/api/public/telegram/webhook'
@@ -183,6 +203,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   TonconnectManifestDotjsonRoute: TonconnectManifestDotjsonRoute,
+  ApiPublicMexcPricesRoute: ApiPublicMexcPricesRoute,
   ApiPublicProcessWithdrawalsRoute: ApiPublicProcessWithdrawalsRoute,
   ApiPublicVerifyDepositsRoute: ApiPublicVerifyDepositsRoute,
   ApiPublicHooksDailyCheckinBroadcastRoute:
