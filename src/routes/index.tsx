@@ -1884,10 +1884,16 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-// ============ Stats (live trading report — Binance) ============
+// ============ Stats (live trading report — Binance + MEXC) ============
+// Binance covers most majors and the largest TON-ecosystem tokens (TON, NOT,
+// DOGS, HMSTR, CATI, GRAM) via WebSocket. MEXC fills the gap for TON tokens
+// that Binance does not list (MAJOR, X Empire, REDO, PX, GEMS, ANON) via
+// REST polling every 5s — MEXC's public WS uses protobuf so a light polling
+// loop is a much smaller integration for the same UX.
 type TradeCoin = {
-  symbol: string;       // display symbol (BTC, ETH, …)
-  binanceSymbol: string; // Binance pair, e.g. BTCUSDT
+  symbol: string;        // display symbol (BTC, ETH, …)
+  source: "binance" | "mexc";
+  pair: string;          // exchange pair, e.g. BTCUSDT / MAJORUSDT
   logo: string;          // stable CDN logo URL
   decimals: number;
 };
@@ -1895,25 +1901,35 @@ type TradeCoin = {
 const MAX_STATS_ROWS = 10;
 
 const STATS_COINS: TradeCoin[] = [
-  // TON ecosystem
-  { symbol: "TON",   binanceSymbol: "TONUSDT",   decimals: 2, logo: "https://assets.coingecko.com/coins/images/17980/large/ton_symbol.png" },
-  { symbol: "NOT",   binanceSymbol: "NOTUSDT",   decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/28850.png" },
-  { symbol: "DOGS",  binanceSymbol: "DOGSUSDT",  decimals: 6, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32698.png" },
-  { symbol: "HMSTR", binanceSymbol: "HMSTRUSDT", decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32195.png" },
-  { symbol: "CATI",  binanceSymbol: "CATIUSDT",  decimals: 4, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32966.png" },
-  { symbol: "GRAM",  binanceSymbol: "GRAMUSDT",  decimals: 2, logo: gramLogoImg.url },
+  // TON ecosystem — Binance
+  { symbol: "TON",   source: "binance", pair: "TONUSDT",   decimals: 2, logo: "https://assets.coingecko.com/coins/images/17980/large/ton_symbol.png" },
+  { symbol: "NOT",   source: "binance", pair: "NOTUSDT",   decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/28850.png" },
+  { symbol: "DOGS",  source: "binance", pair: "DOGSUSDT",  decimals: 6, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32698.png" },
+  { symbol: "HMSTR", source: "binance", pair: "HMSTRUSDT", decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32195.png" },
+  { symbol: "CATI",  source: "binance", pair: "CATIUSDT",  decimals: 4, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32966.png" },
+  { symbol: "GRAM",  source: "binance", pair: "GRAMUSDT",  decimals: 2, logo: gramLogoImg.url },
+  // TON ecosystem — MEXC (not listed on Binance)
+  { symbol: "MAJOR", source: "mexc",    pair: "MAJORUSDT", decimals: 4, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/33179.png" },
+  { symbol: "X",     source: "mexc",    pair: "XUSDT",     decimals: 6, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32799.png" },
+  { symbol: "REDO",  source: "mexc",    pair: "REDOUSDT",  decimals: 4, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/33888.png" },
+  { symbol: "PX",    source: "mexc",    pair: "PXUSDT",    decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/33477.png" },
+  { symbol: "GEMS",  source: "mexc",    pair: "GEMSUSDT",  decimals: 5, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/33083.png" },
+  { symbol: "ANON",  source: "mexc",    pair: "ANONUSDT",  decimals: 4, logo: "https://s2.coinmarketcap.com/static/img/coins/128x128/32623.png" },
   // General market
-  { symbol: "BTC",  binanceSymbol: "BTCUSDT",  decimals: 0, logo: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png" },
-  { symbol: "ETH",  binanceSymbol: "ETHUSDT",  decimals: 0, logo: "https://assets.coingecko.com/coins/images/279/large/ethereum.png" },
-  { symbol: "BNB",  binanceSymbol: "BNBUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png" },
-  { symbol: "SOL",  binanceSymbol: "SOLUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/4128/large/solana.png" },
-  { symbol: "XRP",  binanceSymbol: "XRPUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png" },
-  { symbol: "TRX",  binanceSymbol: "TRXUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/1094/large/tron-logo.png" },
-  { symbol: "DOGE", binanceSymbol: "DOGEUSDT", decimals: 4, logo: "https://assets.coingecko.com/coins/images/5/large/dogecoin.png" },
-  { symbol: "ADA",  binanceSymbol: "ADAUSDT",  decimals: 3, logo: "https://assets.coingecko.com/coins/images/975/large/cardano.png" },
-  { symbol: "AVAX", binanceSymbol: "AVAXUSDT", decimals: 2, logo: "https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png" },
-  { symbol: "LINK", binanceSymbol: "LINKUSDT", decimals: 2, logo: "https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png" },
+  { symbol: "BTC",  source: "binance", pair: "BTCUSDT",  decimals: 0, logo: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png" },
+  { symbol: "ETH",  source: "binance", pair: "ETHUSDT",  decimals: 0, logo: "https://assets.coingecko.com/coins/images/279/large/ethereum.png" },
+  { symbol: "BNB",  source: "binance", pair: "BNBUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png" },
+  { symbol: "SOL",  source: "binance", pair: "SOLUSDT",  decimals: 1, logo: "https://assets.coingecko.com/coins/images/4128/large/solana.png" },
+  { symbol: "XRP",  source: "binance", pair: "XRPUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png" },
+  { symbol: "TRX",  source: "binance", pair: "TRXUSDT",  decimals: 4, logo: "https://assets.coingecko.com/coins/images/1094/large/tron-logo.png" },
+  { symbol: "DOGE", source: "binance", pair: "DOGEUSDT", decimals: 4, logo: "https://assets.coingecko.com/coins/images/5/large/dogecoin.png" },
+  { symbol: "ADA",  source: "binance", pair: "ADAUSDT",  decimals: 3, logo: "https://assets.coingecko.com/coins/images/975/large/cardano.png" },
+  { symbol: "AVAX", source: "binance", pair: "AVAXUSDT", decimals: 2, logo: "https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png" },
+  { symbol: "LINK", source: "binance", pair: "LINKUSDT", decimals: 2, logo: "https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png" },
 ];
+
+const BINANCE_COINS = STATS_COINS.filter((c) => c.source === "binance");
+const MEXC_COINS = STATS_COINS.filter((c) => c.source === "mexc");
 
 type TickRow = {
   id: string;
@@ -1934,10 +1950,10 @@ function formatPrice(v: number, decimals: number) {
 type MarketQuote = { price: number; changePct: number };
 type MarketMap = Record<string, MarketQuote>;
 
-// Initial snapshot from Binance REST — returns per-symbol quotes
+// Initial snapshot from Binance REST — returns per-symbol quotes for Binance coins
 async function fetchBinanceSnapshot(): Promise<MarketMap> {
   const symbolsParam = encodeURIComponent(
-    JSON.stringify(STATS_COINS.map((c) => c.binanceSymbol)),
+    JSON.stringify(BINANCE_COINS.map((c) => c.pair)),
   );
   const url = `https://api.binance.com/api/v3/ticker/24hr?symbols=${symbolsParam}`;
   const res = await fetch(url);
@@ -1948,13 +1964,42 @@ async function fetchBinanceSnapshot(): Promise<MarketMap> {
     priceChangePercent: string;
   }>;
   const map: MarketMap = {};
-  for (const c of STATS_COINS) {
-    const m = data.find((d) => d.symbol === c.binanceSymbol);
+  for (const c of BINANCE_COINS) {
+    const m = data.find((d) => d.symbol === c.pair);
     map[c.symbol] = {
       price: m ? parseFloat(m.lastPrice) : 0,
       changePct: m ? parseFloat(m.priceChangePercent) : 0,
     };
   }
+  return map;
+}
+
+// MEXC REST snapshot — fetched in parallel per symbol (no batch endpoint).
+// Called on boot and then polled every 5s to keep TON tokens live.
+async function fetchMexcSnapshot(): Promise<MarketMap> {
+  const results = await Promise.all(
+    MEXC_COINS.map(async (c) => {
+      try {
+        const res = await fetch(
+          `https://api.mexc.com/api/v3/ticker/24hr?symbol=${c.pair}`,
+        );
+        if (!res.ok) throw new Error(`MEXC ${res.status}`);
+        const d = (await res.json()) as {
+          lastPrice: string;
+          priceChangePercent: string;
+        };
+        return [c.symbol, {
+          price: parseFloat(d.lastPrice),
+          // MEXC returns fraction (0.05 = 5%), Binance returns percent (5).
+          changePct: parseFloat(d.priceChangePercent) * 100,
+        }] as const;
+      } catch {
+        return [c.symbol, { price: 0, changePct: 0 }] as const;
+      }
+    }),
+  );
+  const map: MarketMap = {};
+  for (const [k, v] of results) map[k] = v;
   return map;
 }
 
