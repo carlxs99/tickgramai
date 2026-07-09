@@ -1615,7 +1615,6 @@ function DepositTab() {
             {t("deposit.bonus_hint", {
               percent: bonusPct.toFixed(1),
               extra: formatReward(amountNum * (bonusPct / 100)),
-              total: formatReward(amountNum * (1 + bonusPct / 100)),
             })}
           </p>
         )}
