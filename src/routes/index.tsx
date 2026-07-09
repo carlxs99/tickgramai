@@ -1479,6 +1479,10 @@ function DepositTab() {
   const wallet = useTonWallet();
   const [amount, setAmount] = useState("");
   const { data: deposits } = useQuery({ queryKey: ["deposits"], queryFn: () => listFn() });
+  const giftListFn = useServerFn(listGiftBoxes);
+  const { data: giftData } = useQuery({ queryKey: ["gift-boxes"], queryFn: () => giftListFn(), refetchInterval: 60_000 });
+  const activeBonus = giftData?.activeBonus as { percent: number; expires_at: string } | null | undefined;
+  const bonusPct = activeBonus ? Number(activeBonus.percent) : 0;
 
   // Reinvest
   const reinvestFn = useServerFn(reinvestBalance);
