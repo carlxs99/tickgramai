@@ -1609,6 +1609,16 @@ function DepositTab() {
             {t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: formatReward(amountNum * 0.033) })}
           </p>
         )}
+        {amountNum > 0 && bonusPct > 0 && (
+          <p className="text-[11px] mt-1 tabular-nums font-semibold text-amber-300 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            {t("deposit.bonus_hint", {
+              percent: bonusPct.toFixed(1),
+              extra: formatReward(amountNum * (bonusPct / 100)),
+              total: formatReward(amountNum * (1 + bonusPct / 100)),
+            })}
+          </p>
+        )}
         <p className="text-[10px] text-muted-foreground mt-1">{t("deposit.min_hint")}</p>
         {amountNum > 0 && amountNum < 0.1 && (
           <p className="text-[11px] text-[color:var(--danger)] mt-1">{t("deposit.err_min")}</p>
