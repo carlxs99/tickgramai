@@ -1479,6 +1479,10 @@ function DepositTab() {
   const wallet = useTonWallet();
   const [amount, setAmount] = useState("");
   const { data: deposits } = useQuery({ queryKey: ["deposits"], queryFn: () => listFn() });
+  const giftListFn = useServerFn(listGiftBoxes);
+  const { data: giftData } = useQuery({ queryKey: ["gift-boxes"], queryFn: () => giftListFn(), refetchInterval: 60_000 });
+  const activeBonus = giftData?.activeBonus as { percent: number; expires_at: string } | null | undefined;
+  const bonusPct = activeBonus ? Number(activeBonus.percent) : 0;
 
   // Reinvest
   const reinvestFn = useServerFn(reinvestBalance);
@@ -1603,6 +1607,16 @@ function DepositTab() {
         {amountNum > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
             {t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: formatReward(amountNum * 0.033) })}
+          </p>
+        )}
+        {amountNum > 0 && bonusPct > 0 && (
+          <p className="text-[11px] mt-1 tabular-nums font-semibold text-amber-300 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            {t("deposit.bonus_hint", {
+              percent: bonusPct.toFixed(1),
+              extra: formatReward(amountNum * (bonusPct / 100)),
+              total: formatReward(amountNum * (1 + bonusPct / 100)),
+            })}
           </p>
         )}
         <p className="text-[10px] text-muted-foreground mt-1">{t("deposit.min_hint")}</p>
