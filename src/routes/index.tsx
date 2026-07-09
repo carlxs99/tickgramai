@@ -1370,7 +1370,7 @@ function FriendsTab() {
         <div className="relative">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-white/90">{t("friends.total_referrals")}</span>
-            <span className="text-3xl font-extrabold tabular-nums">{s.total_referrals ?? 0}</span>
+            <span className="text-3xl font-extrabold tabular-nums">{s.level1 ?? 0}</span>
           </div>
           <div className="space-y-2 border-t border-white/20 pt-3">
             <div className="flex items-center justify-between">
