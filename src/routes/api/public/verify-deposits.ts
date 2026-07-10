@@ -248,16 +248,8 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                   { _user_id: anc.user_id, _amount: netBonus } as never,
                 );
               }
-              // Accumulate lifetime earnings (net of refback) on ancestor's profile.
-              await supabaseAdmin
-                .from("profiles")
-                .update({ referral_earned_total: netBonus } as never)
-                .eq("user_id", anc.user_id);
-              // atomic increment: use rpc-safe path — do a raw SQL via update on a
-              // read-modify-write is racy; but since we only read here for stats,
-              // use a small increment through select+update inside a single call.
-              await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: anc.user_id, _amount: 0 } as never);
-              // For robust increment, do read-modify-write (best-effort, non-critical stat):
+              // Accumulate lifetime earnings & refback paid on ancestor's profile
+              // (read-modify-write; best-effort stat, not economic state).
               const { data: pRow } = await supabaseAdmin
                 .from("profiles")
                 .select("referral_earned_total, refback_paid")
@@ -270,6 +262,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                   refback_paid: Number((pRow as any)?.refback_paid ?? 0) + refbackShare,
                 } as never)
                 .eq("user_id", anc.user_id);
+
 
               // Keep L1 per-friend row in sync for the friends list display.
               if (anc.level === 1) {
