@@ -204,45 +204,111 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
 
 
 
-            // Referral bonus: 10% of deposit (in GRAM) credited from the
-            // system to the referrer. The referred user is untouched.
-            let referrerNotify: { telegram_id: number | null; first_name: string | null; bonus: number } | null = null;
-            if (profile.referred_by) {
-              const { data: refProfile } = await supabaseAdmin
+            // ============================================================
+            // 3-level referral commissions (10% / 5% / 3% of deposit in GRAM).
+            // Each ancestor's refback_rate is deducted from their commission
+            // and credited back to the depositor's balance.
+            // Chain is resolved by get_referral_ancestors() (walks profiles.referred_by).
+            // ============================================================
+            const LEVEL_RATES = [0.10, 0.05, 0.03] as const;
+            type Ancestor = {
+              level: number;
+              user_id: string;
+              telegram_id: number | null;
+              first_name: string | null;
+              refback_rate: number | null;
+            };
+            const { data: ancestorsData } = await supabaseAdmin
+              .rpc("get_referral_ancestors" as never, { _user_id: profile.user_id } as never);
+            const ancestors = (ancestorsData ?? []) as Ancestor[];
+
+            const referrerNotifies: Array<{
+              telegram_id: number | null;
+              first_name: string | null;
+              level: number;
+              percent: number;
+              commission: number;
+              refbackReturned: number;
+            }> = [];
+            let totalRefbackToDepositor = 0;
+
+            for (const anc of ancestors) {
+              const rate = LEVEL_RATES[(anc.level ?? 1) - 1];
+              if (!rate) continue;
+              const grossBonus = amountTon * rate;
+              const refbackPct = Math.max(0, Math.min(1, Number(anc.refback_rate ?? 0)));
+              const refbackShare = grossBonus * refbackPct;
+              const netBonus = grossBonus - refbackShare;
+              totalRefbackToDepositor += refbackShare;
+
+              // Credit the ancestor's balance (atomic).
+              if (netBonus > 0) {
+                await supabaseAdmin.rpc(
+                  "atomic_add_balance" as never,
+                  { _user_id: anc.user_id, _amount: netBonus } as never,
+                );
+              }
+              // Accumulate lifetime earnings (net of refback) on ancestor's profile.
+              await supabaseAdmin
                 .from("profiles")
-                .select("user_id, telegram_id, first_name")
-                .eq("id", profile.referred_by)
+                .update({ referral_earned_total: netBonus } as never)
+                .eq("user_id", anc.user_id);
+              // atomic increment: use rpc-safe path — do a raw SQL via update on a
+              // read-modify-write is racy; but since we only read here for stats,
+              // use a small increment through select+update inside a single call.
+              await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: anc.user_id, _amount: 0 } as never);
+              // For robust increment, do read-modify-write (best-effort, non-critical stat):
+              const { data: pRow } = await supabaseAdmin
+                .from("profiles")
+                .select("referral_earned_total, refback_paid")
+                .eq("user_id", anc.user_id)
                 .maybeSingle();
-              if (refProfile) {
-                const bonus = amountTon * 0.10;
-                // Atomic add: avoids lost-update when the referrer is also
-                // collecting income or claiming rewards concurrently.
-                await supabaseAdmin
-                  .rpc("atomic_add_balance" as never, { _user_id: refProfile.user_id, _amount: bonus } as never);
+              await supabaseAdmin
+                .from("profiles")
+                .update({
+                  referral_earned_total: Number((pRow as any)?.referral_earned_total ?? 0) + netBonus,
+                  refback_paid: Number((pRow as any)?.refback_paid ?? 0) + refbackShare,
+                } as never)
+                .eq("user_id", anc.user_id);
+
+              // Keep L1 per-friend row in sync for the friends list display.
+              if (anc.level === 1) {
                 const { data: refRow } = await supabaseAdmin
                   .from("referrals")
                   .select("id, bonus_earned")
-                  .eq("referrer_id", refProfile.user_id)
+                  .eq("referrer_id", anc.user_id)
                   .eq("referred_id", profile.user_id)
                   .maybeSingle();
                 if (refRow) {
                   await supabaseAdmin
                     .from("referrals")
-                    .update({ bonus_earned: Number(refRow.bonus_earned ?? 0) + bonus })
+                    .update({ bonus_earned: Number(refRow.bonus_earned ?? 0) + netBonus })
                     .eq("id", refRow.id);
                 } else {
                   await supabaseAdmin.from("referrals").insert({
-                    referrer_id: refProfile.user_id,
+                    referrer_id: anc.user_id,
                     referred_id: profile.user_id,
-                    bonus_earned: bonus,
+                    bonus_earned: netBonus,
                   });
                 }
-                referrerNotify = {
-                  telegram_id: refProfile.telegram_id as number | null,
-                  first_name: (refProfile.first_name as string | null) ?? null,
-                  bonus,
-                };
               }
+
+              referrerNotifies.push({
+                telegram_id: anc.telegram_id,
+                first_name: anc.first_name,
+                level: anc.level,
+                percent: rate * 100,
+                commission: netBonus,
+                refbackReturned: refbackShare,
+              });
+            }
+
+            // Credit refback total back to the depositor.
+            if (totalRefbackToDepositor > 0) {
+              await supabaseAdmin.rpc(
+                "atomic_add_balance" as never,
+                { _user_id: profile.user_id, _amount: totalRefbackToDepositor } as never,
+              );
             }
 
             // Telegram DMs (best-effort)
@@ -254,11 +320,15 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                   ? `🎁 Deposit bonus: <b>+${bonusPercent.toFixed(2)}%</b> (+${formatReward(bonusAmountTon)} TON)\n` +
                     `💎 Effective deposit: <b>${formatReward(effectiveAmountTon)} TON</b>\n`
                   : "";
+                const refbackLine = totalRefbackToDepositor > 0
+                  ? `🔁 Refback received: <b>+${formatReward(totalRefbackToDepositor)} GRAM</b>\n`
+                  : "";
                 await sendTelegramMessage(
                   Number(profile.telegram_id),
                   `✅ <b>Deposit confirmed!</b>\n\n` +
                     `Hi ${name}, we received your deposit of <b>${formatReward(amountTon)} TON</b>.\n\n` +
                     bonusLine +
+                    refbackLine +
                     `⚡ Mining rate added: <b>+$${formatReward(usdPerDay)} USDT/day</b>\n` +
                     `🪙 GRAM per day: <b>+${gramPerDayStr} GRAM</b>\n` +
                     `📈 Daily ROI: 3.3%\n\n` +
@@ -266,19 +336,22 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                 );
               }
 
-              if (referrerNotify?.telegram_id) {
-                const refName = referrerNotify.first_name || "friend";
+              for (const rn of referrerNotifies) {
+                if (!rn.telegram_id) continue;
+                const refName = rn.first_name || "friend";
+                const levelLabel = rn.level === 1 ? "direct referral" : rn.level === 2 ? "level 2 referral" : "level 3 referral";
                 await sendTelegramMessage(
-                  Number(referrerNotify.telegram_id),
+                  Number(rn.telegram_id),
                   `🎉 <b>Referral commission earned!</b>\n\n` +
-                    `Hi ${refName}, one of your referrals just made a deposit of <b>${formatReward(amountTon)} GRAM</b>.\n\n` +
-                    `💰 Your 10% commission: <b>+${formatReward(referrerNotify.bonus)} GRAM</b>\n\n` +
+                    `Hi ${refName}, one of your ${levelLabel}s just made a deposit of <b>${formatReward(amountTon)} GRAM</b>.\n\n` +
+                    `💰 Your ${rn.percent}% commission (level ${rn.level}): <b>+${formatReward(rn.commission)} GRAM</b>\n\n` +
                     `Keep inviting friends to earn more!`,
                 );
               }
             } catch (e) {
               console.error("telegram deposit notify failed", e);
             }
+
 
             credited += 1;
             results.push({ txHash, user: profile.user_id, amountTon, gramPerDay });
