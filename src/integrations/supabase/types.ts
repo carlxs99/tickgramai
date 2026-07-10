@@ -251,6 +251,7 @@ export type Database = {
           refback_paid: number
           refback_rate: number
           referral_code: string | null
+          referral_earned_total: number
           referred_by: string | null
           telegram_id: number | null
           updated_at: string
@@ -277,6 +278,7 @@ export type Database = {
           refback_paid?: number
           refback_rate?: number
           referral_code?: string | null
+          referral_earned_total?: number
           referred_by?: string | null
           telegram_id?: number | null
           updated_at?: string
@@ -303,6 +305,7 @@ export type Database = {
           refback_paid?: number
           refback_rate?: number
           referral_code?: string | null
+          referral_earned_total?: number
           referred_by?: string | null
           telegram_id?: number | null
           updated_at?: string
@@ -568,6 +571,16 @@ export type Database = {
       expire_stale_pending_deposits: { Args: never; Returns: number }
       generate_memo_tag: { Args: never; Returns: string }
       generate_partner_memo: { Args: never; Returns: string }
+      get_referral_ancestors: {
+        Args: { _user_id: string }
+        Returns: {
+          first_name: string
+          level: number
+          refback_rate: number
+          telegram_id: number
+          user_id: string
+        }[]
+      }
       get_referral_stats: { Args: { _user_id: string }; Returns: Json }
       get_top_miners: {
         Args: { _limit?: number }
