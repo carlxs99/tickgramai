@@ -1364,26 +1364,34 @@ function FriendsTab() {
       )}
 
 
-      {/* Main stats card */}
+      {/* Main stats card — 3-level referral tree */}
       <div className="rounded-3xl p-5 text-white relative overflow-hidden bg-gradient-to-br from-primary to-accent">
         <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none" />
         <div className="relative">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-white/90">{t("friends.total_referrals")}</span>
-            <span className="text-3xl font-extrabold tabular-nums">{s.level1 ?? 0}</span>
+            <span className="text-3xl font-extrabold tabular-nums">{s.total_referrals ?? 0}</span>
           </div>
-          <div className="space-y-2 border-t border-white/20 pt-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-white/90">{t("friends.total_earned")}</span>
-              <span className="text-lg font-semibold tabular-nums">{formatGram(s.total_earned ?? 0, 8)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-white/90">{t("friends.commission_rate")}</span>
-              <span className="text-lg font-semibold tabular-nums">10%</span>
-            </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: t("friends.level1"), value: s.level1 ?? 0, pct: "10%", opacity: "bg-white/20" },
+              { label: t("friends.level2"), value: s.level2 ?? 0, pct: "5%",  opacity: "bg-white/15" },
+              { label: t("friends.level3"), value: s.level3 ?? 0, pct: "3%",  opacity: "bg-white/10" },
+            ].map((lvl) => (
+              <div key={lvl.label} className={`rounded-2xl ${lvl.opacity} backdrop-blur-sm p-3 text-center`}>
+                <p className="text-[11px] text-white/80 font-medium">{lvl.label}</p>
+                <p className="text-xl font-extrabold tabular-nums mt-0.5">{lvl.value}</p>
+                <p className="text-[10px] text-white/70 mt-0.5">{lvl.pct}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-3 border-t border-white/20 flex items-center justify-between">
+            <span className="text-sm text-white/90">{t("friends.total_earned")}</span>
+            <span className="text-lg font-semibold tabular-nums">{formatGram(s.total_earned ?? 0, 8)}</span>
           </div>
         </div>
       </div>
+
 
       {/* Referral link */}
       <div className="card-glass rounded-2xl p-4 space-y-3">
