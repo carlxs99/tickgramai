@@ -40,25 +40,25 @@
 :root, .dark {
   --radius: 1.1rem;
 
-  /* Deep navy base with GRAM cyan accent */
-  --background: oklch(0.16 0.03 260);      /* #0B1220-ish navy */
+  /* Near-black navy base with GRAM cyan accent (matches mockup) */
+  --background: oklch(0.11 0.02 258);      /* deep near-black navy */
   --foreground: oklch(0.98 0.005 250);
 
-  --card: oklch(0.22 0.035 262);           /* slate panel */
+  --card: oklch(0.17 0.028 260);           /* dark panel */
   --card-foreground: oklch(0.98 0.005 250);
 
-  --popover: oklch(0.22 0.035 262);
+  --popover: oklch(0.17 0.028 260);
   --popover-foreground: oklch(0.98 0.005 250);
 
   /* GRAM blue — matches the coin logo */
   --primary: oklch(0.78 0.14 235);
   --primary-foreground: oklch(0.14 0.04 260);
 
-  --secondary: oklch(0.26 0.04 262);
+  --secondary: oklch(0.2 0.03 262);
   --secondary-foreground: oklch(0.96 0.01 250);
 
-  --muted: oklch(0.26 0.03 262);
-  --muted-foreground: oklch(0.72 0.02 255);
+  --muted: oklch(0.2 0.03 262);
+  --muted-foreground: oklch(0.7 0.02 255);
 
   /* Reserved violet — only used in hero cards */
   --accent: oklch(0.68 0.18 295);
