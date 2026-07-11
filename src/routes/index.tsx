@@ -379,12 +379,12 @@ function MineTab() {
         initial={{ scale: 0.96 }} animate={{ scale: 1 }}
         style={{
           background:
-            "linear-gradient(135deg, oklch(0.48 0.22 295) 0%, oklch(0.55 0.24 285) 45%, oklch(0.62 0.20 270) 100%)",
+            "linear-gradient(135deg, oklch(0.22 0.06 255) 0%, oklch(0.32 0.09 245) 50%, oklch(0.46 0.13 225) 100%)",
         }}
       >
         {/* Ambient glow blobs */}
         <div className="absolute -top-16 -left-10 w-56 h-56 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -right-10 w-64 h-64 rounded-full bg-fuchsia-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -right-10 w-64 h-64 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
 
         {/* 3D coins cluster */}
         <img
@@ -625,7 +625,7 @@ function GiftBoxesCard() {
         className="relative rounded-3xl p-5 overflow-hidden"
         style={{
           background:
-            "linear-gradient(135deg, oklch(0.42 0.16 300) 0%, oklch(0.48 0.20 285) 60%, oklch(0.55 0.18 260) 100%)",
+            "linear-gradient(135deg, oklch(0.22 0.06 255) 0%, oklch(0.30 0.09 245) 60%, oklch(0.44 0.13 225) 100%)",
         }}
       >
         <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
@@ -740,7 +740,7 @@ function ActiveBonusBanner() {
       className="relative rounded-2xl p-3 overflow-hidden flex items-center gap-3"
       style={{
         background:
-          "linear-gradient(135deg, oklch(0.42 0.16 300) 0%, oklch(0.48 0.20 285) 60%, oklch(0.55 0.18 260) 100%)",
+          "linear-gradient(135deg, oklch(0.22 0.06 255) 0%, oklch(0.30 0.09 245) 60%, oklch(0.44 0.13 225) 100%)",
       }}
     >
       <div className="w-9 h-9 rounded-xl bg-amber-400/90 flex items-center justify-center shrink-0">
@@ -775,7 +775,7 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
         initial={{ scale: 0.7, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}
         transition={{ type: "spring", damping: 18 }}
         className="relative w-full max-w-sm rounded-3xl p-6 text-center overflow-hidden"
-        style={{ background: "linear-gradient(160deg, oklch(0.42 0.16 300), oklch(0.55 0.18 260))" }}
+        style={{ background: "linear-gradient(160deg, oklch(0.22 0.06 255), oklch(0.44 0.13 225))" }}
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute top-3 right-3 text-white/60 hover:text-white">
