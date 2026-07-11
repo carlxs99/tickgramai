@@ -453,14 +453,18 @@ const PARTNER_MIN_CLICKS = 250;
 export const listPartnerTasks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { data, error } = await supabase.rpc(
+    // Admin client: RPC is SECURITY DEFINER and only granted to service_role.
+    // _user_id is bound to the authenticated caller and used only to filter
+    // out the caller's own tasks and already-completed tasks.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc(
       "list_active_partner_tasks" as never,
-      { _user_id: userId } as never,
+      { _user_id: context.userId } as never,
     );
     if (error) throw error;
     return (data ?? []) as any[];
   });
+
 
 
 // Owner list: my partner tasks (any state).
