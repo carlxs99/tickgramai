@@ -507,6 +507,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _set_cron_secret: { Args: { _value: string }; Returns: undefined }
       atomic_add_balance: {
         Args: { _amount: number; _user_id: string }
         Returns: number
