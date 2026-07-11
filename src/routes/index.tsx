@@ -455,8 +455,8 @@ function MineTab() {
 
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} valueClassName="text-gradient-gold" />
-        <StatCard label={t("mine.deposits")} value={formatReward(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} valueClassName="text-gradient-gold" />
+        <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} valueClassName="text-black" />
+        <StatCard label={t("mine.deposits")} value={formatReward(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} valueClassName="text-black" />
       </div>
 
       <GiftBoxesCard />
