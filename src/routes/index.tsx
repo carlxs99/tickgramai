@@ -2225,7 +2225,16 @@ function useStatsStream() {
 
 function StatsTab() {
   const { t } = useT();
-  const { rows, split } = useStatsStream();
+  const { rows } = useStatsStream();
+  // Keep the LONG/SHORT bar coherent with the visible rows: a row with a
+  // positive % change counts as LONG, negative as SHORT.
+  const split = (() => {
+    if (!rows.length) return { long: 50, short: 50 };
+    const longCount = rows.filter((r) => r.changePct >= 0).length;
+    const longPct = (longCount / rows.length) * 100;
+    const clamped = Math.max(8, Math.min(92, longPct));
+    return { long: clamped, short: 100 - clamped };
+  })();
 
   return (
     <div className="space-y-3 pb-4">
