@@ -17,6 +17,7 @@ import { Route as ApiPublicMexcPricesRouteImport } from './routes/api/public/mex
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicHooksDailyGiftBroadcastRouteImport } from './routes/api/public/hooks/daily-gift-broadcast'
 import { Route as ApiPublicHooksDailyCheckinBroadcastRouteImport } from './routes/api/public/hooks/daily-checkin-broadcast'
+import { Route as ApiPublicHooksBootstrapCronSecretRouteImport } from './routes/api/public/hooks/bootstrap-cron-secret'
 
 const TonconnectManifestDotjsonRoute =
   TonconnectManifestDotjsonRouteImport.update({
@@ -63,6 +64,12 @@ const ApiPublicHooksDailyCheckinBroadcastRoute =
     path: '/api/public/hooks/daily-checkin-broadcast',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBootstrapCronSecretRoute =
+  ApiPublicHooksBootstrapCronSecretRouteImport.update({
+    id: '/api/public/hooks/bootstrap-cron-secret',
+    path: '/api/public/hooks/bootstrap-cron-secret',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/api/public/mexc-prices': typeof ApiPublicMexcPricesRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
+  '/api/public/hooks/bootstrap-cron-secret': typeof ApiPublicHooksBootstrapCronSecretRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -80,6 +88,7 @@ export interface FileRoutesByTo {
   '/api/public/mexc-prices': typeof ApiPublicMexcPricesRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
+  '/api/public/hooks/bootstrap-cron-secret': typeof ApiPublicHooksBootstrapCronSecretRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -91,6 +100,7 @@ export interface FileRoutesById {
   '/api/public/mexc-prices': typeof ApiPublicMexcPricesRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
+  '/api/public/hooks/bootstrap-cron-secret': typeof ApiPublicHooksBootstrapCronSecretRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/api/public/mexc-prices'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
+    | '/api/public/hooks/bootstrap-cron-secret'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
     | '/api/public/telegram/webhook'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/api/public/mexc-prices'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
+    | '/api/public/hooks/bootstrap-cron-secret'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
     | '/api/public/telegram/webhook'
@@ -123,6 +135,7 @@ export interface FileRouteTypes {
     | '/api/public/mexc-prices'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
+    | '/api/public/hooks/bootstrap-cron-secret'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
     | '/api/public/telegram/webhook'
@@ -134,6 +147,7 @@ export interface RootRouteChildren {
   ApiPublicMexcPricesRoute: typeof ApiPublicMexcPricesRoute
   ApiPublicProcessWithdrawalsRoute: typeof ApiPublicProcessWithdrawalsRoute
   ApiPublicVerifyDepositsRoute: typeof ApiPublicVerifyDepositsRoute
+  ApiPublicHooksBootstrapCronSecretRoute: typeof ApiPublicHooksBootstrapCronSecretRoute
   ApiPublicHooksDailyCheckinBroadcastRoute: typeof ApiPublicHooksDailyCheckinBroadcastRoute
   ApiPublicHooksDailyGiftBroadcastRoute: typeof ApiPublicHooksDailyGiftBroadcastRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -197,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailyCheckinBroadcastRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/bootstrap-cron-secret': {
+      id: '/api/public/hooks/bootstrap-cron-secret'
+      path: '/api/public/hooks/bootstrap-cron-secret'
+      fullPath: '/api/public/hooks/bootstrap-cron-secret'
+      preLoaderRoute: typeof ApiPublicHooksBootstrapCronSecretRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -206,6 +227,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMexcPricesRoute: ApiPublicMexcPricesRoute,
   ApiPublicProcessWithdrawalsRoute: ApiPublicProcessWithdrawalsRoute,
   ApiPublicVerifyDepositsRoute: ApiPublicVerifyDepositsRoute,
+  ApiPublicHooksBootstrapCronSecretRoute:
+    ApiPublicHooksBootstrapCronSecretRoute,
   ApiPublicHooksDailyCheckinBroadcastRoute:
     ApiPublicHooksDailyCheckinBroadcastRoute,
   ApiPublicHooksDailyGiftBroadcastRoute: ApiPublicHooksDailyGiftBroadcastRoute,
