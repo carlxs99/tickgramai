@@ -394,11 +394,12 @@ function MineTab() {
           loading="lazy"
           width={1024}
           height={1024}
-          className="absolute -right-6 -bottom-2 w-[70%] max-w-[280px] pointer-events-none select-none"
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-[62%] max-w-[260px] pointer-events-none select-none"
           style={{
             filter: "drop-shadow(0 12px 24px oklch(0.30 0.14 300 / 0.45))",
           }}
         />
+
 
 
         <div className="relative z-10">
