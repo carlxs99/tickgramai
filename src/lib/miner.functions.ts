@@ -389,11 +389,22 @@ export const getFriends = createServerFn({ method: "GET" })
     if (rows.length === 0) return [];
     const ids = rows.map((r: any) => r.referred_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profs } = await supabaseAdmin
-      .from("profiles")
-      .select("user_id, username, first_name, last_name, avatar_url")
-      .in("user_id", ids);
-    const map = new Map((profs ?? []).map((p: any) => [p.user_id, p]));
+    // Chunk the IN() filter — PostgREST enforces a URL length limit, and a
+    // single .in() with hundreds of UUIDs silently returns nothing, leaving
+    // the friends list rendering fallback IDs instead of names/avatars.
+    const CHUNK = 100;
+    const profs: any[] = [];
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const slice = ids.slice(i, i + CHUNK);
+      const { data: part, error: pErr } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, username, first_name, last_name, avatar_url")
+        .in("user_id", slice);
+      if (pErr) throw pErr;
+      if (part) profs.push(...part);
+    }
+    const map = new Map(profs.map((p: any) => [p.user_id, p]));
+
     return rows.map((r: any) => ({
       ...r,
       profile: map.get(r.referred_id) ?? null,
