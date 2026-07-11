@@ -2197,7 +2197,7 @@ const statsStore = (() => {
         setState({ ...state, rows: nextRows });
         nextCoinCursor = (nextCoinCursor + 1) % STATS_COINS.length;
       }
-    }, 3000);
+    }, 2000);
 
     splitId = setInterval(() => {
       const long = 45 + Math.random() * 10;
