@@ -88,15 +88,33 @@ async function runBroadcast() {
   console.log(`[daily-gift-broadcast] done. sent=${sent} failed=${failed} total=${list.length}`);
 }
 
+function safeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+function authorized(request: Request): boolean {
+  const expected = process.env.CRON_SECRET;
+  if (!expected) return false;
+  const header = request.headers.get("authorization") ?? "";
+  const provided =
+    header.replace(/^Bearer\s+/i, "").trim() ||
+    request.headers.get("x-cron-secret") ||
+    new URL(request.url).searchParams.get("secret") ||
+    "";
+  return provided.length > 0 && safeEqual(provided, expected);
+}
+
 async function handleBroadcast(request: Request) {
-  const apiKey = request.headers.get("apikey") ?? request.headers.get("x-api-key") ?? "";
-  const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
-  if (!expected || apiKey !== expected) {
+  if (!authorized(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
   if (!process.env.LOVABLE_API_KEY || !process.env.TELEGRAM_API_KEY) {
     return new Response("Telegram not configured", { status: 500 });
   }
+
 
   // Fire-and-forget: keep the worker alive with waitUntil so the broadcast
   // finishes after we return 202 immediately to the caller (avoids client timeouts).
