@@ -394,8 +394,14 @@ function MineTab() {
           loading="lazy"
           width={1024}
           height={1024}
-          className="absolute -right-6 top-1/2 -translate-y-1/2 w-[62%] max-w-[240px] pointer-events-none select-none opacity-95"
-          style={{ filter: "drop-shadow(0 12px 24px oklch(0.30 0.14 300 / 0.55))" }}
+          className="absolute -right-4 -bottom-4 w-[58%] max-w-[220px] pointer-events-none select-none opacity-95"
+          style={{
+            filter: "drop-shadow(0 12px 24px oklch(0.30 0.14 300 / 0.55))",
+            WebkitMaskImage:
+              "radial-gradient(ellipse at 70% 45%, black 55%, transparent 92%)",
+            maskImage:
+              "radial-gradient(ellipse at 70% 45%, black 55%, transparent 92%)",
+          }}
         />
 
         <div className="relative z-10">
