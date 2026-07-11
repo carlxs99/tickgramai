@@ -414,8 +414,13 @@ export const getFriends = createServerFn({ method: "GET" })
 export const getReferralStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.rpc("get_referral_stats" as never, { _user_id: context.userId } as never);
+    // Use admin client — the RPC is SECURITY DEFINER and only granted to
+    // service_role. The user id is bound to the authenticated caller so
+    // callers cannot query another user's referral stats.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("get_referral_stats" as never, { _user_id: context.userId } as never);
     if (error) throw error;
+
     return (data ?? {}) as {
       inviter: {
         user_id: string;
