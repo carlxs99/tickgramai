@@ -1006,7 +1006,7 @@ function TasksTab() {
             <div className="flex-1 min-w-0">
               <p className="font-semibold">{t.title}</p>
               {t.description && <p className="text-xs text-muted-foreground">{t.description}</p>}
-              <p className="text-xs mt-1 text-[color:var(--success)]">+${(Number(t.reward) * 0.033).toFixed(6)} USDT/día ⛏️</p>
+              <p className="text-xs mt-1 text-[color:var(--success)]">+{formatReward(Number(t.reward))} GRAM/día ⛏️</p>
             </div>
             {t.completed ? (
               <div className="flex items-center gap-1 text-[color:var(--success)] text-sm"><CheckCircle2 className="w-4 h-4" />{tr("tasks.done")}</div>
