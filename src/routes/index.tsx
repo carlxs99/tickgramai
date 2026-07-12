@@ -2231,13 +2231,14 @@ function useStatsStream() {
 function StatsTab() {
   const { t } = useT();
   const { rows } = useStatsStream();
-  // Keep the LONG/SHORT bar coherent with the visible rows: a row with a
-  // positive % change counts as LONG, negative as SHORT.
+  // Keep the LONG/SHORT bar coherent with the visible rows. The buildRow
+  // helper already applies a gentle bias, so this should now be balanced.
   const split = (() => {
     if (!rows.length) return { long: 50, short: 50 };
     const longCount = rows.filter((r) => r.changePct >= 0).length;
     const longPct = (longCount / rows.length) * 100;
-    const clamped = Math.max(8, Math.min(92, longPct));
+    // Allow any real range from 5% to 95% so an outlier market can still show.
+    const clamped = Math.max(5, Math.min(95, longPct));
     return { long: clamped, short: 100 - clamped };
   })();
 
