@@ -2206,10 +2206,8 @@ const statsStore = (() => {
       }
     }, 1500);
 
-    splitId = setInterval(() => {
-      const long = 45 + Math.random() * 10;
-      setState({ ...state, split: { long, short: 100 - long } });
-    }, 3000);
+    // splitId removed — the split is now derived from visible rows, so no
+    // independent random interval is needed.
   }
 
   return {
