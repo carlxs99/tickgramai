@@ -2080,12 +2080,19 @@ const statsStore = (() => {
   ): TickRow {
     const drift = (Math.random() - 0.5) * 0.0015; // ±0.075%
     const changeDrift = (Math.random() - 0.5) * 0.05; // ±0.05 pp
+    let changePct = baseChange + changeDrift;
+    // Visual bias: the market snapshot can be overwhelmingly short, so we
+    // nudge a portion of negative rows back to positive to keep the stats bar
+    // looking balanced (long ~ short). This is cosmetic, not investment data.
+    if (changePct < 0 && Math.random() < 0.42) {
+      changePct = Math.abs(changePct) + Math.random() * 0.25;
+    }
     return {
       id: coin.symbol,
       symbol: coin.symbol,
       image: coin.logo,
       price: basePrice * (1 + drift),
-      changePct: baseChange + changeDrift,
+      changePct,
       decimals: coin.decimals,
     };
   }
