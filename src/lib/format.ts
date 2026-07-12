@@ -15,5 +15,8 @@ export function formatReward(n: number | string) {
   if (v >= 1_000_000) return (v / 1_000_000).toFixed(2) + "M";
   if (v >= 1_000) return (v / 1_000).toFixed(2) + "K";
   const decimals = Math.min(8, Math.max(2, -Math.floor(Math.log10(Math.abs(v))) + 1));
-  return Number(v.toFixed(decimals)).toString();
+  let s = v.toFixed(decimals);
+  // Keep leading zeros (e.g. 0.00000011) but drop trailing zeros and the redundant dot
+  s = s.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+  return s;
 }
