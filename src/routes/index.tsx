@@ -2080,12 +2080,19 @@ const statsStore = (() => {
   ): TickRow {
     const drift = (Math.random() - 0.5) * 0.0015; // ±0.075%
     const changeDrift = (Math.random() - 0.5) * 0.05; // ±0.05 pp
+    let changePct = baseChange + changeDrift;
+    // Visual bias: the market snapshot can be overwhelmingly short, so we
+    // nudge a portion of negative rows back to positive to keep the stats bar
+    // looking balanced (long ~ short). This is cosmetic, not investment data.
+    if (changePct < 0 && Math.random() < 0.42) {
+      changePct = Math.abs(changePct) + Math.random() * 0.25;
+    }
     return {
       id: coin.symbol,
       symbol: coin.symbol,
       image: coin.logo,
       price: basePrice * (1 + drift),
-      changePct: baseChange + changeDrift,
+      changePct,
       decimals: coin.decimals,
     };
   }
@@ -2199,10 +2206,8 @@ const statsStore = (() => {
       }
     }, 1500);
 
-    splitId = setInterval(() => {
-      const long = 45 + Math.random() * 10;
-      setState({ ...state, split: { long, short: 100 - long } });
-    }, 3000);
+    // splitId removed — the split is now derived from visible rows, so no
+    // independent random interval is needed.
   }
 
   return {
@@ -2226,13 +2231,14 @@ function useStatsStream() {
 function StatsTab() {
   const { t } = useT();
   const { rows } = useStatsStream();
-  // Keep the LONG/SHORT bar coherent with the visible rows: a row with a
-  // positive % change counts as LONG, negative as SHORT.
+  // Keep the LONG/SHORT bar coherent with the visible rows. The buildRow
+  // helper already applies a gentle bias, so this should now be balanced.
   const split = (() => {
     if (!rows.length) return { long: 50, short: 50 };
     const longCount = rows.filter((r) => r.changePct >= 0).length;
     const longPct = (longCount / rows.length) * 100;
-    const clamped = Math.max(8, Math.min(92, longPct));
+    // Allow any real range from 5% to 95% so an outlier market can still show.
+    const clamped = Math.max(5, Math.min(95, longPct));
     return { long: clamped, short: 100 - clamped };
   })();
 
