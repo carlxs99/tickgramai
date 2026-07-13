@@ -1419,40 +1419,65 @@ function FriendsTab() {
         const pct = Math.min(100, Math.round((active / required) * 100));
         const canClaim = active >= required;
         return (
-          <div className="card-glass rounded-2xl p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-[color:var(--gold)]" />
-              <p className="text-sm font-semibold">{t("friends.milestones_title")}</p>
-            </div>
-            <p className="text-xs text-white/70">{t("friends.milestones_subtitle")}</p>
-            <div className="rounded-xl border border-white/10 bg-background/40 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">{required} 👥</span>
-                    <span className="text-xs text-[color:var(--gold)] font-semibold tabular-nums">+{formatGram(next.reward, 8)} GRAM</span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                    <div className="h-full bg-[color:var(--gold)] transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="mt-1 text-[10px] text-white/60 tabular-nums">{t("friends.milestone_progress", { active, required })}</p>
+          <div className="relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/25 bg-gradient-to-br from-[#0b1220]/90 via-[#0f1a2e]/85 to-[#0b1220]/90 p-4 space-y-3 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]">
+            {/* Ambient glow */}
+            <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-[color:var(--gold)]/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl" />
+
+            <div className="relative flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[color:var(--gold)]/15 border border-[color:var(--gold)]/30">
+                  <Trophy className="w-4 h-4 text-[color:var(--gold)]" />
                 </div>
-                {canClaim ? (
-                  <button
-                    onClick={() => claimMilestone.mutate(next.tier)}
-                    disabled={claimMilestone.isPending}
-                    className="shrink-0 px-3 py-1.5 rounded-lg bg-[color:var(--gold)] text-black text-xs font-semibold disabled:opacity-50"
-                  >
-                    {t("friends.milestone_claim")}
-                  </button>
-                ) : (
-                  <span className="shrink-0 inline-flex items-center gap-1 text-xs text-white/50">
-                    <Lock className="w-3.5 h-3.5" />{t("friends.milestone_locked")}
-                  </span>
-                )}
+                <div>
+                  <p className="text-sm font-bold text-glow-white">{t("friends.milestones_title")}</p>
+                  <p className="text-[10px] text-white/60">{t("friends.milestones_subtitle")}</p>
+                </div>
+              </div>
+              <span className="shrink-0 px-2 py-0.5 rounded-full bg-[color:var(--gold)]/15 border border-[color:var(--gold)]/30 text-[10px] font-bold text-[color:var(--gold)] tabular-nums">
+                +{formatGram(next.reward, 8)} GRAM
+              </span>
+            </div>
+
+            <div className="relative rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm p-3">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-lg">👥</span>
+                  <span className="text-sm font-bold tabular-nums">{active}<span className="text-white/40"> / {required}</span></span>
+                </div>
+                <span className="text-[10px] font-semibold text-white/60 tabular-nums">{pct}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-white/5 overflow-hidden border border-white/5">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[color:var(--gold)] via-amber-300 to-[color:var(--gold)] transition-all duration-500 shadow-[0_0_12px_rgba(212,175,55,0.6)]"
+                  style={{ width: `${pct}%` }}
+                />
               </div>
             </div>
-            <p className="text-[10px] text-white/50">{t("friends.milestone_active_hint")}</p>
+
+            <button
+              onClick={() => canClaim && claimMilestone.mutate(next.tier)}
+              disabled={!canClaim || claimMilestone.isPending}
+              className={`relative w-full py-2.5 rounded-xl text-sm font-bold transition-all ${
+                canClaim
+                  ? "bg-gradient-to-r from-[color:var(--gold)] to-amber-400 text-black shadow-[0_6px_20px_-6px_rgba(212,175,55,0.7)] hover:brightness-110 active:scale-[0.98]"
+                  : "bg-white/5 text-white/40 border border-white/10 cursor-not-allowed"
+              } disabled:opacity-70`}
+            >
+              {canClaim ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Trophy className="w-4 h-4" />
+                  {t("friends.milestone_claim")}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5" />
+                  {t("friends.milestone_locked")}
+                </span>
+              )}
+            </button>
+
+            <p className="relative text-[10px] text-white/50 text-center">{t("friends.milestone_active_hint")}</p>
           </div>
         );
       })()}
