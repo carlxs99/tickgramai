@@ -1312,9 +1312,22 @@ function FriendsTab() {
   const meFn = useServerFn(getMe);
   const frFn = useServerFn(getFriends);
   const statsFn = useServerFn(getReferralStats);
+  const milestonesFn = useServerFn(listReferralMilestones);
+  const claimMilestoneFn = useServerFn(claimReferralMilestone);
+  const qc = useQueryClient();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
   const { data: friends } = useQuery({ queryKey: ["friends"], queryFn: () => frFn() });
   const { data: stats } = useQuery({ queryKey: ["referral-stats"], queryFn: () => statsFn() });
+  const { data: milestones } = useQuery({ queryKey: ["referral-milestones"], queryFn: () => milestonesFn() });
+  const claimMilestone = useMutation({
+    mutationFn: (tier: number) => claimMilestoneFn({ data: { tier } }),
+    onSuccess: (r) => {
+      toast.success(t("friends.milestone_reward_toast", { amount: formatGram(r.reward, 8) }));
+      qc.invalidateQueries({ queryKey: ["referral-milestones"] });
+      qc.invalidateQueries({ queryKey: ["me"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Error"),
+  });
   const code = me.profile.referral_code as string;
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   const shareText = t("tasks.share_default");
