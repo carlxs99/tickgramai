@@ -2954,7 +2954,7 @@ function AdminUsersSection() {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               {detail.profile.avatar_url ? (
-                <img src={detail.profile.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+                <img src={avatarSrc(detail.profile.avatar_url)} alt="" referrerPolicy="no-referrer" className="w-12 h-12 rounded-full object-cover" />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                   <UserCircle2 className="w-6 h-6 text-muted-foreground" />
