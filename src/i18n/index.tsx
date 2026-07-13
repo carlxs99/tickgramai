@@ -119,6 +119,14 @@ const en: Dict = {
   "friends.your_invite": "Your invite link",
   "friends.your_friends": "Your friends ({count})",
   "friends.no_referrals": "No referrals yet.",
+  "friends.milestones_title": "Referral milestones",
+  "friends.milestones_subtitle": "Invite active friends to unlock rewards.",
+  "friends.milestone_progress": "{active} / {required} active friends",
+  "friends.milestone_active_hint": "Only friends who have made a deposit count.",
+  "friends.milestone_claim": "Claim",
+  "friends.milestone_claimed": "Claimed",
+  "friends.milestone_locked": "Locked",
+  "friends.milestone_reward_toast": "+{amount} GRAM added to your balance",
 
 
 
@@ -346,6 +354,14 @@ const es: Dict = {
   "friends.your_invite": "Tu enlace de invitación",
   "friends.your_friends": "Tus amigos ({count})",
   "friends.no_referrals": "Aún no tienes referidos.",
+  "friends.milestones_title": "Logros por referidos",
+  "friends.milestones_subtitle": "Invita amigos activos para desbloquear recompensas.",
+  "friends.milestone_progress": "{active} / {required} amigos activos",
+  "friends.milestone_active_hint": "Solo cuentan los amigos que hayan depositado.",
+  "friends.milestone_claim": "Reclamar",
+  "friends.milestone_claimed": "Reclamado",
+  "friends.milestone_locked": "Bloqueado",
+  "friends.milestone_reward_toast": "+{amount} GRAM añadidos a tu balance",
 
 
 
@@ -571,6 +587,14 @@ const ru: Dict = {
   "friends.your_invite": "Ваша ссылка-приглашение",
   "friends.your_friends": "Ваши друзья ({count})",
   "friends.no_referrals": "Пока нет рефералов.",
+  "friends.milestones_title": "Достижения по рефералам",
+  "friends.milestones_subtitle": "Приглашайте активных друзей, чтобы получать награды.",
+  "friends.milestone_progress": "{active} / {required} активных друзей",
+  "friends.milestone_active_hint": "Учитываются только друзья, сделавшие депозит.",
+  "friends.milestone_claim": "Забрать",
+  "friends.milestone_claimed": "Получено",
+  "friends.milestone_locked": "Заблокировано",
+  "friends.milestone_reward_toast": "+{amount} GRAM зачислено на баланс",
 
 
 
@@ -796,6 +820,14 @@ const hi: Dict = {
   "friends.your_invite": "आपका आमंत्रण लिंक",
   "friends.your_friends": "आपके मित्र ({count})",
   "friends.no_referrals": "अभी कोई रेफरल नहीं।",
+  "friends.milestones_title": "रेफ़रल माइलस्टोन",
+  "friends.milestones_subtitle": "इनाम पाने के लिए सक्रिय दोस्तों को आमंत्रित करें।",
+  "friends.milestone_progress": "{active} / {required} सक्रिय मित्र",
+  "friends.milestone_active_hint": "केवल वे मित्र गिने जाते हैं जिन्होंने जमा किया हो।",
+  "friends.milestone_claim": "क्लेम करें",
+  "friends.milestone_claimed": "प्राप्त",
+  "friends.milestone_locked": "लॉक",
+  "friends.milestone_reward_toast": "आपके बैलेंस में +{amount} GRAM जोड़ा गया",
 
 
 

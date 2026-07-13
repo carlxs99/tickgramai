@@ -8,7 +8,7 @@ import { toast, Toaster } from "sonner";
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
-import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getMyRank, getFriends, getReferralStats, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
+import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getMyRank, getFriends, getReferralStats, listReferralMilestones, claimReferralMilestone, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
@@ -1312,9 +1312,22 @@ function FriendsTab() {
   const meFn = useServerFn(getMe);
   const frFn = useServerFn(getFriends);
   const statsFn = useServerFn(getReferralStats);
+  const milestonesFn = useServerFn(listReferralMilestones);
+  const claimMilestoneFn = useServerFn(claimReferralMilestone);
+  const qc = useQueryClient();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
   const { data: friends } = useQuery({ queryKey: ["friends"], queryFn: () => frFn() });
   const { data: stats } = useQuery({ queryKey: ["referral-stats"], queryFn: () => statsFn() });
+  const { data: milestones } = useQuery({ queryKey: ["referral-milestones"], queryFn: () => milestonesFn() });
+  const claimMilestone = useMutation({
+    mutationFn: (tier: number) => claimMilestoneFn({ data: { tier } }),
+    onSuccess: (r) => {
+      toast.success(t("friends.milestone_reward_toast", { amount: formatGram(r.reward, 8) }));
+      qc.invalidateQueries({ queryKey: ["referral-milestones"] });
+      qc.invalidateQueries({ queryKey: ["me"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Error"),
+  });
   const code = me.profile.referral_code as string;
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   const shareText = t("tasks.share_default");
@@ -1397,7 +1410,59 @@ function FriendsTab() {
         </div>
       </div>
 
+      {/* Referral milestones */}
+      <div className="card-glass rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-[color:var(--gold)]" />
+          <p className="text-sm font-semibold">{t("friends.milestones_title")}</p>
+        </div>
+        <p className="text-xs text-white/70">{t("friends.milestones_subtitle")}</p>
+        <div className="space-y-2">
+          {(milestones ?? []).map((m) => {
+            const active = Number(m.active_count ?? 0);
+            const required = Number(m.required);
+            const pct = Math.min(100, Math.round((active / required) * 100));
+            const canClaim = !m.claimed && active >= required;
+            return (
+              <div key={m.tier} className="rounded-xl border border-white/10 bg-background/40 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold">{required} 👥</span>
+                      <span className="text-xs text-[color:var(--gold)] font-semibold tabular-nums">+{formatGram(m.reward, 8)} GRAM</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                      <div className="h-full bg-[color:var(--gold)] transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="mt-1 text-[10px] text-white/60 tabular-nums">{t("friends.milestone_progress", { active, required })}</p>
+                  </div>
+                  {m.claimed ? (
+                    <span className="shrink-0 inline-flex items-center gap-1 text-xs text-[color:var(--success)]">
+                      <CheckCircle2 className="w-4 h-4" />{t("friends.milestone_claimed")}
+                    </span>
+                  ) : canClaim ? (
+                    <button
+                      onClick={() => claimMilestone.mutate(m.tier)}
+                      disabled={claimMilestone.isPending}
+                      className="shrink-0 px-3 py-1.5 rounded-lg bg-[color:var(--gold)] text-black text-xs font-semibold disabled:opacity-50"
+                    >
+                      {t("friends.milestone_claim")}
+                    </button>
+                  ) : (
+                    <span className="shrink-0 inline-flex items-center gap-1 text-xs text-white/50">
+                      <Lock className="w-3.5 h-3.5" />{t("friends.milestone_locked")}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-white/50">{t("friends.milestone_active_hint")}</p>
+      </div>
+
       {/* Referral link */}
+
 
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <p className="text-sm font-semibold">{t("friends.your_link")}</p>

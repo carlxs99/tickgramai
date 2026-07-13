@@ -1,0 +1,135 @@
+
+-- Milestone claims table
+CREATE TABLE public.referral_milestone_claims (
+  user_id uuid NOT NULL,
+  tier smallint NOT NULL,
+  reward numeric(20,8) NOT NULL,
+  claimed_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, tier)
+);
+
+GRANT SELECT ON public.referral_milestone_claims TO authenticated;
+GRANT ALL ON public.referral_milestone_claims TO service_role;
+
+ALTER TABLE public.referral_milestone_claims ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own milestone claims"
+ON public.referral_milestone_claims
+FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+-- List milestones with progress + claim status
+CREATE OR REPLACE FUNCTION public.list_referral_milestones(_user_id uuid)
+RETURNS TABLE(tier smallint, required integer, reward numeric, claimed boolean, active_count bigint)
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  active bigint;
+BEGIN
+  SELECT COUNT(*) INTO active
+  FROM public.referrals r
+  JOIN public.profiles p ON p.user_id = r.referred_id
+  WHERE r.referrer_id = _user_id
+    AND COALESCE(p.deposit_total, 0) > 0;
+
+  RETURN QUERY
+  WITH tiers(tier, required, reward) AS (
+    VALUES
+      (1::smallint, 1,   0.005::numeric),
+      (2::smallint, 3,   0.02::numeric),
+      (3::smallint, 5,   0.05::numeric),
+      (4::smallint, 10,  0.15::numeric),
+      (5::smallint, 25,  0.5::numeric),
+      (6::smallint, 50,  1::numeric),
+      (7::smallint, 100, 3::numeric)
+  )
+  SELECT
+    t.tier,
+    t.required,
+    t.reward,
+    EXISTS (SELECT 1 FROM public.referral_milestone_claims c
+            WHERE c.user_id = _user_id AND c.tier = t.tier) AS claimed,
+    active AS active_count
+  FROM tiers t
+  ORDER BY t.tier;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.list_referral_milestones(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.list_referral_milestones(uuid) TO authenticated, service_role;
+
+-- Claim a milestone
+CREATE OR REPLACE FUNCTION public.claim_referral_milestone(_user_id uuid, _tier smallint)
+RETURNS TABLE(reward numeric, new_balance numeric)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  t_required integer;
+  t_reward numeric;
+  active bigint;
+  new_bal numeric;
+BEGIN
+  -- Look up the tier from the canonical inline table (never trust client)
+  SELECT required, reward INTO t_required, t_reward
+  FROM (VALUES
+      (1::smallint, 1,   0.005::numeric),
+      (2::smallint, 3,   0.02::numeric),
+      (3::smallint, 5,   0.05::numeric),
+      (4::smallint, 10,  0.15::numeric),
+      (5::smallint, 25,  0.5::numeric),
+      (6::smallint, 50,  1::numeric),
+      (7::smallint, 100, 3::numeric)
+    ) AS t(tier, required, reward)
+  WHERE t.tier = _tier;
+
+  IF t_required IS NULL THEN
+    RAISE EXCEPTION 'invalid milestone tier';
+  END IF;
+
+  -- Idempotency: reserve the claim row first
+  BEGIN
+    INSERT INTO public.referral_milestone_claims (user_id, tier, reward)
+    VALUES (_user_id, _tier, t_reward);
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'milestone already claimed';
+  END;
+
+  -- Verify active referrals (level 1, referred user has confirmed deposits)
+  SELECT COUNT(*) INTO active
+  FROM public.referrals r
+  JOIN public.profiles p ON p.user_id = r.referred_id
+  WHERE r.referrer_id = _user_id
+    AND COALESCE(p.deposit_total, 0) > 0;
+
+  IF active < t_required THEN
+    -- Roll back the claim so the user can retry after reaching the threshold
+    DELETE FROM public.referral_milestone_claims
+    WHERE user_id = _user_id AND tier = _tier;
+    RAISE EXCEPTION 'not enough active referrals: % / %', active, t_required;
+  END IF;
+
+  -- Credit balance
+  UPDATE public.profiles
+     SET balance = COALESCE(balance, 0) + t_reward
+   WHERE user_id = _user_id
+  RETURNING balance INTO new_bal;
+
+  IF new_bal IS NULL THEN
+    -- Profile missing: undo
+    DELETE FROM public.referral_milestone_claims
+    WHERE user_id = _user_id AND tier = _tier;
+    RAISE EXCEPTION 'profile not found';
+  END IF;
+
+  reward := t_reward;
+  new_balance := new_bal;
+  RETURN NEXT;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.claim_referral_milestone(uuid, smallint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.claim_referral_milestone(uuid, smallint) TO authenticated, service_role;
