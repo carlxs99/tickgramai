@@ -154,13 +154,15 @@ export const completeTask = createServerFn({ method: "POST" })
     if (iErr) throw new Error(iErr.message || "Already claimed");
 
 
-    // Admin-defined task rewards act as "capital": mining adds 3.3% of the reward
-    // per day (matching the deposit formula), NOT the full reward as daily rate.
+    // Task reward is denominated in GRAM (capital). Mining adds 3.3% of that
+    // reward per day in GRAM — matching what the UI displays to the user
+    // (`+{reward * 0.033} GRAM/día`). USD equivalent is derived from the live
+    // TON price so mining_rate_usd stays consistent with mining_rate.
     // Partner tasks credit the balance directly (see completePartnerTask).
-    const rewardCapitalUsd = Number(task.reward);
-    const dailyAddUsd = rewardCapitalUsd * 0.033;
+    const rewardCapitalGram = Number(task.reward);
+    const dailyAddGram = rewardCapitalGram * 0.033;
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
-    const dailyAddGram = dailyAddUsd / tonPrice;
+    const dailyAddUsd = dailyAddGram * tonPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Atomic add — prevents lost-update races with concurrent reinvest/deposit crediting.
     const { data: rpcRow, error: uErr } = await supabaseAdmin
@@ -175,10 +177,11 @@ export const completeTask = createServerFn({ method: "POST" })
     const { data: cur } = await supabaseAdmin
       .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
     return {
-      reward: dailyAddUsd,
-      rewardUsd: dailyAddUsd,
-      rewardCapitalUsd,
+      reward: dailyAddGram,
+      rewardGram: dailyAddGram,
+      rewardCapitalGram,
       balance: Number((cur as any)?.balance ?? 0),
+      miningRateGram: Number(rpc?.new_rate_gram ?? 0),
       miningRateUsd: Number(rpc?.new_rate_usd ?? 0),
     };
   });
