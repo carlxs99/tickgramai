@@ -38,7 +38,7 @@ async function fetchTelegramAvatarById(telegramId: string): Promise<Response | n
   if (!photosResp.ok || !photosJson?.ok || !photosJson.result?.photos?.[0]?.length) return null;
 
   const photo = [...photosJson.result.photos[0]].sort(
-    (a: any, b: any) => Number(b.file_size ?? b.width * b.height ?? 0) - Number(a.file_size ?? a.width * a.height ?? 0),
+    (a: any, b: any) => Number(b.file_size ?? (b.width && b.height ? b.width * b.height : 0)) - Number(a.file_size ?? (a.width && a.height ? a.width * a.height : 0)),
   )[0];
   if (!photo?.file_id) return null;
 
