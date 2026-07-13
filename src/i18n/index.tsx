@@ -820,6 +820,14 @@ const hi: Dict = {
   "friends.your_invite": "आपका आमंत्रण लिंक",
   "friends.your_friends": "आपके मित्र ({count})",
   "friends.no_referrals": "अभी कोई रेफरल नहीं।",
+  "friends.milestones_title": "रेफ़रल माइलस्टोन",
+  "friends.milestones_subtitle": "इनाम पाने के लिए सक्रिय दोस्तों को आमंत्रित करें।",
+  "friends.milestone_progress": "{active} / {required} सक्रिय मित्र",
+  "friends.milestone_active_hint": "केवल वे मित्र गिने जाते हैं जिन्होंने जमा किया हो।",
+  "friends.milestone_claim": "क्लेम करें",
+  "friends.milestone_claimed": "प्राप्त",
+  "friends.milestone_locked": "लॉक",
+  "friends.milestone_reward_toast": "आपके बैलेंस में +{amount} GRAM जोड़ा गया",
 
 
 
