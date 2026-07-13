@@ -439,7 +439,6 @@ export const getReferralStats = createServerFn({ method: "GET" })
       total_earned: number;
     };
 
-    };
   });
 
 export const listReferralMilestones = createServerFn({ method: "GET" })
