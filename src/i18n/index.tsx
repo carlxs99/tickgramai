@@ -103,7 +103,7 @@ const en: Dict = {
   "partner.kind_link": "Link",
 
   "friends.title": "Friends",
-  "friends.subtitle": "Invite friends and earn 10% of their deposits forever.",
+  "friends.subtitle": "Invite friends to earn GRAM.",
   "friends.invited_by": "Invited by",
   "friends.refback_title": "Partner refback",
   "friends.refback_body": "Get additional USDT cashback when you deposit from your sponsor.",
@@ -119,7 +119,8 @@ const en: Dict = {
   "friends.your_invite": "Your invite link",
   "friends.your_friends": "Your friends ({count})",
   "friends.no_referrals": "No referrals yet.",
-  "friends.explain_commissions": "Earn a commission on every deposit your referrals make: Level 1 = 10%, Level 2 = 5%, Level 3 = 3%. The more active friends you invite, the higher your daily income.",
+
+
 
 
 
