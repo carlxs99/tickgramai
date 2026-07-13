@@ -442,6 +442,43 @@ export const getReferralStats = createServerFn({ method: "GET" })
     };
   });
 
+export const listReferralMilestones = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc(
+      "list_referral_milestones" as never,
+      { _user_id: context.userId } as never,
+    );
+    if (error) throw error;
+    return (data ?? []) as Array<{
+      tier: number;
+      required: number;
+      reward: number;
+      claimed: boolean;
+      active_count: number;
+    }>;
+  });
+
+export const claimReferralMilestone = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { tier: number }) =>
+    z.object({ tier: z.number().int().min(1).max(7) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc(
+      "claim_referral_milestone" as never,
+      { _user_id: context.userId, _tier: data.tier } as never,
+    );
+    if (error) throw error;
+    const row = Array.isArray(rows) ? (rows[0] as { reward: number; new_balance: number } | undefined) : undefined;
+    if (!row) throw new Error("claim failed");
+    return { reward: Number(row.reward), newBalance: Number(row.new_balance) };
+  });
+
+
+
 
 
 // ============= Partner Tasks =============
