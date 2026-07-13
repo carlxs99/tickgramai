@@ -1348,6 +1348,7 @@ function FriendsTab() {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold text-white text-glow-white">{t("friends.title")}</h2>
+      <p className="text-sm text-white/80">{t("friends.subtitle")}</p>
 
       {/* Invited by */}
       {inviterName && (
@@ -1395,17 +1396,6 @@ function FriendsTab() {
           </div>
         </div>
       </div>
-
-      {/* Commission explanation */}
-      <div className="card-glass rounded-2xl p-4 flex items-start gap-3">
-        <div className="shrink-0 w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
-          <HelpCircle className="w-4 h-4" />
-        </div>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {t("friends.explain_commissions")}
-        </p>
-      </div>
-
 
       {/* Referral link */}
 
