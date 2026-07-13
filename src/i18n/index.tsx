@@ -119,6 +119,8 @@ const en: Dict = {
   "friends.your_invite": "Your invite link",
   "friends.your_friends": "Your friends ({count})",
   "friends.no_referrals": "No referrals yet.",
+  "friends.explain_commissions": "Earn a commission on every deposit your referrals make: Level 1 = 10%, Level 2 = 5%, Level 3 = 3%. The more active friends you invite, the higher your daily income.",
+
 
 
   "deposit.title": "Deposit",
@@ -343,6 +345,8 @@ const es: Dict = {
   "friends.your_invite": "Tu enlace de invitación",
   "friends.your_friends": "Tus amigos ({count})",
   "friends.no_referrals": "Aún no tienes referidos.",
+  "friends.explain_commissions": "Gana una comisión por cada depósito que hagan tus referidos: Nivel 1 = 10%, Nivel 2 = 5%, Nivel 3 = 3%. Cuanto más amigos activos invites, mayor será tu ingreso diario.",
+
 
 
   "deposit.title": "Depósito",
@@ -567,6 +571,8 @@ const ru: Dict = {
   "friends.your_invite": "Ваша ссылка-приглашение",
   "friends.your_friends": "Ваши друзья ({count})",
   "friends.no_referrals": "Пока нет рефералов.",
+  "friends.explain_commissions": "Получайте комиссию с каждого депозита ваших рефералов: 1 уровень = 10%, 2 уровень = 5%, 3 уровень = 3%. Чем больше активных друзей вы пригласите, тем выше ваш ежедневный доход.",
+
 
 
   "deposit.title": "Депозит",
