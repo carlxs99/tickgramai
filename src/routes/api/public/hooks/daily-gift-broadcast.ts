@@ -3,10 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 
 const APP_URL = "https://t.me/Tickgramaibot/app";
 const BROADCAST_TEXT =
-  `🎁 <b>Your FREE daily Gift Box is ready!</b>\n\n` +
-  `Open the app now and claim your free daily gift box.\n\n` +
-  `✨ Every box boosts your GRAM mining rate — don't miss today's reward!\n\n` +
-  `⏰ You can claim a new free box every 24 hours.`;
+  `🎁 <b>Your 3 FREE daily Gift Boxes are ready!</b>\n\n` +
+  `Open the app now and claim your 3 free daily gift boxes.\n\n` +
+  `✨ Every box boosts your GRAM mining rate — don't miss today's rewards!\n\n` +
+  `⏰ You can claim 3 new free boxes every 24 hours.`;
 
 async function sendMessage(chatId: number | string, text: string, extra: Record<string, unknown> = {}) {
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY!;
