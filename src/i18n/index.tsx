@@ -119,6 +119,14 @@ const en: Dict = {
   "friends.your_invite": "Your invite link",
   "friends.your_friends": "Your friends ({count})",
   "friends.no_referrals": "No referrals yet.",
+  "friends.milestones_title": "Referral milestones",
+  "friends.milestones_subtitle": "Invite active friends to unlock rewards.",
+  "friends.milestone_progress": "{active} / {required} active friends",
+  "friends.milestone_active_hint": "Only friends who have made a deposit count.",
+  "friends.milestone_claim": "Claim",
+  "friends.milestone_claimed": "Claimed",
+  "friends.milestone_locked": "Locked",
+  "friends.milestone_reward_toast": "+{amount} GRAM added to your balance",
 
 
 
