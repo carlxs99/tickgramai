@@ -1396,8 +1396,19 @@ function FriendsTab() {
         </div>
       </div>
 
+      {/* Commission explanation */}
+      <div className="card-glass rounded-2xl p-4 flex items-start gap-3">
+        <div className="shrink-0 w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
+          <HelpCircle className="w-4 h-4" />
+        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {t("friends.explain_commissions")}
+        </p>
+      </div>
+
 
       {/* Referral link */}
+
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <p className="text-sm font-semibold">{t("friends.your_link")}</p>
         <div className="flex items-center gap-2">
