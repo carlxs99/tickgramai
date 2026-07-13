@@ -3057,7 +3057,7 @@ function AdminUsersSection() {
                 {i + 1}
               </div>
               {u.avatar_url ? (
-                <img src={u.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                <img src={avatarSrc(u.avatar_url)} alt="" referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                   <UserCircle2 className="w-4 h-4 text-muted-foreground" />
