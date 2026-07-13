@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.claim_referral_milestone(smallint) TO authenticated;
