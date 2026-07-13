@@ -869,7 +869,7 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
         )}
         <div className={`${styles.avatar} rounded-full bg-gradient-to-br from-primary/60 to-accent/60 ${styles.ring} flex items-center justify-center font-bold text-primary-foreground overflow-hidden`}>
           {miner?.avatar_url ? (
-            <img src={miner.avatar_url} alt={name} className="w-full h-full object-cover" />
+            <img src={avatarSrc(miner.avatar_url)} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
           ) : (
             <span>{podiumInitial(miner)}</span>
           )}
