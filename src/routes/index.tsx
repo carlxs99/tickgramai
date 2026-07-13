@@ -869,7 +869,7 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
         )}
         <div className={`${styles.avatar} rounded-full bg-gradient-to-br from-primary/60 to-accent/60 ${styles.ring} flex items-center justify-center font-bold text-primary-foreground overflow-hidden`}>
           {miner?.avatar_url ? (
-            <img src={avatarSrc(miner.avatar_url)} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+            <img src={avatarSrc(miner.avatar_url, miner.telegram_id)} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
           ) : (
             <span>{podiumInitial(miner)}</span>
           )}
@@ -947,7 +947,7 @@ function LeaderboardTab() {
                 <div key={rank} className="flex items-center gap-3 px-3 py-2.5">
                   <span className="w-8 text-center text-xs font-bold text-muted-foreground">#{rank}</span>
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/40 to-accent/40 flex items-center justify-center text-sm font-bold overflow-hidden">
-                    {m.avatar_url ? <img src={avatarSrc(m.avatar_url)} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : podiumInitial(m)}
+                    {m.avatar_url ? <img src={avatarSrc(m.avatar_url, m.telegram_id)} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : podiumInitial(m)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{name}</p>
@@ -1340,7 +1340,7 @@ function FriendsTab() {
   const pageItems = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const s = (stats ?? {}) as {
-    inviter?: { user_id: string; username: string | null; first_name: string | null; last_name: string | null; avatar_url: string | null } | null;
+    inviter?: { user_id: string; username: string | null; first_name: string | null; last_name: string | null; avatar_url: string | null; telegram_id?: number | null } | null;
     level1?: number;
     level2?: number;
     level3?: number;
@@ -1366,7 +1366,7 @@ function FriendsTab() {
       {inviterName && (
         <div className="flex items-center gap-3 rounded-2xl card-glass p-4">
           {inviter?.avatar_url ? (
-            <img src={avatarSrc(inviter.avatar_url)} alt={inviterName} referrerPolicy="no-referrer" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+            <img src={avatarSrc(inviter.avatar_url, inviter.telegram_id)} alt={inviterName} referrerPolicy="no-referrer" className="w-10 h-10 rounded-xl object-cover shrink-0" />
           ) : (
             <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-semibold shrink-0">
               {inviterName.slice(0, 1).toUpperCase()}
@@ -1530,7 +1530,7 @@ function FriendsTab() {
             return (
               <div key={f.id} className="flex items-center gap-3 py-1.5">
                 {p?.avatar_url ? (
-                  <img src={avatarSrc(p.avatar_url)} alt={name} referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover" />
+                  <img src={avatarSrc(p.avatar_url, p.telegram_id)} alt={name} referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover" />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-semibold">{initial}</div>
                 )}
@@ -2954,7 +2954,7 @@ function AdminUsersSection() {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               {detail.profile.avatar_url ? (
-                <img src={avatarSrc(detail.profile.avatar_url)} alt="" referrerPolicy="no-referrer" className="w-12 h-12 rounded-full object-cover" />
+                <img src={avatarSrc(detail.profile.avatar_url, detail.profile.telegram_id)} alt="" referrerPolicy="no-referrer" className="w-12 h-12 rounded-full object-cover" />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                   <UserCircle2 className="w-6 h-6 text-muted-foreground" />
@@ -3057,7 +3057,7 @@ function AdminUsersSection() {
                 {i + 1}
               </div>
               {u.avatar_url ? (
-                <img src={avatarSrc(u.avatar_url)} alt="" referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover" />
+                <img src={avatarSrc(u.avatar_url, u.telegram_id)} alt="" referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                   <UserCircle2 className="w-4 h-4 text-muted-foreground" />
