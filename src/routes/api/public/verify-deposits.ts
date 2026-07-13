@@ -335,7 +335,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                 await sendTelegramMessage(
                   Number(rn.telegram_id),
                   `🎉 <b>Referral commission earned!</b>\n\n` +
-                    `Hi ${refName}, one of your ${levelLabel}s just made a deposit of <b>${formatReward(amountTon)} GRAM</b>.\n\n` +
+                    `Hi ${refName}, one of your ${levelLabel}s just made a deposit of <b>${formatReward(amountTon)} TON</b>.\n\n` +
                     `💰 Your ${rn.percent}% commission (level ${rn.level}): <b>+${formatReward(rn.commission)} GRAM</b>\n\n` +
                     `Keep inviting friends to earn more!`,
                 );
