@@ -466,8 +466,7 @@ export const claimReferralMilestone = createServerFn({ method: "POST" })
     z.object({ tier: z.number().int().min(1).max(7) }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin.rpc(
+    const { data: rows, error } = await context.supabase.rpc(
       "claim_referral_milestone" as never,
       { _tier: data.tier } as never,
     );
