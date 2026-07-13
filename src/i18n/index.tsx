@@ -330,7 +330,7 @@ const es: Dict = {
   "partner.kind_link": "Enlace",
 
   "friends.title": "Amigos",
-  "friends.subtitle": "Invita amigos y gana el 10% de sus depósitos para siempre.",
+  "friends.subtitle": "Invita amigos para ganar GRAM.",
   "friends.invited_by": "Invitado por",
   "friends.refback_title": "Refback del socio",
   "friends.refback_body": "Obtendrá cashback adicional en USDT al depositar desde su patrocinador.",
@@ -346,7 +346,6 @@ const es: Dict = {
   "friends.your_invite": "Tu enlace de invitación",
   "friends.your_friends": "Tus amigos ({count})",
   "friends.no_referrals": "Aún no tienes referidos.",
-  "friends.explain_commissions": "Gana una comisión por cada depósito que hagan tus referidos: Nivel 1 = 10%, Nivel 2 = 5%, Nivel 3 = 3%. Cuanto más amigos activos invites, mayor será tu ingreso diario.",
 
 
 
@@ -556,7 +555,7 @@ const ru: Dict = {
   "partner.kind_link": "Ссылка",
 
   "friends.title": "Друзья",
-  "friends.subtitle": "Приглашайте друзей и получайте 10% с их депозитов навсегда.",
+  "friends.subtitle": "Приглашайте друзей, чтобы зарабатывать GRAM.",
   "friends.invited_by": "Пригласил",
   "friends.refback_title": "Рефбэк партнёра",
   "friends.refback_body": "Получите дополнительный кэшбэк в USDT при депозите от спонсора.",
@@ -572,7 +571,6 @@ const ru: Dict = {
   "friends.your_invite": "Ваша ссылка-приглашение",
   "friends.your_friends": "Ваши друзья ({count})",
   "friends.no_referrals": "Пока нет рефералов.",
-  "friends.explain_commissions": "Получайте комиссию с каждого депозита ваших рефералов: 1 уровень = 10%, 2 уровень = 5%, 3 уровень = 3%. Чем больше активных друзей вы пригласите, тем выше ваш ежедневный доход.",
 
 
 
@@ -782,7 +780,7 @@ const hi: Dict = {
   "partner.kind_link": "लिंक",
 
   "friends.title": "मित्र",
-  "friends.subtitle": "दोस्तों को आमंत्रित करें और उनके जमा का 10% हमेशा के लिए कमाएँ।",
+  "friends.subtitle": "GRAM कमाने के लिए दोस्तों को आमंत्रित करें।",
   "friends.invited_by": "आमंत्रित किया",
   "friends.refback_title": "पार्टनर रिफबैक",
   "friends.refback_body": "अपने स्पॉन्सर से जमा करने पर अतिरिक्त USDT कैशबैक पाएँ।",
@@ -798,7 +796,6 @@ const hi: Dict = {
   "friends.your_invite": "आपका आमंत्रण लिंक",
   "friends.your_friends": "आपके मित्र ({count})",
   "friends.no_referrals": "अभी कोई रेफरल नहीं।",
-  "friends.explain_commissions": "अपने रेफरल्स द्वारा किए गए हर डिपॉजिट पर कमीशन कमाएं: स्तर 1 = 10%, स्तर 2 = 5%, स्तर 3 = 3%。 जितने अधिक सक्रिय दोस्तों को आप आमंत्रित करेंगे, उतनी अधिक आपकी दैनिक आय होगी।",
 
 
 
