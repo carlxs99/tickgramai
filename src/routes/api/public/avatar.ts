@@ -6,7 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 // This endpoint refetches the image server-side and streams it back with
 // permissive CORS/CORP headers, plus a long cache to keep it cheap.
 
-const ALLOWED_HOST = "t.me";
+const ALLOWED_HOSTS = new Set(["t.me", "telegram.me"]);
 
 function avatarHeaders(contentType = "image/jpeg") {
   return {
@@ -58,9 +58,10 @@ async function fetchTelegramAvatarById(telegramId: string): Promise<Response | n
     },
   });
   if (!imageResp.ok || !imageResp.body) return null;
+  const contentType = imageResp.headers.get("content-type");
   return new Response(imageResp.body, {
     status: 200,
-    headers: avatarHeaders(imageResp.headers.get("content-type") ?? "image/jpeg"),
+    headers: avatarHeaders(contentType && contentType !== "application/octet-stream" ? contentType : "image/jpeg"),
   });
 }
 
@@ -90,7 +91,7 @@ export const Route = createFileRoute("/api/public/avatar")({
           return new Response("invalid url", { status: 400 });
         }
 
-        if (parsed.hostname !== ALLOWED_HOST || !parsed.pathname.startsWith("/i/userpic/")) {
+        if (!ALLOWED_HOSTS.has(parsed.hostname) || !parsed.pathname.startsWith("/i/userpic/")) {
           return new Response("host not allowed", { status: 400 });
         }
 

@@ -30,7 +30,7 @@ export function avatarSrc(url: string | null | undefined, telegramId?: string | 
   if (!url) return undefined;
   try {
     const u = new URL(url);
-    if (u.hostname === "t.me" && u.pathname.startsWith("/i/userpic/")) {
+    if ((u.hostname === "t.me" || u.hostname === "telegram.me") && u.pathname.startsWith("/i/userpic/")) {
       const qs = new URLSearchParams({ u: url });
       if (id) qs.set("id", id);
       return `/api/public/avatar?${qs.toString()}`;
