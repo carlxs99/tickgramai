@@ -65,6 +65,18 @@ async function fetchTelegramAvatarById(telegramId: string): Promise<Response | n
   });
 }
 
+async function isKnownTelegramProfile(telegramId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("user_id")
+    .eq("telegram_id", Number(telegramId))
+    .limit(1)
+    .maybeSingle();
+  if (error) return false;
+  return !!data?.user_id;
+}
+
 export const Route = createFileRoute("/api/public/avatar")({
   server: {
     handlers: {
@@ -73,7 +85,7 @@ export const Route = createFileRoute("/api/public/avatar")({
         const target = reqUrl.searchParams.get("u");
         const telegramId = reqUrl.searchParams.get("id");
 
-        if (telegramId) {
+        if (telegramId && (await isKnownTelegramProfile(telegramId))) {
           try {
             const telegramAvatar = await fetchTelegramAvatarById(telegramId);
             if (telegramAvatar) return telegramAvatar;
