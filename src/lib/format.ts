@@ -20,3 +20,19 @@ export function formatReward(n: number | string) {
   s = s.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
   return s;
 }
+
+// Telegram avatar URLs (t.me/i/userpic/...) block cross-origin loads in the
+// browser due to CORP/hotlink protection. Route them through our proxy so
+// they always render. Non-Telegram URLs pass through untouched.
+export function avatarSrc(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    if (u.hostname === "t.me" && u.pathname.startsWith("/i/userpic/")) {
+      return `/api/public/avatar?u=${encodeURIComponent(url)}`;
+    }
+  } catch {
+    return url;
+  }
+  return url;
+}
