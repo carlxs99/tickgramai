@@ -1366,7 +1366,7 @@ function FriendsTab() {
       {inviterName && (
         <div className="flex items-center gap-3 rounded-2xl card-glass p-4">
           {inviter?.avatar_url ? (
-            <img src={inviter.avatar_url} alt={inviterName} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+            <img src={avatarSrc(inviter.avatar_url)} alt={inviterName} referrerPolicy="no-referrer" className="w-10 h-10 rounded-xl object-cover shrink-0" />
           ) : (
             <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-semibold shrink-0">
               {inviterName.slice(0, 1).toUpperCase()}
