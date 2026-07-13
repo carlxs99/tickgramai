@@ -234,15 +234,11 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             for (const anc of ancestors) {
               const rate = LEVEL_RATES[(anc.level ?? 1) - 1];
               if (!rate) continue;
-              // Both commission and refback are paid by the SYSTEM.
-              // The ancestor receives the full advertised rate (10/5/3%),
-              // and the depositor separately receives refback_rate * grossBonus
-              // funded by the system — nothing is deducted from the ancestor.
+              // Commission is paid entirely by the SYSTEM to the ancestor
+              // at the advertised rate (10/5/3%). No refback to depositor.
               const grossBonus = amountTon * rate;
-              const refbackPct = Math.max(0, Math.min(1, Number(anc.refback_rate ?? 0)));
-              const refbackShare = grossBonus * refbackPct;
+              const refbackShare = 0;
               const netBonus = grossBonus;
-              totalRefbackToDepositor += refbackShare;
 
               // Credit the ancestor's balance (atomic).
               if (netBonus > 0) {
