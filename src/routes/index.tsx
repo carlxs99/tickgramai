@@ -1530,7 +1530,7 @@ function FriendsTab() {
             return (
               <div key={f.id} className="flex items-center gap-3 py-1.5">
                 {p?.avatar_url ? (
-                  <img src={p.avatar_url} alt={name} className="w-9 h-9 rounded-full object-cover" />
+                  <img src={avatarSrc(p.avatar_url)} alt={name} referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover" />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-semibold">{initial}</div>
                 )}
