@@ -13,7 +13,7 @@ import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
-import { formatGram, formatReward } from "@/lib/format";
+import { formatGram, formatReward, avatarSrc } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { LanguageProvider, LanguageSwitcher, useT } from "@/i18n";
 import { markAppReady } from "@/lib/app-ready";
