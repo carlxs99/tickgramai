@@ -108,7 +108,10 @@ export const Route = createFileRoute("/api/public/avatar")({
         }
 
         try {
-          const upstream = await fetch(parsed.toString(), {
+          const fetchUrl = new URL(parsed.toString());
+          if (fetchUrl.hostname === "t.me") fetchUrl.hostname = "telegram.me";
+
+          const upstream = await fetch(fetchUrl.toString(), {
             headers: {
               "User-Agent": "Mozilla/5.0 (compatible; TickGramBot/1.0)",
               Accept: "image/*,*/*;q=0.8",
