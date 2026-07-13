@@ -797,6 +797,8 @@ const hi: Dict = {
   "friends.your_invite": "आपका आमंत्रण लिंक",
   "friends.your_friends": "आपके मित्र ({count})",
   "friends.no_referrals": "अभी कोई रेफरल नहीं।",
+  "friends.explain_commissions": "अपने रेफरल्स द्वारा किए गए हर डिपॉजिट पर कमीशन कमाएं: स्तर 1 = 10%, स्तर 2 = 5%, स्तर 3 = 3%。 जितने अधिक सक्रिय दोस्तों को आप आमंत्रित करेंगे, उतनी अधिक आपकी दैनिक आय होगी।",
+
 
 
   "deposit.title": "जमा",
