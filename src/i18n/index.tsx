@@ -354,6 +354,14 @@ const es: Dict = {
   "friends.your_invite": "Tu enlace de invitación",
   "friends.your_friends": "Tus amigos ({count})",
   "friends.no_referrals": "Aún no tienes referidos.",
+  "friends.milestones_title": "Logros por referidos",
+  "friends.milestones_subtitle": "Invita amigos activos para desbloquear recompensas.",
+  "friends.milestone_progress": "{active} / {required} amigos activos",
+  "friends.milestone_active_hint": "Solo cuentan los amigos que hayan depositado.",
+  "friends.milestone_claim": "Reclamar",
+  "friends.milestone_claimed": "Reclamado",
+  "friends.milestone_locked": "Bloqueado",
+  "friends.milestone_reward_toast": "+{amount} GRAM añadidos a tu balance",
 
 
 
