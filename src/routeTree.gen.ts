@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicVerifyDepositsRouteImport } from './routes/api/public/verify-deposits'
 import { Route as ApiPublicProcessWithdrawalsRouteImport } from './routes/api/public/process-withdrawals'
 import { Route as ApiPublicMexcPricesRouteImport } from './routes/api/public/mexc-prices'
+import { Route as ApiPublicAvatarRouteImport } from './routes/api/public/avatar'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicHooksDailyGiftBroadcastRouteImport } from './routes/api/public/hooks/daily-gift-broadcast'
 import { Route as ApiPublicHooksDailyCheckinBroadcastRouteImport } from './routes/api/public/hooks/daily-checkin-broadcast'
@@ -46,6 +47,11 @@ const ApiPublicMexcPricesRoute = ApiPublicMexcPricesRouteImport.update({
   path: '/api/public/mexc-prices',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAvatarRoute = ApiPublicAvatarRouteImport.update({
+  id: '/api/public/avatar',
+  path: '/api/public/avatar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTelegramWebhookRoute =
   ApiPublicTelegramWebhookRouteImport.update({
     id: '/api/public/telegram/webhook',
@@ -74,6 +80,7 @@ const ApiPublicHooksBootstrapCronSecretRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
+  '/api/public/avatar': typeof ApiPublicAvatarRoute
   '/api/public/mexc-prices': typeof ApiPublicMexcPricesRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
+  '/api/public/avatar': typeof ApiPublicAvatarRoute
   '/api/public/mexc-prices': typeof ApiPublicMexcPricesRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/tonconnect-manifest.json': typeof TonconnectManifestDotjsonRoute
+  '/api/public/avatar': typeof ApiPublicAvatarRoute
   '/api/public/mexc-prices': typeof ApiPublicMexcPricesRoute
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/tonconnect-manifest.json'
+    | '/api/public/avatar'
     | '/api/public/mexc-prices'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/tonconnect-manifest.json'
+    | '/api/public/avatar'
     | '/api/public/mexc-prices'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/tonconnect-manifest.json'
+    | '/api/public/avatar'
     | '/api/public/mexc-prices'
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
@@ -144,6 +156,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   TonconnectManifestDotjsonRoute: typeof TonconnectManifestDotjsonRoute
+  ApiPublicAvatarRoute: typeof ApiPublicAvatarRoute
   ApiPublicMexcPricesRoute: typeof ApiPublicMexcPricesRoute
   ApiPublicProcessWithdrawalsRoute: typeof ApiPublicProcessWithdrawalsRoute
   ApiPublicVerifyDepositsRoute: typeof ApiPublicVerifyDepositsRoute
@@ -190,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMexcPricesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/avatar': {
+      id: '/api/public/avatar'
+      path: '/api/public/avatar'
+      fullPath: '/api/public/avatar'
+      preLoaderRoute: typeof ApiPublicAvatarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/telegram/webhook': {
       id: '/api/public/telegram/webhook'
       path: '/api/public/telegram/webhook'
@@ -224,6 +244,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   TonconnectManifestDotjsonRoute: TonconnectManifestDotjsonRoute,
+  ApiPublicAvatarRoute: ApiPublicAvatarRoute,
   ApiPublicMexcPricesRoute: ApiPublicMexcPricesRoute,
   ApiPublicProcessWithdrawalsRoute: ApiPublicProcessWithdrawalsRoute,
   ApiPublicVerifyDepositsRoute: ApiPublicVerifyDepositsRoute,
