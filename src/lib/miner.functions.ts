@@ -469,7 +469,7 @@ export const claimReferralMilestone = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin.rpc(
       "claim_referral_milestone" as never,
-      { _user_id: context.userId, _tier: data.tier } as never,
+      { _tier: data.tier } as never,
     );
     if (error) throw error;
     const row = Array.isArray(rows) ? (rows[0] as { reward: number; new_balance: number } | undefined) : undefined;

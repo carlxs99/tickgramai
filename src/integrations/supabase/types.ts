@@ -571,13 +571,21 @@ export type Database = {
           next_claim_at: string
         }[]
       }
-      claim_referral_milestone: {
-        Args: { _tier: number; _user_id: string }
-        Returns: {
-          new_balance: number
-          reward: number
-        }[]
-      }
+      claim_referral_milestone:
+        | {
+            Args: { _tier: number }
+            Returns: {
+              new_balance: number
+              reward: number
+            }[]
+          }
+        | {
+            Args: { _tier: number; _user_id: string }
+            Returns: {
+              new_balance: number
+              reward: number
+            }[]
+          }
       complete_partner_task: {
         Args: { _partner_task_id: string; _user_id: string }
         Returns: {
