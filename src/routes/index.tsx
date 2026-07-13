@@ -947,7 +947,7 @@ function LeaderboardTab() {
                 <div key={rank} className="flex items-center gap-3 px-3 py-2.5">
                   <span className="w-8 text-center text-xs font-bold text-muted-foreground">#{rank}</span>
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/40 to-accent/40 flex items-center justify-center text-sm font-bold overflow-hidden">
-                    {m.avatar_url ? <img src={m.avatar_url} alt={name} className="w-full h-full object-cover" /> : podiumInitial(m)}
+                    {m.avatar_url ? <img src={avatarSrc(m.avatar_url)} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : podiumInitial(m)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{name}</p>
