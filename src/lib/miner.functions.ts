@@ -340,11 +340,24 @@ export const listWithdrawals = createServerFn({ method: "GET" })
 export const getTopMiners = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    // Use service-role client to bypass RLS for the public leaderboard,
-    // exposing only the safe columns. Authenticated users cannot call the
-    // underlying SECURITY DEFINER function directly.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.rpc("get_top_miners", { _limit: 100 });
+    const { data: adminRoles } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const adminIds = (adminRoles ?? []).map((r: any) => r.user_id).filter(Boolean);
+
+    const query = supabaseAdmin
+      .from("profiles")
+      .select("username, first_name, avatar_url, telegram_id, mining_rate, mining_rate_usd, balance")
+      .order("mining_rate_usd", { ascending: false })
+      .order("balance", { ascending: false })
+      .limit(100);
+    if (adminIds.length > 0) {
+      query.not("user_id", "in", `(${adminIds.join(",")})`);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data ?? [];
   });
@@ -401,7 +414,7 @@ export const getFriends = createServerFn({ method: "GET" })
       const slice = ids.slice(i, i + CHUNK);
       const { data: part, error: pErr } = await supabaseAdmin
         .from("profiles")
-        .select("user_id, username, first_name, last_name, avatar_url")
+        .select("user_id, username, first_name, last_name, avatar_url, telegram_id")
         .in("user_id", slice);
       if (pErr) throw pErr;
       if (part) profs.push(...part);
@@ -424,13 +437,24 @@ export const getReferralStats = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin.rpc("get_referral_stats" as never, { _user_id: context.userId } as never);
     if (error) throw error;
 
-    return (data ?? {}) as {
+    const stats: any = data ?? {};
+    if (stats?.inviter?.user_id) {
+      const { data: inviterProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("telegram_id")
+        .eq("user_id", stats.inviter.user_id)
+        .maybeSingle();
+      stats.inviter.telegram_id = (inviterProfile as any)?.telegram_id ?? null;
+    }
+
+    return stats as {
       inviter: {
         user_id: string;
         username: string | null;
         first_name: string | null;
         last_name: string | null;
         avatar_url: string | null;
+        telegram_id?: number | null;
       } | null;
       level1: number;
       level2: number;
