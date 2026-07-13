@@ -323,6 +323,27 @@ export type Database = {
           },
         ]
       }
+      referral_milestone_claims: {
+        Row: {
+          claimed_at: string
+          reward: number
+          tier: number
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          reward: number
+          tier: number
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          reward?: number
+          tier?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           bonus_earned: number
@@ -550,6 +571,13 @@ export type Database = {
           next_claim_at: string
         }[]
       }
+      claim_referral_milestone: {
+        Args: { _tier: number; _user_id: string }
+        Returns: {
+          new_balance: number
+          reward: number
+        }[]
+      }
       complete_partner_task: {
         Args: { _partner_task_id: string; _user_id: string }
         Returns: {
@@ -613,6 +641,16 @@ export type Database = {
           status: string
           target_clicks: number
           title: string
+        }[]
+      }
+      list_referral_milestones: {
+        Args: { _user_id: string }
+        Returns: {
+          active_count: number
+          claimed: boolean
+          required: number
+          reward: number
+          tier: number
         }[]
       }
       open_gift_box: {
