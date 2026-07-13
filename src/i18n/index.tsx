@@ -587,6 +587,14 @@ const ru: Dict = {
   "friends.your_invite": "Ваша ссылка-приглашение",
   "friends.your_friends": "Ваши друзья ({count})",
   "friends.no_referrals": "Пока нет рефералов.",
+  "friends.milestones_title": "Достижения по рефералам",
+  "friends.milestones_subtitle": "Приглашайте активных друзей, чтобы получать награды.",
+  "friends.milestone_progress": "{active} / {required} активных друзей",
+  "friends.milestone_active_hint": "Учитываются только друзья, сделавшие депозит.",
+  "friends.milestone_claim": "Забрать",
+  "friends.milestone_claimed": "Получено",
+  "friends.milestone_locked": "Заблокировано",
+  "friends.milestone_reward_toast": "+{amount} GRAM зачислено на баланс",
 
 
 
