@@ -437,9 +437,8 @@ export const getReferralStats = createServerFn({ method: "GET" })
       level3: number;
       total_referrals: number;
       total_earned: number;
-      refback_paid: number;
-      refback_rate: number;
     };
+
   });
 
 export const listReferralMilestones = createServerFn({ method: "GET" })

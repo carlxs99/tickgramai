@@ -1346,9 +1346,8 @@ function FriendsTab() {
     level3?: number;
     total_referrals?: number;
     total_earned?: number;
-    refback_paid?: number;
-    refback_rate?: number;
   };
+
 
   const inviter = s.inviter;
   const inviterName = inviter ? [inviter.first_name, inviter.last_name].filter(Boolean).join(" ") || inviter.username || t("leaderboard.anon") : null;

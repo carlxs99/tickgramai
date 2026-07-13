@@ -205,8 +205,9 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
 
             // ============================================================
             // 3-level referral commissions (10% / 5% / 3% of deposit in GRAM).
-            // Each ancestor's refback_rate is deducted from their commission
-            // and credited back to the depositor's balance.
+            // Commissions are paid entirely by the SYSTEM to each ancestor.
+            // No refback: the depositor is not charged and does not receive
+            // any cashback from the referrer's commission.
             // Chain is resolved by get_referral_ancestors() (walks profiles.referred_by).
             // ============================================================
             const LEVEL_RATES = [0.10, 0.05, 0.03] as const;
@@ -215,7 +216,6 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               user_id: string;
               telegram_id: number | null;
               first_name: string | null;
-              refback_rate: number | null;
             };
             const { data: ancestorsData } = await supabaseAdmin
               .rpc("get_referral_ancestors" as never, { _user_id: profile.user_id } as never);
@@ -227,38 +227,31 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               level: number;
               percent: number;
               commission: number;
-              refbackReturned: number;
             }> = [];
-            let totalRefbackToDepositor = 0;
 
             for (const anc of ancestors) {
               const rate = LEVEL_RATES[(anc.level ?? 1) - 1];
               if (!rate) continue;
-              // Commission is paid entirely by the SYSTEM to the ancestor
-              // at the advertised rate (10/5/3%). No refback to depositor.
-              const grossBonus = amountTon * rate;
-              const refbackShare = 0;
-              const netBonus = grossBonus;
+              const commission = amountTon * rate;
 
               // Credit the ancestor's balance (atomic).
-              if (netBonus > 0) {
+              if (commission > 0) {
                 await supabaseAdmin.rpc(
                   "atomic_add_balance" as never,
-                  { _user_id: anc.user_id, _amount: netBonus } as never,
+                  { _user_id: anc.user_id, _amount: commission } as never,
                 );
               }
-              // Accumulate lifetime earnings & refback paid on ancestor's profile
+              // Accumulate lifetime earnings on ancestor's profile
               // (read-modify-write; best-effort stat, not economic state).
               const { data: pRow } = await supabaseAdmin
                 .from("profiles")
-                .select("referral_earned_total, refback_paid")
+                .select("referral_earned_total")
                 .eq("user_id", anc.user_id)
                 .maybeSingle();
               await supabaseAdmin
                 .from("profiles")
                 .update({
-                  referral_earned_total: Number((pRow as any)?.referral_earned_total ?? 0) + netBonus,
-                  refback_paid: Number((pRow as any)?.refback_paid ?? 0) + refbackShare,
+                  referral_earned_total: Number((pRow as any)?.referral_earned_total ?? 0) + commission,
                 } as never)
                 .eq("user_id", anc.user_id);
 
@@ -274,13 +267,13 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                 if (refRow) {
                   await supabaseAdmin
                     .from("referrals")
-                    .update({ bonus_earned: Number(refRow.bonus_earned ?? 0) + netBonus })
+                    .update({ bonus_earned: Number(refRow.bonus_earned ?? 0) + commission })
                     .eq("id", refRow.id);
                 } else {
                   await supabaseAdmin.from("referrals").insert({
                     referrer_id: anc.user_id,
                     referred_id: profile.user_id,
-                    bonus_earned: netBonus,
+                    bonus_earned: commission,
                   });
                 }
               }
@@ -290,17 +283,8 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                 first_name: anc.first_name,
                 level: anc.level,
                 percent: rate * 100,
-                commission: netBonus,
-                refbackReturned: refbackShare,
+                commission,
               });
-            }
-
-            // Credit refback total back to the depositor.
-            if (totalRefbackToDepositor > 0) {
-              await supabaseAdmin.rpc(
-                "atomic_add_balance" as never,
-                { _user_id: profile.user_id, _amount: totalRefbackToDepositor } as never,
-              );
             }
 
             // Telegram DMs (best-effort)
@@ -312,15 +296,11 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                   ? `🎁 Deposit bonus: <b>+${bonusPercent.toFixed(2)}%</b> (+${formatReward(bonusAmountTon)} TON)\n` +
                     `💎 Effective deposit: <b>${formatReward(effectiveAmountTon)} TON</b>\n`
                   : "";
-                const refbackLine = totalRefbackToDepositor > 0
-                  ? `🔁 Refback received: <b>+${formatReward(totalRefbackToDepositor)} GRAM</b>\n`
-                  : "";
                 await sendTelegramMessage(
                   Number(profile.telegram_id),
                   `✅ <b>Deposit confirmed!</b>\n\n` +
                     `Hi ${name}, we received your deposit of <b>${formatReward(amountTon)} TON</b>.\n\n` +
                     bonusLine +
-                    refbackLine +
                     `⚡ Mining rate added: <b>+$${formatReward(usdPerDay)} USDT/day</b>\n` +
                     `🪙 GRAM per day: <b>+${gramPerDayStr} GRAM</b>\n` +
                     `📈 Daily ROI: 3.3%\n\n` +
@@ -338,6 +318,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                     `Hi ${refName}, one of your ${levelLabel}s just made a deposit of <b>${formatReward(amountTon)} GRAM</b>.\n\n` +
                     `💰 Your ${rn.percent}% commission (level ${rn.level}): <b>+${formatReward(rn.commission)} GRAM</b>\n\n` +
                     `Keep inviting friends to earn more!`,
+
                 );
               }
             } catch (e) {
