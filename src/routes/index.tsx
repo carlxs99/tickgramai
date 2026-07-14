@@ -1201,7 +1201,7 @@ function PartnerTasksSection() {
   );
 }
 
-function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
+function AddPartnerTaskModal({ onClose, createFn, qc, isAdmin }: any) {
   const { t: tr } = useT();
   const [title, setTitle] = useState("");
   const [link, setLink] = useState("");
@@ -1211,23 +1211,29 @@ function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
   const wallet = useTonWallet();
 
   const clicksNum = Math.max(0, Math.floor(Number(clicks) || 0));
-  const costTon = clicksNum * 0.001;
-  const canSubmit = title.trim().length >= 2 && /^https?:\/\//i.test(link.trim()) && clicksNum >= 250;
+  const costTon = isAdmin ? 0 : clicksNum * 0.001;
+  const canSubmit =
+    title.trim().length >= 2 &&
+    /^https?:\/\//i.test(link.trim()) &&
+    clicksNum >= 250 &&
+    (isAdmin || !!wallet);
 
   const submit = useMutation({
     mutationFn: async () => {
-      if (!wallet) throw new Error(tr("deposit.err_connect"));
-      // 1) Create pending partner task → get memo + cost_ton.
+      if (!isAdmin && !wallet) throw new Error(tr("deposit.err_connect"));
+      // 1) Create partner task. For admins it is created directly as active (free).
       const created: any = await createFn({
         data: { title: title.trim(), link: link.trim(), kind, targetClicks: clicksNum },
       });
-      // 2) Send TON payment with the memo.
-      const payload = buildCommentPayload(created.memo_tag);
-      const nano = Math.floor(Number(created.cost_ton) * 1e9).toString();
-      await tonConnectUI.sendTransaction({
-        validUntil: Math.floor(Date.now() / 1000) + 300,
-        messages: [{ address: RECEIVING_WALLET, amount: nano, payload }],
-      });
+      // 2) Non-admin: send TON payment with the memo to activate the task.
+      if (!created?.is_admin_free) {
+        const payload = buildCommentPayload(created.memo_tag);
+        const nano = Math.floor(Number(created.cost_ton) * 1e9).toString();
+        await tonConnectUI.sendTransaction({
+          validUntil: Math.floor(Date.now() / 1000) + 300,
+          messages: [{ address: RECEIVING_WALLET, amount: nano, payload }],
+        });
+      }
       return created;
     },
     onSuccess: () => {
