@@ -1050,6 +1050,9 @@ function PartnerTasksSection() {
   const createFn = useServerFn(createPartnerTask);
   const completeFn = useServerFn(completePartnerTask);
   const cancelFn = useServerFn(cancelPartnerTask);
+  const meFn = useServerFn(getMe);
+  const { data: me } = useSuspenseQuery(meQO(() => meFn()));
+  const isAdmin = !!(me as any)?.isAdmin;
 
   const { data: partners } = useQuery({ queryKey: ["partner-tasks"], queryFn: () => listFn(), refetchInterval: 30000 });
   const { data: mine } = useQuery({ queryKey: ["my-partner-tasks"], queryFn: () => myListFn(), refetchInterval: 20000 });
@@ -1182,7 +1185,7 @@ function PartnerTasksSection() {
         </div>
       )}
 
-      {showAdd && <AddPartnerTaskModal onClose={() => setShowAdd(false)} createFn={createFn} qc={qc} />}
+      {showAdd && <AddPartnerTaskModal onClose={() => setShowAdd(false)} createFn={createFn} qc={qc} isAdmin={isAdmin} />}
       {showHelp && (
         <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4" onClick={() => setShowHelp(false)}>
           <div className="card-glass rounded-2xl p-5 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
@@ -1198,7 +1201,7 @@ function PartnerTasksSection() {
   );
 }
 
-function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
+function AddPartnerTaskModal({ onClose, createFn, qc, isAdmin }: any) {
   const { t: tr } = useT();
   const [title, setTitle] = useState("");
   const [link, setLink] = useState("");
@@ -1208,23 +1211,29 @@ function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
   const wallet = useTonWallet();
 
   const clicksNum = Math.max(0, Math.floor(Number(clicks) || 0));
-  const costTon = clicksNum * 0.001;
-  const canSubmit = title.trim().length >= 2 && /^https?:\/\//i.test(link.trim()) && clicksNum >= 250;
+  const costTon = isAdmin ? 0 : clicksNum * 0.001;
+  const canSubmit =
+    title.trim().length >= 2 &&
+    /^https?:\/\//i.test(link.trim()) &&
+    clicksNum >= 250 &&
+    (isAdmin || !!wallet);
 
   const submit = useMutation({
     mutationFn: async () => {
-      if (!wallet) throw new Error(tr("deposit.err_connect"));
-      // 1) Create pending partner task → get memo + cost_ton.
+      if (!isAdmin && !wallet) throw new Error(tr("deposit.err_connect"));
+      // 1) Create partner task. For admins it is created directly as active (free).
       const created: any = await createFn({
         data: { title: title.trim(), link: link.trim(), kind, targetClicks: clicksNum },
       });
-      // 2) Send TON payment with the memo.
-      const payload = buildCommentPayload(created.memo_tag);
-      const nano = Math.floor(Number(created.cost_ton) * 1e9).toString();
-      await tonConnectUI.sendTransaction({
-        validUntil: Math.floor(Date.now() / 1000) + 300,
-        messages: [{ address: RECEIVING_WALLET, amount: nano, payload }],
-      });
+      // 2) Non-admin: send TON payment with the memo to activate the task.
+      if (!created?.is_admin_free) {
+        const payload = buildCommentPayload(created.memo_tag);
+        const nano = Math.floor(Number(created.cost_ton) * 1e9).toString();
+        await tonConnectUI.sendTransaction({
+          validUntil: Math.floor(Date.now() / 1000) + 300,
+          messages: [{ address: RECEIVING_WALLET, amount: nano, payload }],
+        });
+      }
       return created;
     },
     onSuccess: () => {
@@ -1283,7 +1292,13 @@ function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
 
         <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
           <p className="text-sm">
-            {tr("partner.cost_label")} <span className="font-bold tabular-nums">{costTon.toFixed(4)} GRAM</span>
+            {isAdmin ? (
+              <span className="font-bold text-primary">Admin · Free publish</span>
+            ) : (
+              <>
+                {tr("partner.cost_label")} <span className="font-bold tabular-nums">{costTon.toFixed(4)} GRAM</span>
+              </>
+            )}
           </p>
         </div>
 
@@ -1297,7 +1312,13 @@ function AddPartnerTaskModal({ onClose, createFn, qc }: any) {
             onClick={() => submit.mutate()}
             className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50"
           >
-            {submit.isPending ? tr("deposit.waiting") : wallet ? tr("partner.pay_and_create") : tr("deposit.connect_wallet")}
+            {submit.isPending
+              ? tr("deposit.waiting")
+              : isAdmin
+                ? tr("partner.add")
+                : wallet
+                  ? tr("partner.pay_and_create")
+                  : tr("deposit.connect_wallet")}
           </motion.button>
         </div>
       </div>
