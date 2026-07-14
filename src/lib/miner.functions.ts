@@ -556,8 +556,15 @@ export const createPartnerTask = createServerFn({ method: "POST" })
     }).parse(d))
   .handler(async ({ context, data }) => {
     const { userId } = context;
-    const costTon = Number((data.targetClicks * PARTNER_COST_PER_CLICK).toFixed(6));
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Admins can publish partner tasks for free (auto-active, no payment).
+    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+
+    const costTon = isAdmin ? 0 : Number((data.targetClicks * PARTNER_COST_PER_CLICK).toFixed(6));
 
     const { data: memoRow, error: mErr } = await supabaseAdmin
       .rpc("generate_partner_memo" as never);
@@ -575,12 +582,12 @@ export const createPartnerTask = createServerFn({ method: "POST" })
         reward_per_click: 0.001,
         cost_ton: costTon,
         memo_tag: memo,
-        status: "pending_payment",
+        status: isAdmin ? "active" : "pending_payment",
       })
       .select()
       .single();
     if (iErr) throw iErr;
-    return inserted;
+    return { ...inserted, is_admin_free: !!isAdmin };
   });
 
 // Called after the user visits the partner's link. Atomically records the
