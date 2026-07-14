@@ -1050,6 +1050,9 @@ function PartnerTasksSection() {
   const createFn = useServerFn(createPartnerTask);
   const completeFn = useServerFn(completePartnerTask);
   const cancelFn = useServerFn(cancelPartnerTask);
+  const meFn = useServerFn(getMe);
+  const { data: me } = useSuspenseQuery(meQO(() => meFn()));
+  const isAdmin = !!(me as any)?.isAdmin;
 
   const { data: partners } = useQuery({ queryKey: ["partner-tasks"], queryFn: () => listFn(), refetchInterval: 30000 });
   const { data: mine } = useQuery({ queryKey: ["my-partner-tasks"], queryFn: () => myListFn(), refetchInterval: 20000 });
