@@ -1292,7 +1292,13 @@ function AddPartnerTaskModal({ onClose, createFn, qc, isAdmin }: any) {
 
         <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
           <p className="text-sm">
-            {tr("partner.cost_label")} <span className="font-bold tabular-nums">{costTon.toFixed(4)} GRAM</span>
+            {isAdmin ? (
+              <span className="font-bold text-primary">Admin · Free publish</span>
+            ) : (
+              <>
+                {tr("partner.cost_label")} <span className="font-bold tabular-nums">{costTon.toFixed(4)} GRAM</span>
+              </>
+            )}
           </p>
         </div>
 
@@ -1306,7 +1312,13 @@ function AddPartnerTaskModal({ onClose, createFn, qc, isAdmin }: any) {
             onClick={() => submit.mutate()}
             className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary font-bold text-primary-foreground disabled:opacity-50"
           >
-            {submit.isPending ? tr("deposit.waiting") : wallet ? tr("partner.pay_and_create") : tr("deposit.connect_wallet")}
+            {submit.isPending
+              ? tr("deposit.waiting")
+              : isAdmin
+                ? tr("partner.add")
+                : wallet
+                  ? tr("partner.pay_and_create")
+                  : tr("deposit.connect_wallet")}
           </motion.button>
         </div>
       </div>
