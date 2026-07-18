@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
 const APP_URL = "https://t.me/Tickgramaibot/app";
+const JOB_NAME = "daily-gift-broadcast";
 const BROADCAST_TEXT =
   `🎁 <b>Your 3 FREE daily Gift Boxes are ready!</b>\n\n` +
   `Open the app now and claim your 3 free daily gift boxes.\n\n` +
@@ -29,39 +30,47 @@ async function sendMessage(chatId: number | string, text: string, extra: Record<
   return { status: res.status, data: await res.json().catch(() => ({})) };
 }
 
-async function runBroadcast() {
+async function runBroadcast(opts: { onlyChatId?: string | number } = {}) {
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 
-  const { data: users, error } = await supabase
-    .from("profiles")
-    .select("telegram_id")
-    .not("telegram_id", "is", null);
-
-  if (error) {
-    console.error("[daily-gift-broadcast] fetch users error:", error.message);
-    return;
-  }
-
   const reply_markup = {
     inline_keyboard: [[{ text: "🎁 Claim Free Gift Box", url: APP_URL }]],
   };
 
-  const list = (users ?? [])
-    .map((u: any) => u.telegram_id)
-    .filter((id: any) => id != null);
+  let list: (number | string)[];
+  if (opts.onlyChatId != null) {
+    list = [opts.onlyChatId];
+  } else {
+    const { data: users, error } = await supabase
+      .from("profiles")
+      .select("telegram_id")
+      .not("telegram_id", "is", null);
+    if (error) {
+      console.error(`[${JOB_NAME}] fetch users error:`, error.message);
+      return;
+    }
+    list = (users ?? []).map((u: any) => u.telegram_id).filter((id: any) => id != null);
+  }
 
-  console.log(`[daily-gift-broadcast] starting broadcast to ${list.length} users`);
+  const { data: runRow } = await supabase
+    .from("broadcast_runs")
+    .insert({ job: JOB_NAME, total: list.length })
+    .select("id")
+    .single();
+  const runId = runRow?.id as string | undefined;
+
+  console.log(`[${JOB_NAME}] starting broadcast to ${list.length} users (run=${runId})`);
 
   let sent = 0;
   let failed = 0;
-  const CONCURRENCY = 20;
+  let lastError: string | null = null;
+  const CONCURRENCY = 25;
+  const BATCH_PAUSE_MS = 400;
 
-  // Process in parallel batches to stay well under Telegram's 30 msg/s cap
-  // while completing quickly enough to avoid worker timeouts.
   for (let i = 0; i < list.length; i += CONCURRENCY) {
     const batch = list.slice(i, i + CONCURRENCY);
     const results = await Promise.all(
@@ -72,20 +81,42 @@ async function runBroadcast() {
             const retryAfter = Number((r.data as any)?.parameters?.retry_after ?? 1);
             await new Promise((res) => setTimeout(res, (retryAfter + 1) * 1000));
             const r2 = await sendMessage(chatId, BROADCAST_TEXT, { reply_markup });
-            return r2.status >= 200 && r2.status < 300;
+            if (!(r2.status >= 200 && r2.status < 300 && (r2.data as any)?.ok !== false)) {
+              return { ok: false, err: `retry ${r2.status} ${JSON.stringify(r2.data).slice(0, 200)}` };
+            }
+            return { ok: true };
           }
-          return r.status >= 200 && r.status < 300 && (r.data as any)?.ok !== false;
-        } catch {
-          return false;
+          const ok = r.status >= 200 && r.status < 300 && (r.data as any)?.ok !== false;
+          return ok ? { ok: true } : { ok: false, err: `${r.status} ${JSON.stringify(r.data).slice(0, 200)}` };
+        } catch (e: any) {
+          return { ok: false, err: String(e?.message ?? e).slice(0, 200) };
         }
       }),
     );
-    for (const ok of results) ok ? sent++ : failed++;
-    // Small pause between batches to respect rate limit (~20 msg / 800ms = 25/s)
-    await new Promise((res) => setTimeout(res, 800));
+    for (const r of results) {
+      if (r.ok) sent++;
+      else {
+        failed++;
+        if (r.err) lastError = r.err;
+      }
+    }
+    if (runId) {
+      await supabase
+        .from("broadcast_runs")
+        .update({ sent, failed, progress: i + batch.length, last_error: lastError })
+        .eq("id", runId);
+    }
+    await new Promise((res) => setTimeout(res, BATCH_PAUSE_MS));
   }
 
-  console.log(`[daily-gift-broadcast] done. sent=${sent} failed=${failed} total=${list.length}`);
+  if (runId) {
+    await supabase
+      .from("broadcast_runs")
+      .update({ sent, failed, progress: list.length, last_error: lastError, finished_at: new Date().toISOString() })
+      .eq("id", runId);
+  }
+
+  console.log(`[${JOB_NAME}] done. sent=${sent} failed=${failed} total=${list.length}`);
 }
 
 function safeEqual(a: string, b: string) {
@@ -115,15 +146,20 @@ async function handleBroadcast(request: Request) {
     return new Response("Telegram not configured", { status: 500 });
   }
 
+  const url = new URL(request.url);
+  const onlyChatId = url.searchParams.get("chat_id") ?? undefined;
 
-  // Fire-and-forget: keep the worker alive with waitUntil so the broadcast
-  // finishes after we return 202 immediately to the caller (avoids client timeouts).
+  const task = runBroadcast({ onlyChatId }).catch((e) =>
+    console.error(`[${JOB_NAME}] error:`, e),
+  );
+
   try {
-    const { waitUntil } = (await import("cloudflare:workers" as any)) as { waitUntil: (p: Promise<unknown>) => void };
-    waitUntil(runBroadcast());
+    const { waitUntil } = (await import("cloudflare:workers" as any)) as {
+      waitUntil: (p: Promise<unknown>) => void;
+    };
+    waitUntil(task);
   } catch {
-    // Fallback for environments without cloudflare:workers (e.g. local dev)
-    runBroadcast().catch((e) => console.error("[daily-gift-broadcast] error:", e));
+    // Local dev fallback
   }
 
   return Response.json({ ok: true, status: "accepted" }, { status: 202 });
