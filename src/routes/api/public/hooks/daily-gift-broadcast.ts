@@ -45,15 +45,26 @@ async function runBroadcast(opts: { onlyChatId?: string | number } = {}) {
   if (opts.onlyChatId != null) {
     list = [opts.onlyChatId];
   } else {
-    const { data: users, error } = await supabase
-      .from("profiles")
-      .select("telegram_id")
-      .not("telegram_id", "is", null);
-    if (error) {
-      console.error(`[${JOB_NAME}] fetch users error:`, error.message);
-      return;
+    // Paginate to bypass Supabase's default 1000-row cap.
+    const PAGE = 1000;
+    let from = 0;
+    list = [];
+    for (;;) {
+      const { data: users, error } = await supabase
+        .from("profiles")
+        .select("telegram_id")
+        .not("telegram_id", "is", null)
+        .order("telegram_id", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) {
+        console.error(`[${JOB_NAME}] fetch users error:`, error.message);
+        return;
+      }
+      const page = (users ?? []).map((u: any) => u.telegram_id).filter((id: any) => id != null);
+      list.push(...page);
+      if (page.length < PAGE) break;
+      from += PAGE;
     }
-    list = (users ?? []).map((u: any) => u.telegram_id).filter((id: any) => id != null);
   }
 
   const { data: runRow } = await supabase
