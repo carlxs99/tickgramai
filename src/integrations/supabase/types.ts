@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      broadcast_runs: {
+        Row: {
+          failed: number
+          finished_at: string | null
+          id: string
+          job: string
+          last_error: string | null
+          progress: number
+          sent: number
+          started_at: string
+          total: number
+        }
+        Insert: {
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          job: string
+          last_error?: string | null
+          progress?: number
+          sent?: number
+          started_at?: string
+          total?: number
+        }
+        Update: {
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          job?: string
+          last_error?: string | null
+          progress?: number
+          sent?: number
+          started_at?: string
+          total?: number
+        }
+        Relationships: []
+      }
       deposit_bonuses: {
         Row: {
           created_at: string
