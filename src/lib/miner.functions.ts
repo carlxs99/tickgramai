@@ -298,7 +298,11 @@ export const listDeposits = createServerFn({ method: "GET" })
 export const submitWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { amount: number; address: string; memo?: string }) =>
-    z.object({ amount: z.number().positive(), address: z.string().min(10), memo: z.string().optional() }).parse(d))
+    z.object({
+      amount: z.number().positive().max(1_000_000),
+      address: z.string().trim().min(10).max(80),
+      memo: z.string().trim().max(200).optional(),
+    }).parse(d))
   .handler(async ({ context, data }) => {
     const { userId } = context;
     if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
