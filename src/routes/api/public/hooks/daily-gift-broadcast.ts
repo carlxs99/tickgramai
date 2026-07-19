@@ -86,6 +86,22 @@ async function getOrCreateRun(
       .limit(1)
       .maybeSingle();
     if (existing) return { runId: existing.id as string, created: false };
+
+    // No unfinished run — only create a new one if there's no completed
+    // run for this job within the last 20h (avoids duplicate daily runs
+    // when the drain cron ticks after completion).
+    const dedupIso = new Date(Date.now() - 20 * 3600_000).toISOString();
+    const { data: recentDone } = await supabase
+      .from("broadcast_runs")
+      .select("id")
+      .eq("job", JOB_NAME)
+      .not("finished_at", "is", null)
+      .gte("started_at", dedupIso)
+      .limit(1)
+      .maybeSingle();
+    if (recentDone && opts.onlyChatId == null) {
+      return { runId: recentDone.id as string, created: false, alreadyDone: true };
+    }
   }
 
   // Materialize the target list for this new run.
