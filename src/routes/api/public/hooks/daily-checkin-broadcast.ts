@@ -61,6 +61,20 @@ async function getOrCreateRun(
       .limit(1)
       .maybeSingle();
     if (existing) return { runId: existing.id as string, created: false };
+
+    // Avoid duplicate daily runs while the drain cron keeps ticking.
+    const dedupIso = new Date(Date.now() - 20 * 3600_000).toISOString();
+    const { data: recentDone } = await supabase
+      .from("broadcast_runs")
+      .select("id")
+      .eq("job", JOB_NAME)
+      .not("finished_at", "is", null)
+      .gte("started_at", dedupIso)
+      .limit(1)
+      .maybeSingle();
+    if (recentDone && opts.onlyChatId == null) {
+      return { runId: recentDone.id as string, created: false, alreadyDone: true };
+    }
   }
 
   let total = 0;
