@@ -134,12 +134,17 @@ export const adminListUsers = createServerFn({ method: "GET" })
       .limit(data.limit ?? 200);
     const s = data.search?.trim();
     if (s) {
-      const esc = s.replace(/[%,]/g, "");
+      // Strip every character PostgREST treats specially inside .or() filter
+      // strings so a malicious admin search can't break out of the ilike
+      // pattern into another filter expression.
+      const esc = s.replace(/[%,.()"'\\*:]/g, "").slice(0, 60);
       const asNum = Number(s);
-      if (Number.isFinite(asNum) && s.match(/^\d+$/)) {
-        q = q.or(`username.ilike.%${esc}%,first_name.ilike.%${esc}%,telegram_id.eq.${asNum}`);
-      } else {
-        q = q.or(`username.ilike.%${esc}%,first_name.ilike.%${esc}%,last_name.ilike.%${esc}%`);
+      if (esc.length > 0) {
+        if (Number.isFinite(asNum) && /^\d+$/.test(s)) {
+          q = q.or(`username.ilike.%${esc}%,first_name.ilike.%${esc}%,telegram_id.eq.${asNum}`);
+        } else {
+          q = q.or(`username.ilike.%${esc}%,first_name.ilike.%${esc}%,last_name.ilike.%${esc}%`);
+        }
       }
     }
     const { data: rows, error } = await q;
