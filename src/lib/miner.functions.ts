@@ -191,7 +191,13 @@ export const completeTask = createServerFn({ method: "POST" })
 export const saveWallet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { address: string | null }) =>
-    z.object({ address: z.string().min(10).max(80).nullable() }).parse(d))
+    z.object({
+      address: z
+        .string()
+        .trim()
+        .regex(/^[A-Za-z0-9_\-:+/=]{10,80}$/, "Invalid address format")
+        .nullable(),
+    }).parse(d))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("profiles").update({ wallet_address: data.address }).eq("user_id", context.userId);
@@ -202,7 +208,10 @@ export const saveWallet = createServerFn({ method: "POST" })
 export const submitDeposit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { amountTon: number; txHash?: string }) =>
-    z.object({ amountTon: z.number().positive(), txHash: z.string().optional() }).parse(d))
+    z.object({
+      amountTon: z.number().positive().min(0.1).max(100000),
+      txHash: z.string().max(200).optional(),
+    }).parse(d))
   .handler(async ({ context, data }) => {
     const { userId } = context;
     // This endpoint records the user's INTENT to deposit. It does NOT credit
@@ -289,7 +298,11 @@ export const listDeposits = createServerFn({ method: "GET" })
 export const submitWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { amount: number; address: string; memo?: string }) =>
-    z.object({ amount: z.number().positive(), address: z.string().min(10), memo: z.string().optional() }).parse(d))
+    z.object({
+      amount: z.number().positive().max(1_000_000),
+      address: z.string().trim().min(10).max(80),
+      memo: z.string().trim().max(200).optional(),
+    }).parse(d))
   .handler(async ({ context, data }) => {
     const { userId } = context;
     if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
