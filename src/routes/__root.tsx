@@ -126,6 +126,40 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+
+    const start = () => {
+      if (cancelled) return;
+      const show = (window as unknown as Record<string, unknown>).show_11237001;
+      if (typeof show === "function") {
+        try {
+          (show as (opts: unknown) => Promise<unknown>)({
+            type: "inApp",
+            inAppSettings: {
+              frequency: 2,
+              capping: 0.1,
+              interval: 30,
+              timeout: 5,
+              everyPage: false,
+            },
+          })?.catch?.(() => {});
+        } catch {
+          /* ignore ad errors */
+        }
+        return;
+      }
+      if (attempts++ < 30) setTimeout(start, 500);
+    };
+
+    start();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+
   return (
     <QueryClientProvider client={queryClient}>
       <SplashScreen minimumDisplayMs={2000}>
