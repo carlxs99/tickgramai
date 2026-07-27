@@ -1664,9 +1664,11 @@ function DepositTab() {
   const promoFn = useServerFn(getActivePromotion);
   const { data: promoData } = useQuery({ queryKey: ["promotion"], queryFn: () => promoFn(), refetchInterval: 60_000 });
   const promo = promoData?.promotion ?? null;
-  // The site-wide promotion always takes precedence; the personal gift-box
-  // bonus is kept for the next deposit.
-  const bonusPct = promo ? Number(promo.percent) : activeBonus ? Number(activeBonus.percent) : 0;
+  // The site-wide promotion takes precedence, but only once per user; the
+  // personal gift-box bonus is kept for the next deposit.
+  const promoUsable = !!promo && !promo.used;
+  const bonusPct = promoUsable ? Number(promo!.percent) : activeBonus ? Number(activeBonus.percent) : 0;
+
 
 
   // Reinvest
