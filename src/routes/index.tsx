@@ -2511,7 +2511,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 
 
 
-type AdminSection = "overview" | "tasks" | "users";
+type AdminSection = "overview" | "tasks" | "users" | "security";
 
 function AdminTab() {
   const { t: tr } = useT();
@@ -2545,11 +2545,12 @@ function AdminTab() {
         </div>
 
         {/* Segmented sub-nav */}
-        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
+        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
           {([
             { id: "overview", label: "Overview", icon: LayoutDashboard },
             { id: "tasks", label: "Tasks", icon: ListChecks },
             { id: "users", label: "Users", icon: Users },
+            { id: "security", label: "Multi-acc", icon: ShieldAlert },
           ] as { id: AdminSection; label: string; icon: any }[]).map((s) => {
             const Icon = s.icon;
             const active = section === s.id;
@@ -2574,6 +2575,7 @@ function AdminTab() {
       {section === "overview" && <AdminOverview stats={stats} tr={tr} />}
       {section === "tasks" && <AdminTasksSection tr={tr} />}
       {section === "users" && <AdminUsersSection />}
+      {section === "security" && <AdminSecuritySection />}
     </div>
   );
 }
