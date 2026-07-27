@@ -591,6 +591,7 @@ export type Database = {
         Returns: {
           account_count: number
           accounts: Json
+          confidence: string
           group_key: string
           signal: string
         }[]
