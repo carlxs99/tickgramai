@@ -16,6 +16,7 @@ import { Route as ApiPublicProcessWithdrawalsRouteImport } from './routes/api/pu
 import { Route as ApiPublicMexcPricesRouteImport } from './routes/api/public/mexc-prices'
 import { Route as ApiPublicAvatarRouteImport } from './routes/api/public/avatar'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as ApiPublicHooksWeeklyPromoBroadcastRouteImport } from './routes/api/public/hooks/weekly-promo-broadcast'
 import { Route as ApiPublicHooksDailyGiftBroadcastRouteImport } from './routes/api/public/hooks/daily-gift-broadcast'
 import { Route as ApiPublicHooksDailyCheckinBroadcastRouteImport } from './routes/api/public/hooks/daily-checkin-broadcast'
 import { Route as ApiPublicHooksBootstrapCronSecretRouteImport } from './routes/api/public/hooks/bootstrap-cron-secret'
@@ -58,6 +59,12 @@ const ApiPublicTelegramWebhookRoute =
     path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksWeeklyPromoBroadcastRoute =
+  ApiPublicHooksWeeklyPromoBroadcastRouteImport.update({
+    id: '/api/public/hooks/weekly-promo-broadcast',
+    path: '/api/public/hooks/weekly-promo-broadcast',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDailyGiftBroadcastRoute =
   ApiPublicHooksDailyGiftBroadcastRouteImport.update({
     id: '/api/public/hooks/daily-gift-broadcast',
@@ -87,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bootstrap-cron-secret': typeof ApiPublicHooksBootstrapCronSecretRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
+  '/api/public/hooks/weekly-promo-broadcast': typeof ApiPublicHooksWeeklyPromoBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -99,6 +107,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bootstrap-cron-secret': typeof ApiPublicHooksBootstrapCronSecretRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
+  '/api/public/hooks/weekly-promo-broadcast': typeof ApiPublicHooksWeeklyPromoBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
@@ -112,6 +121,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bootstrap-cron-secret': typeof ApiPublicHooksBootstrapCronSecretRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
+  '/api/public/hooks/weekly-promo-broadcast': typeof ApiPublicHooksWeeklyPromoBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bootstrap-cron-secret'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
+    | '/api/public/hooks/weekly-promo-broadcast'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bootstrap-cron-secret'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
+    | '/api/public/hooks/weekly-promo-broadcast'
     | '/api/public/telegram/webhook'
   id:
     | '__root__'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bootstrap-cron-secret'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
+    | '/api/public/hooks/weekly-promo-broadcast'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -163,6 +176,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBootstrapCronSecretRoute: typeof ApiPublicHooksBootstrapCronSecretRoute
   ApiPublicHooksDailyCheckinBroadcastRoute: typeof ApiPublicHooksDailyCheckinBroadcastRoute
   ApiPublicHooksDailyGiftBroadcastRoute: typeof ApiPublicHooksDailyGiftBroadcastRoute
+  ApiPublicHooksWeeklyPromoBroadcastRoute: typeof ApiPublicHooksWeeklyPromoBroadcastRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
@@ -217,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/weekly-promo-broadcast': {
+      id: '/api/public/hooks/weekly-promo-broadcast'
+      path: '/api/public/hooks/weekly-promo-broadcast'
+      fullPath: '/api/public/hooks/weekly-promo-broadcast'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyPromoBroadcastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/daily-gift-broadcast': {
       id: '/api/public/hooks/daily-gift-broadcast'
       path: '/api/public/hooks/daily-gift-broadcast'
@@ -253,6 +274,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksDailyCheckinBroadcastRoute:
     ApiPublicHooksDailyCheckinBroadcastRoute,
   ApiPublicHooksDailyGiftBroadcastRoute: ApiPublicHooksDailyGiftBroadcastRoute,
+  ApiPublicHooksWeeklyPromoBroadcastRoute:
+    ApiPublicHooksWeeklyPromoBroadcastRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
