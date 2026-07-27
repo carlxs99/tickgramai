@@ -143,14 +143,13 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
 
-            // Deposit bonus. A site-wide weekly promotion always takes
-            // precedence over the user's personal gift-box bonus — the
-            // personal bonus is NOT consumed and stays available for the
-            // next deposit.
-            const { data: promoRow } = await supabaseAdmin
-              .rpc("get_active_deposit_promotion" as never, {} as never);
-            const promo: any = Array.isArray(promoRow) ? promoRow[0] : promoRow;
-            const promoPercent = Number(promo?.percent ?? 0);
+            // Deposit bonus. A site-wide weekly promotion takes precedence
+            // over the user's personal gift-box bonus, but each user can only
+            // use the promotion ONCE. If already used (or none active), we
+            // fall back to the personal gift-box bonus.
+            const { data: claimedPct } = await supabaseAdmin
+              .rpc("claim_deposit_promotion" as never, { _user_id: profile.user_id } as never);
+            const promoPercent = Number(claimedPct ?? 0);
 
             let bonusPercent = promoPercent;
             let bonusSource: "promo" | "gift" | null = promoPercent > 0 ? "promo" : null;
@@ -160,6 +159,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               bonusPercent = Number(bonusPct ?? 0);
               bonusSource = bonusPercent > 0 ? "gift" : null;
             }
+
             void bonusSource;
             const bonusMultiplier = 1 + bonusPercent / 100;
             const effectiveAmountTon = amountTon * bonusMultiplier;
