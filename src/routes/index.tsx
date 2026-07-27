@@ -384,6 +384,7 @@ function MineTab() {
 
   return (
     <div className="space-y-4">
+      <PromoBanner />
       <motion.div
         className="relative rounded-3xl p-5 overflow-hidden shadow-xl"
         initial={{ scale: 0.96 }} animate={{ scale: 1 }}
@@ -1722,6 +1723,7 @@ function DepositTab() {
       <h2 className="text-2xl font-bold text-white text-glow-white">{t("deposit.title")}</h2>
       <p className="text-sm text-white/80">{t("deposit.subtitle")}</p>
 
+      <PromoBanner />
       <ActiveBonusBanner />
 
 
