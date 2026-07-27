@@ -779,6 +779,8 @@ function PromoBanner() {
   const promo = data?.promotion ?? null;
   if (!promo) return null;
   const pct = Number(promo.percent);
+  const used = !!promo.used;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
