@@ -142,6 +142,14 @@ function MinerAppInner() {
   }
   if (!ready) return <div className="fixed inset-0 bg-background" aria-hidden />;
 
+  // Banned accounts get a full-screen block — no app access at all.
+  const meCached: any = qc.getQueryData(["me"]);
+  if (meCached?.profile?.banned) {
+    return <BannedScreen profile={meCached.profile} />;
+  }
+
+
+
   const manifestUrl = typeof window !== "undefined"
     ? `${window.location.origin}/tonconnect-manifest.json`
     : "https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json";
