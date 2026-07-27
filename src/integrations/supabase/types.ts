@@ -88,6 +88,33 @@ export type Database = {
           },
         ]
       }
+      deposit_promotions: {
+        Row: {
+          created_at: string
+          ends_at: string
+          id: string
+          percent: number
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          id?: string
+          percent: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          percent?: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           amount_ton: number
@@ -675,6 +702,15 @@ export type Database = {
       expire_stale_pending_deposits: { Args: never; Returns: number }
       generate_memo_tag: { Args: never; Returns: string }
       generate_partner_memo: { Args: never; Returns: string }
+      get_active_deposit_promotion: {
+        Args: never
+        Returns: {
+          ends_at: string
+          id: string
+          percent: number
+          starts_at: string
+        }[]
+      }
       get_referral_ancestors: {
         Args: { _user_id: string }
         Returns: {
@@ -735,6 +771,16 @@ export type Database = {
           mining_rate_gram: number
           prize_amount: number
           prize_type: string
+        }[]
+      }
+      start_weekly_deposit_promotion: {
+        Args: { _duration_hours?: number }
+        Returns: {
+          created: boolean
+          ends_at: string
+          id: string
+          percent: number
+          starts_at: string
         }[]
       }
     }
