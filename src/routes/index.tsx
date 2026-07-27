@@ -3,14 +3,14 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send, Activity, LayoutDashboard, ChevronRight, TrendingUp, Circle } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send, Activity, LayoutDashboard, ChevronRight, TrendingUp, Circle, ShieldAlert, Ban, Fingerprint, AlertTriangle } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
 import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getMyRank, getFriends, getReferralStats, listReferralMilestones, claimReferralMilestone, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
-import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails } from "@/lib/admin.functions";
+import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
 import { formatGram, formatReward, avatarSrc } from "@/lib/format";
@@ -141,6 +141,14 @@ function MinerAppInner() {
     );
   }
   if (!ready) return <div className="fixed inset-0 bg-background" aria-hidden />;
+
+  // Banned accounts get a full-screen block — no app access at all.
+  const meCached: any = qc.getQueryData(["me"]);
+  if (meCached?.profile?.banned) {
+    return <BannedScreen profile={meCached.profile} />;
+  }
+
+
 
   const manifestUrl = typeof window !== "undefined"
     ? `${window.location.origin}/tonconnect-manifest.json`
@@ -2503,7 +2511,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 
 
 
-type AdminSection = "overview" | "tasks" | "users";
+type AdminSection = "overview" | "tasks" | "users" | "security";
 
 function AdminTab() {
   const { t: tr } = useT();
@@ -2537,11 +2545,12 @@ function AdminTab() {
         </div>
 
         {/* Segmented sub-nav */}
-        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
+        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
           {([
             { id: "overview", label: "Overview", icon: LayoutDashboard },
             { id: "tasks", label: "Tasks", icon: ListChecks },
             { id: "users", label: "Users", icon: Users },
+            { id: "security", label: "Multi-acc", icon: ShieldAlert },
           ] as { id: AdminSection; label: string; icon: any }[]).map((s) => {
             const Icon = s.icon;
             const active = section === s.id;
@@ -2566,6 +2575,7 @@ function AdminTab() {
       {section === "overview" && <AdminOverview stats={stats} tr={tr} />}
       {section === "tasks" && <AdminTasksSection tr={tr} />}
       {section === "users" && <AdminUsersSection />}
+      {section === "security" && <AdminSecuritySection />}
     </div>
   );
 }
@@ -3127,6 +3137,212 @@ function DetailList({ title, empty, children }: { title: string; empty: string; 
     <div className="rounded-xl bg-background/40 p-3">
       <p className="text-xs font-semibold mb-1">{title}</p>
       {hasContent ? <div>{children}</div> : <p className="text-[11px] text-muted-foreground">{empty}</p>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Banned account screen
+// ---------------------------------------------------------------------------
+function BannedScreen({ profile }: { profile: any }) {
+  const reason = profile?.ban_reason || "Violación de las reglas de TickGram.";
+  const when = profile?.banned_at ? new Date(profile.banned_at).toLocaleDateString() : null;
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6 bg-background">
+      <div className="card-glass rounded-3xl p-6 max-w-sm w-full text-center space-y-4 border border-destructive/30">
+        <div className="w-16 h-16 rounded-2xl bg-destructive/15 border border-destructive/30 flex items-center justify-center mx-auto">
+          <Ban className="w-8 h-8 text-destructive" />
+        </div>
+        <div className="space-y-1">
+          <h1 className="text-xl font-extrabold text-glow-white">Account suspended</h1>
+          <p className="text-xs text-muted-foreground">
+            Your TickGram account has been blocked and you can no longer use the app.
+          </p>
+        </div>
+        <div className="rounded-2xl bg-background/50 border border-white/5 p-3 text-left space-y-1">
+          <p className="eyebrow !text-[9px] text-muted-foreground">Reason</p>
+          <p className="text-sm font-semibold leading-snug">{reason}</p>
+          {when && <p className="text-[10px] text-muted-foreground">Banned on {when}</p>}
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Using multiple accounts, botting or abusing the referral system is not allowed.
+          If you believe this is a mistake, contact support from the official Telegram channel.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Admin · Multi-account detection
+// ---------------------------------------------------------------------------
+function AdminSecuritySection() {
+  const qc = useQueryClient();
+  const susFn = useServerFn(adminSuspiciousAccounts);
+  const bannedFn = useServerFn(adminListBanned);
+  const banFn = useServerFn(adminSetBan);
+  const [view, setView] = useState<"suspicious" | "banned">("suspicious");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-suspicious"],
+    queryFn: () => susFn({ data: { limit: 60 } }),
+  });
+  const { data: banned, isLoading: loadingBanned } = useQuery({
+    queryKey: ["admin-banned"],
+    queryFn: () => bannedFn(),
+    enabled: view === "banned",
+  });
+
+  const ban = useMutation({
+    mutationFn: (v: { user_id: string; banned: boolean; reason?: string }) => banFn({ data: v }),
+    onSuccess: (_r, v) => {
+      toast.success(v.banned ? "Usuario baneado" : "Usuario desbaneado");
+      qc.invalidateQueries({ queryKey: ["admin-suspicious"] });
+      qc.invalidateQueries({ queryKey: ["admin-banned"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Error"),
+  });
+
+  const doBan = (user_id: string, name: string) => {
+    const reason = window.prompt(
+      `Motivo del baneo para ${name} (se le mostrará al usuario):`,
+      "Uso de múltiples cuentas (multi-account abuse)",
+    );
+    if (reason === null) return;
+    ban.mutate({ user_id, banned: true, reason });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        <AdminKPI label="Grupos sospechosos" value={String(data?.totals.groups ?? 0)} icon={<Fingerprint className="w-4 h-4" />} />
+        <AdminKPI label="Cuentas implicadas" value={String(data?.totals.accounts ?? 0)} icon={<Users className="w-4 h-4" />} />
+        <AdminKPI label="Baneados" value={String(data?.totals.banned ?? 0)} icon={<Ban className="w-4 h-4" />} />
+      </div>
+
+      <div className="flex gap-2">
+        {([
+          { id: "suspicious", label: "Sospechosas", icon: ShieldAlert },
+          { id: "banned", label: "Baneados", icon: Ban },
+        ] as const).map((v) => (
+          <button
+            key={v.id}
+            onClick={() => setView(v.id)}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition border ${
+              view === v.id
+                ? "bg-primary/15 border-primary/40 text-primary"
+                : "card-glass border-white/5 text-muted-foreground"
+            }`}
+          >
+            <v.icon className="w-3.5 h-3.5" /> {v.label}
+          </button>
+        ))}
+      </div>
+
+      {view === "suspicious" ? (
+        isLoading ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
+            <Loader2 className="w-4 h-4 animate-spin" /> Analizando cuentas…
+          </div>
+        ) : !data?.groups.length ? (
+          <div className="card-glass rounded-2xl p-6 text-center text-xs text-muted-foreground">
+            No se han detectado multicuentas 🎉
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {data.groups.map((g: any) => (
+              <div key={g.group_key} className="card-glass rounded-2xl overflow-hidden">
+                <div className="px-3 py-2.5 border-b border-white/5 bg-background/30 flex items-start gap-2">
+                  <AlertTriangle
+                    className={`w-4 h-4 mt-0.5 shrink-0 ${g.risk >= 70 ? "text-destructive" : g.risk >= 45 ? "text-[color:var(--warning,#f59e0b)]" : "text-muted-foreground"}`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold truncate">{g.label}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{g.detail}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] font-bold tabular-nums">{g.account_count} cuentas</p>
+                    <p className={`text-[10px] tabular-nums ${g.risk >= 70 ? "text-destructive" : "text-muted-foreground"}`}>
+                      riesgo {g.risk}%
+                    </p>
+                  </div>
+                </div>
+                <div className="divide-y divide-white/5">
+                  {g.accounts.map((a: any) => {
+                    const name = a.first_name || (a.username ? `@${a.username}` : a.user_id.slice(0, 8));
+                    return (
+                      <div key={a.user_id} className="flex items-center gap-2.5 p-3">
+                        {a.avatar_url || a.telegram_id ? (
+                          <img src={avatarSrc(a.avatar_url, a.telegram_id)} alt="" referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                            <UserCircle2 className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold truncate flex items-center gap-1">
+                            {name}
+                            {a.banned && <span className="text-[9px] px-1.5 py-0.5 rounded bg-destructive/20 text-destructive font-bold">BANNED</span>}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            TG {a.telegram_id ?? "—"} · {formatGram(a.balance)} GRAM · {a.deposit_total.toFixed(2)} TON · {new Date(a.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <button
+                          disabled={ban.isPending}
+                          onClick={() => (a.banned ? ban.mutate({ user_id: a.user_id, banned: false }) : doBan(a.user_id, name))}
+                          className={`shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition ${
+                            a.banned
+                              ? "border-white/10 text-muted-foreground hover:bg-white/5"
+                              : "border-destructive/40 text-destructive hover:bg-destructive/10"
+                          }`}
+                        >
+                          {a.banned ? "Desbanear" : "Banear"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : loadingBanned ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
+          <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
+        </div>
+      ) : !banned?.length ? (
+        <div className="card-glass rounded-2xl p-6 text-center text-xs text-muted-foreground">
+          No hay usuarios baneados
+        </div>
+      ) : (
+        <div className="card-glass rounded-2xl divide-y divide-white/5">
+          {banned.map((b: any) => (
+            <div key={b.user_id} className="flex items-center gap-2.5 p-3">
+              {b.avatar_url || b.telegram_id ? (
+                <img src={avatarSrc(b.avatar_url, b.telegram_id)} alt="" referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                  <UserCircle2 className="w-4 h-4 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate">
+                  {b.first_name || (b.username ? `@${b.username}` : b.user_id.slice(0, 8))}
+                </p>
+                <p className="text-[10px] text-muted-foreground truncate">{b.ban_reason}</p>
+              </div>
+              <button
+                disabled={ban.isPending}
+                onClick={() => ban.mutate({ user_id: b.user_id, banned: false })}
+                className="shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-white/10 text-muted-foreground hover:bg-white/5"
+              >
+                Desbanear
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

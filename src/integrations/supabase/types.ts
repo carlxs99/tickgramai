@@ -271,6 +271,10 @@ export type Database = {
         Row: {
           avatar_url: string | null
           balance: number
+          ban_reason: string | null
+          banned: boolean
+          banned_at: string | null
+          banned_by: string | null
           created_at: string
           deposit_total: number
           first_name: string | null
@@ -298,6 +302,10 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           balance?: number
+          ban_reason?: string | null
+          banned?: boolean
+          banned_at?: string | null
+          banned_by?: string | null
           created_at?: string
           deposit_total?: number
           first_name?: string | null
@@ -325,6 +333,10 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           balance?: number
+          ban_reason?: string | null
+          banned?: boolean
+          banned_at?: string | null
+          banned_by?: string | null
           created_at?: string
           deposit_total?: number
           first_name?: string | null
@@ -565,6 +577,15 @@ export type Database = {
     }
     Functions: {
       _set_cron_secret: { Args: { _value: string }; Returns: undefined }
+      admin_detect_multi_accounts: {
+        Args: { _limit?: number }
+        Returns: {
+          account_count: number
+          accounts: Json
+          group_key: string
+          signal: string
+        }[]
+      }
       atomic_add_balance: {
         Args: { _amount: number; _user_id: string }
         Returns: number

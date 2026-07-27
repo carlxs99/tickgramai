@@ -1,3 +1,4 @@
+import { assertNotBanned } from "@/lib/ban-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -49,6 +50,7 @@ export const listGiftBoxes = createServerFn({ method: "GET" })
 export const claimDailyGiftBox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
@@ -66,6 +68,7 @@ export const openGiftBox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { boxId: string }) => z.object({ boxId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
