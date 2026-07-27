@@ -283,7 +283,9 @@ export type Database = {
           language_code: string | null
           last_collect_at: string
           last_daily_gift_at: string | null
+          last_ip: string | null
           last_name: string | null
+          last_seen_at: string | null
           memo_tag: string
           mining_rate: number
           mining_rate_usd: number
@@ -293,6 +295,7 @@ export type Database = {
           referral_code: string | null
           referral_earned_total: number
           referred_by: string | null
+          signup_ip: string | null
           telegram_id: number | null
           updated_at: string
           user_id: string
@@ -314,7 +317,9 @@ export type Database = {
           language_code?: string | null
           last_collect_at?: string
           last_daily_gift_at?: string | null
+          last_ip?: string | null
           last_name?: string | null
+          last_seen_at?: string | null
           memo_tag?: string
           mining_rate?: number
           mining_rate_usd?: number
@@ -324,6 +329,7 @@ export type Database = {
           referral_code?: string | null
           referral_earned_total?: number
           referred_by?: string | null
+          signup_ip?: string | null
           telegram_id?: number | null
           updated_at?: string
           user_id: string
@@ -345,7 +351,9 @@ export type Database = {
           language_code?: string | null
           last_collect_at?: string
           last_daily_gift_at?: string | null
+          last_ip?: string | null
           last_name?: string | null
+          last_seen_at?: string | null
           memo_tag?: string
           mining_rate?: number
           mining_rate_usd?: number
@@ -355,6 +363,7 @@ export type Database = {
           referral_code?: string | null
           referral_earned_total?: number
           referred_by?: string | null
+          signup_ip?: string | null
           telegram_id?: number | null
           updated_at?: string
           user_id?: string
