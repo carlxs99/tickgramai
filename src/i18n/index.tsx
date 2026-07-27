@@ -42,6 +42,11 @@ const en: Dict = {
   "mine.deposits": "Deposits",
   "mine.gram_price": "1 GRAM ≈ ${price}",
 
+  "promo.title": "Weekly promotion",
+  "promo.headline": "deposit bonus for everyone",
+  "promo.sub": "Every deposit made now is credited with this extra bonus.",
+  "promo.ends_in": "Ends in",
+  "promo.gift_saved": "Your gift-box bonus is saved for your next deposit.",
   "gift.title": "Gift Boxes",
   "gift.have_boxes": "You have {count} box!",
   "gift.have_boxes_plural": "You have {count} boxes!",
@@ -275,6 +280,11 @@ const es: Dict = {
   "mine.deposits": "Depósitos",
   "mine.gram_price": "1 GRAM ≈ ${price}",
 
+  "promo.title": "Promoción semanal",
+  "promo.headline": "de bono en depósitos para todos",
+  "promo.sub": "Cada depósito que hagas ahora se acredita con este bono extra.",
+  "promo.ends_in": "Termina en",
+  "promo.gift_saved": "Tu bono de gift box se guarda para tu próximo depósito.",
   "gift.title": "Cajas de Regalo",
   "gift.have_boxes": "¡Tienes {count} caja!",
   "gift.have_boxes_plural": "¡Tienes {count} cajas!",

@@ -10,6 +10,8 @@ import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
 import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getMyRank, getFriends, getReferralStats, listReferralMilestones, claimReferralMilestone, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
+import { getActivePromotion } from "@/lib/promotions.functions";
+
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
@@ -382,6 +384,7 @@ function MineTab() {
 
   return (
     <div className="space-y-4">
+      <PromoBanner />
       <motion.div
         className="relative rounded-3xl p-5 overflow-hidden shadow-xl"
         initial={{ scale: 0.96 }} animate={{ scale: 1 }}
@@ -768,6 +771,53 @@ function ActiveBonusBanner() {
     </motion.div>
   );
 }
+
+function PromoBanner() {
+  const { t } = useT();
+  const promoFn = useServerFn(getActivePromotion);
+  const { data } = useQuery({ queryKey: ["promotion"], queryFn: () => promoFn(), refetchInterval: 60_000 });
+  const promo = data?.promotion ?? null;
+  if (!promo) return null;
+  const pct = Number(promo.percent);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative rounded-2xl p-4 overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(135deg, oklch(0.35 0.16 25) 0%, oklch(0.48 0.19 45) 55%, oklch(0.72 0.17 78) 100%)",
+      }}
+    >
+      <div className="absolute -top-10 -right-8 w-36 h-36 rounded-full bg-white/20 blur-2xl pointer-events-none" />
+      <div className="relative flex items-center gap-3">
+        <div className="w-11 h-11 rounded-2xl bg-white/95 grid place-items-center shrink-0 shadow-lg">
+          <Sparkles className="w-6 h-6 text-orange-600" strokeWidth={2.5} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-bold tracking-widest text-white/90 uppercase">
+            {t("promo.title")}
+          </div>
+          <div className="text-lg font-extrabold text-white leading-tight">
+            +{pct.toFixed(0)}% {t("promo.headline")}
+          </div>
+          <div className="text-[11px] text-white/85 leading-tight mt-0.5">
+            {t("promo.sub")}
+          </div>
+        </div>
+      </div>
+      <div className="relative mt-3 rounded-xl bg-black/25 px-3 py-2 flex items-center justify-between gap-2">
+        <span className="text-[11px] font-semibold text-white">{t("promo.ends_in")}</span>
+        <BonusCountdown expiresAt={promo.ends_at} />
+      </div>
+      <div className="relative mt-2 text-[10px] text-white/80 leading-tight">
+        {t("promo.gift_saved")}
+      </div>
+    </motion.div>
+  );
+}
+
+
 
 
 function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmount: number }; onClose: () => void }) {
@@ -1609,7 +1659,13 @@ function DepositTab() {
   const giftListFn = useServerFn(listGiftBoxes);
   const { data: giftData } = useQuery({ queryKey: ["gift-boxes"], queryFn: () => giftListFn(), refetchInterval: 60_000 });
   const activeBonus = giftData?.activeBonus as { percent: number; expires_at: string } | null | undefined;
-  const bonusPct = activeBonus ? Number(activeBonus.percent) : 0;
+  const promoFn = useServerFn(getActivePromotion);
+  const { data: promoData } = useQuery({ queryKey: ["promotion"], queryFn: () => promoFn(), refetchInterval: 60_000 });
+  const promo = promoData?.promotion ?? null;
+  // The site-wide promotion always takes precedence; the personal gift-box
+  // bonus is kept for the next deposit.
+  const bonusPct = promo ? Number(promo.percent) : activeBonus ? Number(activeBonus.percent) : 0;
+
 
   // Reinvest
   const reinvestFn = useServerFn(reinvestBalance);
@@ -1667,6 +1723,7 @@ function DepositTab() {
       <h2 className="text-2xl font-bold text-white text-glow-white">{t("deposit.title")}</h2>
       <p className="text-sm text-white/80">{t("deposit.subtitle")}</p>
 
+      <PromoBanner />
       <ActiveBonusBanner />
 
 

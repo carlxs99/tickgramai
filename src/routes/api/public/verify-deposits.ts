@@ -143,15 +143,28 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             }
 
 
-            // Consume active gift-box deposit bonus (0 if none). The bonus
-            // acts as if the user deposited an extra percentage on top of the
-            // real amount — e.g. a 10% bonus on 1 TON is credited as 1.1 TON.
-            const { data: bonusPct } = await supabaseAdmin
-              .rpc("consume_active_deposit_bonus" as never, { _user_id: profile.user_id } as never);
-            const bonusPercent = Number(bonusPct ?? 0);
+            // Deposit bonus. A site-wide weekly promotion always takes
+            // precedence over the user's personal gift-box bonus — the
+            // personal bonus is NOT consumed and stays available for the
+            // next deposit.
+            const { data: promoRow } = await supabaseAdmin
+              .rpc("get_active_deposit_promotion" as never, {} as never);
+            const promo: any = Array.isArray(promoRow) ? promoRow[0] : promoRow;
+            const promoPercent = Number(promo?.percent ?? 0);
+
+            let bonusPercent = promoPercent;
+            let bonusSource: "promo" | "gift" | null = promoPercent > 0 ? "promo" : null;
+            if (promoPercent <= 0) {
+              const { data: bonusPct } = await supabaseAdmin
+                .rpc("consume_active_deposit_bonus" as never, { _user_id: profile.user_id } as never);
+              bonusPercent = Number(bonusPct ?? 0);
+              bonusSource = bonusPercent > 0 ? "gift" : null;
+            }
+            void bonusSource;
             const bonusMultiplier = 1 + bonusPercent / 100;
             const effectiveAmountTon = amountTon * bonusMultiplier;
             const bonusAmountTon = effectiveAmountTon - amountTon;
+
 
             // Deterministic ROI: 3.3% daily denominated in USDT.
             const priceForCredit = tonPriceAtDeposit > 0 ? tonPriceAtDeposit : 1;
