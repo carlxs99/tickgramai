@@ -223,3 +223,122 @@ export const adminUserDetails = createServerFn({ method: "GET" })
     };
   });
 
+
+// ---------------------------------------------------------------------------
+// Multi-account detection + bans
+// ---------------------------------------------------------------------------
+
+export const adminSuspiciousAccounts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { limit?: number } | undefined) =>
+    z.object({ limit: z.number().int().min(1).max(200).optional() }).partial().parse(d ?? {}))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc("admin_detect_multi_accounts" as never, {
+      _limit: data.limit ?? 60,
+    } as never);
+    if (error) throw error;
+
+    const groups = ((rows as any[]) ?? []).map((g) => {
+      const accounts = (g.accounts ?? []) as any[];
+      const signal: string = g.signal;
+      const label =
+        signal === "shared_wallet" ? "Misma wallet TON conectada"
+        : signal === "shared_payout_address" ? "Misma dirección de retiro"
+        : signal === "shared_avatar" ? "Misma foto de perfil de Telegram"
+        : "Ráfaga de registros del mismo invitador sin depósitos";
+      const detail =
+        signal === "shared_wallet" ? (accounts.find((a) => a.wallet_address)?.wallet_address ?? "")
+        : signal === "shared_payout_address" ? g.group_key.replace(/^payout:/, "")
+        : signal === "shared_avatar" ? "Mismo file_id de avatar"
+        : "Registradas en la misma hora, 0 depósitos";
+      // Risk: more accounts + money-related signals = higher score.
+      const base = signal === "referral_burst" ? 25 : signal === "shared_avatar" ? 35 : 55;
+      const risk = Math.min(100, base + (Number(g.account_count) - 1) * 10);
+      return {
+        group_key: g.group_key as string,
+        signal,
+        label,
+        detail,
+        risk,
+        account_count: Number(g.account_count),
+        accounts: accounts.map((a) => ({
+          user_id: a.user_id,
+          telegram_id: a.telegram_id,
+          username: a.username,
+          first_name: a.first_name,
+          last_name: a.last_name,
+          avatar_url: a.avatar_url,
+          balance: Number(a.balance ?? 0),
+          deposit_total: Number(a.deposit_total ?? 0),
+          mining_rate_usd: Number(a.mining_rate_usd ?? 0),
+          wallet_address: a.wallet_address,
+          created_at: a.created_at,
+          banned: !!a.banned,
+          ban_reason: a.ban_reason ?? null,
+        })),
+      };
+    }).sort((a, b) => b.risk - a.risk || b.account_count - a.account_count);
+
+    const { count: bannedCount } = await supabaseAdmin
+      .from("profiles").select("*", { count: "exact", head: true }).eq("banned", true);
+
+    return {
+      groups,
+      totals: {
+        groups: groups.length,
+        accounts: groups.reduce((s, g) => s + g.account_count, 0),
+        banned: bannedCount ?? 0,
+      },
+    };
+  });
+
+export const adminListBanned = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("user_id, telegram_id, username, first_name, avatar_url, ban_reason, banned_at, balance, deposit_total")
+      .eq("banned", true)
+      .order("banned_at", { ascending: false })
+      .limit(300);
+    if (error) throw error;
+    return data ?? [];
+  });
+
+export const adminSetBan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { user_id: string; banned: boolean; reason?: string }) =>
+    z.object({
+      user_id: z.string().uuid(),
+      banned: z.boolean(),
+      reason: z.string().max(400).optional(),
+    }).parse(d))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    if (data.user_id === context.userId) throw new Error("No puedes banearte a ti mismo");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Never allow banning another admin.
+    const { data: targetIsAdmin } = await supabaseAdmin.rpc("has_role", {
+      _user_id: data.user_id,
+      _role: "admin",
+    });
+    if (targetIsAdmin && data.banned) throw new Error("No puedes banear a un administrador");
+
+    const patch = data.banned
+      ? {
+          banned: true,
+          ban_reason: (data.reason?.trim() || "Uso de múltiples cuentas (multi-account abuse)"),
+          banned_at: new Date().toISOString(),
+          banned_by: context.userId,
+        }
+      : { banned: false, ban_reason: null, banned_at: null, banned_by: null };
+
+    const { error } = await supabaseAdmin.from("profiles").update(patch as never).eq("user_id", data.user_id);
+    if (error) throw error;
+    return { ok: true };
+  });
