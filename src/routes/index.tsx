@@ -3265,7 +3265,15 @@ function AdminSecuritySection() {
                     <p className={`text-[10px] tabular-nums ${g.risk >= 70 ? "text-destructive" : "text-muted-foreground"}`}>
                       riesgo {g.risk}%
                     </p>
+                    <span className={`inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                      g.confidence === "high" ? "bg-destructive/20 text-destructive"
+                      : g.confidence === "medium" ? "bg-amber-500/20 text-amber-400"
+                      : "bg-white/10 text-muted-foreground"
+                    }`}>
+                      {g.confidence === "high" ? "EVIDENCIA FUERTE" : g.confidence === "medium" ? "REVISAR" : "INDICIO DÉBIL"}
+                    </span>
                   </div>
+
                 </div>
                 <div className="divide-y divide-white/5">
                   {g.accounts.map((a: any) => {

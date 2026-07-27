@@ -243,35 +243,40 @@ export const adminSuspiciousAccounts = createServerFn({ method: "GET" })
     const groups = ((rows as any[]) ?? []).map((g) => {
       const accounts = (g.accounts ?? []) as any[];
       const signal: string = g.signal;
+      const confidence: "high" | "medium" | "low" = g.confidence ?? "low";
       const label =
         signal === "shared_wallet" ? "Misma wallet TON conectada"
         : signal === "shared_payout_address" ? "Misma dirección de retiro"
         : signal === "shared_ip" ? "Misma dirección IP (conexión actual)"
         : signal === "shared_signup_ip" ? "Misma IP en el registro"
         : signal === "shared_avatar" ? "Misma foto de perfil de Telegram"
-        : "Ráfaga de registros del mismo invitador sin depósitos";
+        : signal === "sequential_telegram_ids" ? "IDs de Telegram consecutivos (mismo invitador)"
+        : signal === "same_name_same_inviter" ? "Mismo nombre repetido (mismo invitador)"
+        : "Posible granja de referidos (indicio débil)";
       const detail =
         signal === "shared_wallet" ? (accounts.find((a) => a.wallet_address)?.wallet_address ?? "")
         : signal === "shared_payout_address" ? g.group_key.replace(/^payout:/, "")
         : signal === "shared_ip" ? `IP ${g.group_key.replace(/^ip:/, "")}`
         : signal === "shared_signup_ip" ? `IP de registro ${g.group_key.replace(/^signupip:/, "")}`
         : signal === "shared_avatar" ? "Mismo file_id de avatar"
-        : "Registradas en la misma hora, 0 depósitos";
-      // Risk: more accounts + money-related signals = higher score.
+        : signal === "sequential_telegram_ids" ? "Cuentas de Telegram creadas en lote, 0 depósitos"
+        : signal === "same_name_same_inviter" ? `Nombre "${accounts[0]?.first_name ?? ""}" repetido`
+        : "Registros en ráfaga sin usuario/foto y sin depósitos";
+      // Risk: money-linked + device-linked signals are the only strong ones.
       const base =
-        signal === "referral_burst" ? 25
-        : signal === "shared_avatar" ? 35
-        : signal === "shared_signup_ip" ? 45
-        : signal === "shared_ip" ? 60
-        : 55;
-      const risk = Math.min(100, base + (Number(g.account_count) - 1) * 10);
+        confidence === "high" ? 60
+        : confidence === "medium" ? 35
+        : 15;
+      const risk = Math.min(100, base + (Number(g.account_count) - 1) * (confidence === "high" ? 10 : 4));
       return {
         group_key: g.group_key as string,
         signal,
+        confidence,
         label,
         detail,
         risk,
         account_count: Number(g.account_count),
+
         accounts: accounts.map((a) => ({
           user_id: a.user_id,
           telegram_id: a.telegram_id,
