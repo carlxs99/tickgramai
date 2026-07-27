@@ -3287,6 +3287,11 @@ function AdminSecuritySection() {
                           <p className="text-[10px] text-muted-foreground truncate">
                             TG {a.telegram_id ?? "—"} · {formatGram(a.balance)} GRAM · {a.deposit_total.toFixed(2)} TON · {new Date(a.created_at).toLocaleDateString()}
                           </p>
+                          {(a.last_ip || a.signup_ip) && (
+                            <p className="text-[10px] text-muted-foreground/80 truncate font-mono">
+                              IP {a.last_ip ?? "—"}{a.signup_ip && a.signup_ip !== a.last_ip ? ` · registro ${a.signup_ip}` : ""}
+                            </p>
+                          )}
                         </div>
                         <button
                           disabled={ban.isPending}
