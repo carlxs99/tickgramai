@@ -122,6 +122,25 @@ export const authWithTelegram = createServerFn({ method: "POST" })
       user_id: userId,
       telegram_id: tgUser.id,
     };
+    // Client IP (Cloudflare / proxy aware) for multi-account detection.
+    const clientIp = (() => {
+      try {
+        const req = getRequest();
+        const raw =
+          req.headers.get("cf-connecting-ip") ??
+          req.headers.get("x-real-ip") ??
+          (req.headers.get("x-forwarded-for") ?? "").split(",")[0];
+        const ip = (raw ?? "").trim();
+        return ip && ip.length <= 45 ? ip : null;
+      } catch {
+        return null;
+      }
+    })();
+    if (clientIp) {
+      profilePatch.last_ip = clientIp;
+      if (!existingProfile?.user_id) profilePatch.signup_ip = clientIp;
+    }
+    profilePatch.last_seen_at = new Date().toISOString();
     if (tgUser.username) profilePatch.username = tgUser.username;
     if (tgUser.first_name) profilePatch.first_name = tgUser.first_name;
     if (tgUser.last_name) profilePatch.last_name = tgUser.last_name;
