@@ -783,37 +783,39 @@ function PromoBanner() {
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative rounded-2xl p-4 overflow-hidden"
+      className="relative rounded-3xl p-4 overflow-hidden shadow-xl"
       style={{
         background:
-          "linear-gradient(135deg, oklch(0.35 0.16 25) 0%, oklch(0.48 0.19 45) 55%, oklch(0.72 0.17 78) 100%)",
+          "linear-gradient(135deg, oklch(0.22 0.06 255) 0%, oklch(0.32 0.09 245) 50%, oklch(0.46 0.13 225) 100%)",
       }}
     >
-      <div className="absolute -top-10 -right-8 w-36 h-36 rounded-full bg-white/20 blur-2xl pointer-events-none" />
+      <div className="absolute -top-16 -left-10 w-48 h-48 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-16 -right-8 w-52 h-52 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
       <div className="relative flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-white/95 grid place-items-center shrink-0 shadow-lg">
-          <Sparkles className="w-6 h-6 text-orange-600" strokeWidth={2.5} />
+        <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 grid place-items-center shrink-0 shadow-lg">
+          <Sparkles className="w-6 h-6 text-cyan-300" strokeWidth={2.5} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-bold tracking-widest text-white/90 uppercase">
+          <div className="eyebrow text-white/70">
             {t("promo.title")}
           </div>
-          <div className="text-lg font-extrabold text-white leading-tight">
+          <div className="font-display text-xl font-bold text-white leading-tight text-glow-white">
             +{pct.toFixed(0)}% {t("promo.headline")}
           </div>
-          <div className="text-[11px] text-white/85 leading-tight mt-0.5">
+          <div className="text-[11px] text-white/70 leading-tight mt-0.5">
             {t("promo.sub")}
           </div>
         </div>
       </div>
-      <div className="relative mt-3 rounded-xl bg-black/25 px-3 py-2 flex items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold text-white">{t("promo.ends_in")}</span>
+      <div className="relative mt-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2 flex items-center justify-between gap-2">
+        <span className="text-[11px] font-semibold text-white/80">{t("promo.ends_in")}</span>
         <BonusCountdown expiresAt={promo.ends_at} />
       </div>
-      <div className="relative mt-2 text-[10px] text-white/80 leading-tight">
+      <div className="relative mt-2 text-[10px] text-white/60 leading-tight">
         {t("promo.gift_saved")}
       </div>
     </motion.div>
+
   );
 }
 
