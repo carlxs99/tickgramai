@@ -88,6 +88,32 @@ export type Database = {
           },
         ]
       }
+      deposit_promotion_uses: {
+        Row: {
+          promotion_id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          promotion_id: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          promotion_id?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_promotion_uses_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "deposit_promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deposit_promotions: {
         Row: {
           created_at: string
@@ -665,6 +691,7 @@ export type Database = {
           next_claim_at: string
         }[]
       }
+      claim_deposit_promotion: { Args: { _user_id: string }; Returns: number }
       claim_referral_milestone:
         | {
             Args: { _tier: number }

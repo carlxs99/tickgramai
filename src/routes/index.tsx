@@ -779,6 +779,8 @@ function PromoBanner() {
   const promo = data?.promotion ?? null;
   if (!promo) return null;
   const pct = Number(promo.percent);
+  const used = !!promo.used;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
@@ -803,7 +805,7 @@ function PromoBanner() {
             +{pct.toFixed(0)}% {t("promo.headline")}
           </div>
           <div className="text-[11px] text-white/70 leading-tight mt-0.5">
-            {t("promo.sub")}
+            {used ? t("promo.used") : t("promo.sub")}
           </div>
         </div>
       </div>
@@ -812,8 +814,9 @@ function PromoBanner() {
         <BonusCountdown expiresAt={promo.ends_at} />
       </div>
       <div className="relative mt-2 text-[10px] text-white/60 leading-tight">
-        {t("promo.gift_saved")}
+        {used ? t("promo.once_only") : t("promo.gift_saved")}
       </div>
+
     </motion.div>
 
   );
@@ -1664,9 +1667,11 @@ function DepositTab() {
   const promoFn = useServerFn(getActivePromotion);
   const { data: promoData } = useQuery({ queryKey: ["promotion"], queryFn: () => promoFn(), refetchInterval: 60_000 });
   const promo = promoData?.promotion ?? null;
-  // The site-wide promotion always takes precedence; the personal gift-box
-  // bonus is kept for the next deposit.
-  const bonusPct = promo ? Number(promo.percent) : activeBonus ? Number(activeBonus.percent) : 0;
+  // The site-wide promotion takes precedence, but only once per user; the
+  // personal gift-box bonus is kept for the next deposit.
+  const promoUsable = !!promo && !promo.used;
+  const bonusPct = promoUsable ? Number(promo!.percent) : activeBonus ? Number(activeBonus.percent) : 0;
+
 
 
   // Reinvest
