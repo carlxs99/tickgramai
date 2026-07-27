@@ -44,7 +44,9 @@ const en: Dict = {
 
   "promo.title": "Weekly promotion",
   "promo.headline": "deposit bonus for everyone",
-  "promo.sub": "Every deposit made now is credited with this extra bonus.",
+  "promo.sub": "Your next deposit is credited with this extra bonus. One use per user.",
+  "promo.used": "You already used this promotion. It applies once per user.",
+  "promo.once_only": "The weekly promotion can only be used once per user.",
   "promo.ends_in": "Ends in",
   "promo.gift_saved": "Your gift-box bonus is saved for your next deposit.",
   "gift.title": "Gift Boxes",
@@ -282,7 +284,9 @@ const es: Dict = {
 
   "promo.title": "Promoción semanal",
   "promo.headline": "de bono en depósitos para todos",
-  "promo.sub": "Cada depósito que hagas ahora se acredita con este bono extra.",
+  "promo.sub": "Tu próximo depósito se acredita con este bono extra. Un solo uso por usuario.",
+  "promo.used": "Ya usaste esta promoción. Solo se puede usar una vez por usuario.",
+  "promo.once_only": "La promoción semanal solo se puede usar una vez por usuario.",
   "promo.ends_in": "Termina en",
   "promo.gift_saved": "Tu bono de gift box se guarda para tu próximo depósito.",
   "gift.title": "Cajas de Regalo",
