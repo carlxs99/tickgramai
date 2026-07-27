@@ -366,9 +366,11 @@ export const getTopMiners = createServerFn({ method: "GET" })
       .eq("role", "admin");
     const adminIds = (adminRoles ?? []).map((r: any) => r.user_id).filter(Boolean);
 
+    // Public ranking payload: never expose other users' balances or raw
+    // Telegram IDs. Only the display fields the leaderboard UI renders.
     const query = supabaseAdmin
       .from("profiles")
-      .select("username, first_name, avatar_url, telegram_id, mining_rate, mining_rate_usd, balance")
+      .select("username, first_name, avatar_url, mining_rate, mining_rate_usd, balance")
       .order("mining_rate_usd", { ascending: false })
       .order("balance", { ascending: false })
       .limit(100);
@@ -378,7 +380,13 @@ export const getTopMiners = createServerFn({ method: "GET" })
 
     const { data, error } = await query;
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map((p: any) => ({
+      username: p.username ?? null,
+      first_name: p.first_name ?? null,
+      avatar_url: p.avatar_url ?? null,
+      mining_rate: Number(p.mining_rate ?? 0),
+      mining_rate_usd: Number(p.mining_rate_usd ?? 0),
+    }));
   });
 
 // Returns the current user's global rank based on mining_rate_usd.
