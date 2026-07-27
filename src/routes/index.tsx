@@ -1609,7 +1609,13 @@ function DepositTab() {
   const giftListFn = useServerFn(listGiftBoxes);
   const { data: giftData } = useQuery({ queryKey: ["gift-boxes"], queryFn: () => giftListFn(), refetchInterval: 60_000 });
   const activeBonus = giftData?.activeBonus as { percent: number; expires_at: string } | null | undefined;
-  const bonusPct = activeBonus ? Number(activeBonus.percent) : 0;
+  const promoFn = useServerFn(getActivePromotion);
+  const { data: promoData } = useQuery({ queryKey: ["promotion"], queryFn: () => promoFn(), refetchInterval: 60_000 });
+  const promo = promoData?.promotion ?? null;
+  // The site-wide promotion always takes precedence; the personal gift-box
+  // bonus is kept for the next deposit.
+  const bonusPct = promo ? Number(promo.percent) : activeBonus ? Number(activeBonus.percent) : 0;
+
 
   // Reinvest
   const reinvestFn = useServerFn(reinvestBalance);
