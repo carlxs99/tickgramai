@@ -246,15 +246,24 @@ export const adminSuspiciousAccounts = createServerFn({ method: "GET" })
       const label =
         signal === "shared_wallet" ? "Misma wallet TON conectada"
         : signal === "shared_payout_address" ? "Misma dirección de retiro"
+        : signal === "shared_ip" ? "Misma dirección IP (conexión actual)"
+        : signal === "shared_signup_ip" ? "Misma IP en el registro"
         : signal === "shared_avatar" ? "Misma foto de perfil de Telegram"
         : "Ráfaga de registros del mismo invitador sin depósitos";
       const detail =
         signal === "shared_wallet" ? (accounts.find((a) => a.wallet_address)?.wallet_address ?? "")
         : signal === "shared_payout_address" ? g.group_key.replace(/^payout:/, "")
+        : signal === "shared_ip" ? `IP ${g.group_key.replace(/^ip:/, "")}`
+        : signal === "shared_signup_ip" ? `IP de registro ${g.group_key.replace(/^signupip:/, "")}`
         : signal === "shared_avatar" ? "Mismo file_id de avatar"
         : "Registradas en la misma hora, 0 depósitos";
       // Risk: more accounts + money-related signals = higher score.
-      const base = signal === "referral_burst" ? 25 : signal === "shared_avatar" ? 35 : 55;
+      const base =
+        signal === "referral_burst" ? 25
+        : signal === "shared_avatar" ? 35
+        : signal === "shared_signup_ip" ? 45
+        : signal === "shared_ip" ? 60
+        : 55;
       const risk = Math.min(100, base + (Number(g.account_count) - 1) * 10);
       return {
         group_key: g.group_key as string,
@@ -274,6 +283,9 @@ export const adminSuspiciousAccounts = createServerFn({ method: "GET" })
           deposit_total: Number(a.deposit_total ?? 0),
           mining_rate_usd: Number(a.mining_rate_usd ?? 0),
           wallet_address: a.wallet_address,
+          last_ip: a.last_ip ?? null,
+          signup_ip: a.signup_ip ?? null,
+          last_seen_at: a.last_seen_at ?? null,
           created_at: a.created_at,
           banned: !!a.banned,
           ban_reason: a.ban_reason ?? null,
