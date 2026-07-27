@@ -3215,9 +3215,9 @@ function AdminSecuritySection() {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2">
-        <AdminKPI label="Grupos sospechosos" value={String(data?.totals.groups ?? 0)} icon={Fingerprint} />
-        <AdminKPI label="Cuentas implicadas" value={String(data?.totals.accounts ?? 0)} icon={Users} />
-        <AdminKPI label="Baneados" value={String(data?.totals.banned ?? 0)} icon={Ban} />
+        <AdminKPI label="Grupos sospechosos" value={String(data?.totals.groups ?? 0)} icon={<Fingerprint className="w-4 h-4" />} />
+        <AdminKPI label="Cuentas implicadas" value={String(data?.totals.accounts ?? 0)} icon={<Users className="w-4 h-4" />} />
+        <AdminKPI label="Baneados" value={String(data?.totals.banned ?? 0)} icon={<Ban className="w-4 h-4" />} />
       </div>
 
       <div className="flex gap-2">
