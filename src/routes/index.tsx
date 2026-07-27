@@ -805,7 +805,7 @@ function PromoBanner() {
             +{pct.toFixed(0)}% {t("promo.headline")}
           </div>
           <div className="text-[11px] text-white/70 leading-tight mt-0.5">
-            {t("promo.sub")}
+            {used ? t("promo.used") : t("promo.sub")}
           </div>
         </div>
       </div>
@@ -814,8 +814,9 @@ function PromoBanner() {
         <BonusCountdown expiresAt={promo.ends_at} />
       </div>
       <div className="relative mt-2 text-[10px] text-white/60 leading-tight">
-        {t("promo.gift_saved")}
+        {used ? t("promo.once_only") : t("promo.gift_saved")}
       </div>
+
     </motion.div>
 
   );
