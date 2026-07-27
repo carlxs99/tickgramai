@@ -1,3 +1,4 @@
+import { assertNotBanned } from "@/lib/ban-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -52,6 +53,7 @@ export const getMe = createServerFn({ method: "GET" })
 export const collectIncome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { userId } = context;
     // Fetch current TON price server-side (never trust the client for economic inputs).
     const tonPrice = await fetchTonPriceUsdt();
@@ -99,6 +101,7 @@ export const completeTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { taskId: string }) => z.object({ taskId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { supabase, userId } = context;
     const { data: task, error: tErr } = await supabase
       .from("tasks").select("id,reward,is_active,kind,target_chat,min_deposit").eq("id", data.taskId).maybeSingle();
@@ -213,6 +216,7 @@ export const submitDeposit = createServerFn({ method: "POST" })
       txHash: z.string().max(200).optional(),
     }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { userId } = context;
     // This endpoint records the user's INTENT to deposit. It does NOT credit
     // mining_rate — real credit comes only from on-chain events processed by
@@ -247,6 +251,7 @@ export const reinvestBalance = createServerFn({ method: "POST" })
   .inputValidator((d: { amount: number }) =>
     z.object({ amount: z.number().positive().min(0.1) }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Atomic decrement first — returns NULL if balance is insufficient.
@@ -304,6 +309,7 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
       memo: z.string().trim().max(200).optional(),
     }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { userId } = context;
     if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
       throw new Error("Invalid address format");
@@ -502,6 +508,7 @@ export const claimReferralMilestone = createServerFn({ method: "POST" })
     z.object({ tier: z.number().int().min(1).max(7) }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { data: rows, error } = await context.supabase.rpc(
       "claim_referral_milestone" as never,
       { _tier: data.tier } as never,
@@ -568,6 +575,7 @@ export const createPartnerTask = createServerFn({ method: "POST" })
       targetClicks: z.number().int().min(PARTNER_MIN_CLICKS).max(1_000_000),
     }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -611,6 +619,7 @@ export const completePartnerTask = createServerFn({ method: "POST" })
   .inputValidator((d: { partnerTaskId: string }) =>
     z.object({ partnerTaskId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
