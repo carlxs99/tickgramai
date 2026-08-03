@@ -1985,11 +1985,13 @@ function WithdrawTab() {
       return rows.some((w) => w.status === "pending" || w.status === "processing") ? 8000 : false;
     },
   });
-  const amountNum = Number(String(amount).replace(",", "."));
-  // Small tolerance: the displayed/quick-filled minimum and price rounding must not
-  // block a user who actually has the minimum.
-  const amountInvalid =
-    isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram * 0.995);
+  const normalizedAmount = String(amount).trim().replace(",", ".");
+  const amountNum = Number(normalizedAmount);
+  const amountInvalid = !Number.isFinite(amountNum) || amountNum <= 0;
+  // The live browser quote is informative only. The server performs the definitive
+  // $3 minimum check with its current trusted quote, avoiding client/server drift.
+  const appearsBelowMinimum =
+    !amountInvalid && minGram > 0 && amountNum < minGram * 0.995;
   const mut = useMutation({
     mutationFn: () => {
       if (amountInvalid) throw new Error(t("withdraw.min_error", { amount: formatGram(minDisplay, 4) }));
@@ -2045,11 +2047,11 @@ function WithdrawTab() {
             <button type="button" onClick={() => setAmount(String(Math.floor(balanceNum * 10000) / 10000))}
               className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MAX</button>
           </div>
-          {amount.trim() !== "" && amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minDisplay, 4) })}</p>}
+          {amount.trim() !== "" && (amountInvalid || appearsBelowMinimum) && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minDisplay, 4) })}</p>}
         </Field>
 
         <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
-        {!amountInvalid && (
+        {!amountInvalid && !appearsBelowMinimum && (
           <div className="flex justify-between text-sm pt-1 border-t border-white/5">
             <span className="text-muted-foreground">{t("withdraw.net_label")}</span>
             <span className="font-semibold text-[color:var(--success)]">{formatGram(amountNum * 0.95)} GRAM</span>
