@@ -318,9 +318,9 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     const tonPrice = await fetchTonPriceUsdt();
     if (!(tonPrice > 0)) throw new Error("Precio TON no disponible");
     const minGram = 3 / tonPrice;
-    // 0.5% tolerance: the UI rounds the displayed minimum and the TON price can
-    // drift slightly between the client quote and this request.
-    if (data.amount < minGram * 0.995) {
+    // Allow a small quote buffer because the UI and server cannot fetch the
+    // market at the exact same instant. The server remains authoritative.
+    if (data.amount < minGram * 0.99) {
       throw new Error(`Minimum withdrawal is ${minGram.toFixed(4)} GRAM`);
     }
     // 5% network fee (must match UI copy in withdraw.subtitle / withdraw.fee_label).
