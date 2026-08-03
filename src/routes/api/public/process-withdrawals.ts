@@ -24,8 +24,16 @@ async function processOne(row: any, supabaseAdmin: any) {
   if (!claim.data) return { id: row.id, skipped: true };
 
   const fail = async (msg: string) => {
-    await supabaseAdmin.from("withdrawals").update({ status: "failed", error_message: msg.slice(0, 500) }).eq("id", row.id);
-    // Atomic refund: prevents lost-update against concurrent balance mutations.
+    // Only the worker that successfully transitions processing -> failed may
+    // refund. This makes retries/concurrent cron invocations refund-safe.
+    const { data: failedRow } = await supabaseAdmin
+      .from("withdrawals")
+      .update({ status: "failed", error_message: msg.slice(0, 500) })
+      .eq("id", row.id)
+      .eq("status", "processing")
+      .select("id")
+      .maybeSingle();
+    if (!failedRow) return;
     await supabaseAdmin.rpc("atomic_add_balance", { _user_id: row.user_id, _amount: Number(row.amount) });
     // Let the user know their balance was returned.
     try {
@@ -114,17 +122,60 @@ async function processOne(row: any, supabaseAdmin: any) {
     const hashBuf = extCell.hash();
     txHashB64 = hashBuf.toString("base64");
     txHashHex = hashBuf.toString("hex");
+    // Persist the external-message identity before broadcasting. If the HTTP
+    // call has an ambiguous network failure, a later audit can reconcile it
+    // without ever treating the withdrawal as unsent and refunding it twice.
+    const { error: persistErr } = await supabaseAdmin.from("withdrawals").update({
+      tx_hash: txHashHex,
+      error_message: null,
+    }).eq("id", row.id).eq("status", "processing");
+    if (persistErr) {
+      await fail(`persist transfer identity: ${persistErr.message}`);
+      return { id: row.id, error: "persist_failed" };
+    }
     await client.sendFile(extCell.toBoc());
   } catch (e: any) {
-    await fail(`send: ${e?.message ?? String(e)}`);
-    return { id: row.id, error: "send_failed" };
+    // Once a signed external message may have reached the provider, an error
+    // is ambiguous: refunding here could pay the user and also send the TON.
+    // Keep it processing for reconciliation/retry instead.
+    await supabaseAdmin.from("withdrawals").update({
+      error_message: `broadcast pending confirmation: ${e?.message ?? String(e)}`.slice(0, 500),
+    }).eq("id", row.id).eq("status", "processing");
+    return { id: row.id, awaiting_confirmation: true };
   }
 
-  await supabaseAdmin.from("withdrawals").update({
+  // A successful JSON-RPC submission only means the provider accepted the
+  // message. Confirm the wallet seqno changed before declaring the withdrawal
+  // paid. If confirmation is delayed, leave it processing for the next run.
+  let confirmed = false;
+  const contract = client.open(wallet);
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      if ((await contract.getSeqno()) > seqno) {
+        confirmed = true;
+        break;
+      }
+    } catch {
+      // Transient provider read errors are retried and never trigger a refund.
+    }
+  }
+  if (!confirmed) {
+    await supabaseAdmin.from("withdrawals").update({
+      error_message: "Broadcast accepted; waiting for on-chain confirmation",
+    }).eq("id", row.id).eq("status", "processing");
+    return { id: row.id, awaiting_confirmation: true, tx_hash: txHashHex };
+  }
+
+  const { data: paidRow, error: paidErr } = await supabaseAdmin.from("withdrawals").update({
     status: "paid",
     paid_at: new Date().toISOString(),
     tx_hash: txHashHex || txHashB64 || `seqno:${seqno}`,
-  }).eq("id", row.id);
+    error_message: null,
+  }).eq("id", row.id).eq("status", "processing").select("id").maybeSingle();
+  if (paidErr || !paidRow) {
+    return { id: row.id, awaiting_reconciliation: true, tx_hash: txHashHex };
+  }
 
   // Notify withdrawals group + DM the user
   try {
@@ -190,9 +241,11 @@ export const Route = createFileRoute("/api/public/process-withdrawals")({
         const { data: rows, error } = await supabaseAdmin
           .from("withdrawals")
           .select("*")
-          .eq("status", "pending")
+          .in("status", ["pending"])
           .order("created_at", { ascending: true })
-          .limit(10);
+          // One transfer per run guarantees each withdrawal gets a distinct
+          // wallet seqno and avoids collisions while the prior tx confirms.
+          .limit(1);
         if (error) return Response.json({ error: error.message }, { status: 500 });
 
         const results: any[] = [];
@@ -200,16 +253,17 @@ export const Route = createFileRoute("/api/public/process-withdrawals")({
           try {
             results.push(await processOne(row, supabaseAdmin));
           } catch (e: any) {
-            // Unexpected crash: only refund if the row never reached "paid".
+            // Never refund an unexpected processing-state crash automatically:
+            // the signed message may already have reached the chain. Preserve
+            // it for reconciliation instead of risking a double payment.
             const { data: cur } = await supabaseAdmin
-              .from("withdrawals").select("status").eq("id", row.id).maybeSingle();
+              .from("withdrawals").select("status,tx_hash").eq("id", row.id).maybeSingle();
             if (cur?.status === "processing") {
               await supabaseAdmin.from("withdrawals")
-                .update({ status: "failed", error_message: String(e?.message ?? e).slice(0, 500) })
+                .update({ error_message: `worker retry required: ${String(e?.message ?? e)}`.slice(0, 500) })
                 .eq("id", row.id).eq("status", "processing");
-              await supabaseAdmin.rpc("atomic_add_balance", { _user_id: row.user_id, _amount: Number(row.amount) });
             }
-            results.push({ id: row.id, error: e?.message ?? String(e), refunded: cur?.status === "processing" });
+            results.push({ id: row.id, error: e?.message ?? String(e), awaiting_reconciliation: cur?.status === "processing" });
           }
 
         }
