@@ -2034,9 +2034,10 @@ function WithdrawTab() {
             <span className="font-semibold text-[color:var(--success)]">{formatGram(amountNum * 0.95)} GRAM</span>
           </div>
         )}
-        <button disabled={mut.isPending || amountInvalid || !address.trim()} onClick={() => mut.mutate()}
+        <button disabled={amountInvalid || !address.trim()} onClick={() => mut.mutate()}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
-          {mut.isPending ? t("withdraw.submitting") : t("withdraw.request")}
+          {t("withdraw.request")}
+
         </button>
       </div>
       <div className="card-glass rounded-2xl p-4">
