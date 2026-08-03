@@ -2054,12 +2054,7 @@ function WithdrawTab() {
         {!!hist?.length && (
           <PaginatedList
             items={hist}
-            renderItem={(w: any) => (
-              <div key={w.id} className="flex justify-between text-sm py-1.5">
-                <span>{formatGram(w.amount)} GRAM</span>
-                <span className="text-muted-foreground">{w.status}</span>
-              </div>
-            )}
+            renderItem={(w: any) => <WithdrawalRow key={w.id} w={w} />}
           />
         )}
       </div>
