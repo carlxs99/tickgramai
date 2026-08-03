@@ -1973,7 +1973,15 @@ function WithdrawTab() {
   const minGram = price > 0 ? 3 / price : 0;
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
-  const { data: hist } = useQuery({ queryKey: ["withdrawals"], queryFn: () => lFn() });
+  const { data: hist } = useQuery({
+    queryKey: ["withdrawals"],
+    queryFn: () => lFn(),
+    // Keep auditing live while an operation is still in flight.
+    refetchInterval: (q) => {
+      const rows = (q.state.data as any[]) ?? [];
+      return rows.some((w) => w.status === "pending" || w.status === "processing") ? 8000 : false;
+    },
+  });
   const amountNum = Number(amount);
   const amountInvalid = isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram);
   const mut = useMutation({
@@ -2046,18 +2054,64 @@ function WithdrawTab() {
         {!!hist?.length && (
           <PaginatedList
             items={hist}
-            renderItem={(w: any) => (
-              <div key={w.id} className="flex justify-between text-sm py-1.5">
-                <span>{formatGram(w.amount)} GRAM</span>
-                <span className="text-muted-foreground">{w.status}</span>
-              </div>
-            )}
+            renderItem={(w: any) => <WithdrawalRow key={w.id} w={w} />}
           />
         )}
       </div>
     </div>
   );
 }
+
+// Audit-friendly row: normalized state, timestamps, destination and tx link.
+function WithdrawalRow({ w }: { w: any }) {
+  const [open, setOpen] = useState(false);
+  const raw = String(w.status ?? "");
+  const state =
+    raw === "paid" ? "sent" : raw === "failed" ? "refunded" : raw === "processing" ? "processing" : "pending";
+  const styles: Record<string, string> = {
+    sent: "bg-[color:var(--success)]/15 text-[color:var(--success)] border-[color:var(--success)]/30",
+    refunded: "bg-destructive/15 text-destructive border-destructive/30",
+    processing: "bg-accent/15 text-accent border-accent/30",
+    pending: "bg-white/10 text-white/70 border-white/15",
+  };
+  const fmtDate = (v?: string | null) =>
+    v ? new Date(v).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : "—";
+  const shortAddr = w.address ? `${w.address.slice(0, 6)}…${w.address.slice(-4)}` : "—";
+
+  return (
+    <div className="py-2 border-b border-white/5 last:border-0">
+      <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 text-sm">
+        <span className="flex flex-col items-start">
+          <span className="font-semibold tabular-nums">{formatGram(w.amount)} GRAM</span>
+          <span className="text-[10px] text-muted-foreground">{fmtDate(w.created_at)}</span>
+        </span>
+        <span className={`text-[10px] uppercase tracking-wide px-2 py-1 rounded-full border ${styles[state]}`}>
+          {state}
+        </span>
+      </button>
+      {open && (
+        <div className="mt-2 space-y-1 text-[11px] text-muted-foreground">
+          <div className="flex justify-between"><span>Net</span><span className="tabular-nums">{formatGram(w.net_amount ?? 0)} GRAM</span></div>
+          <div className="flex justify-between"><span>Fee</span><span className="tabular-nums">{formatGram(w.fee ?? 0)} GRAM</span></div>
+          <div className="flex justify-between"><span>To</span><span className="font-mono">{shortAddr}</span></div>
+          <div className="flex justify-between"><span>Requested</span><span>{fmtDate(w.created_at)}</span></div>
+          <div className="flex justify-between"><span>Processed</span><span>{fmtDate(w.processed_at)}</span></div>
+          <div className="flex justify-between"><span>Paid</span><span>{fmtDate(w.paid_at)}</span></div>
+          <div className="flex justify-between"><span>Attempts</span><span>{w.attempts ?? 0}</span></div>
+          {state === "refunded" && (
+            <p className="text-destructive">Refunded to your balance{w.error_message ? `: ${w.error_message}` : ""}</p>
+          )}
+          {w.tx_hash && (
+            <a href={`https://tonscan.org/tx/${w.tx_hash}`} target="_blank" rel="noreferrer" className="block text-accent underline break-all">
+              View on TONScan →
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function PaginatedList<T>({
   items,
