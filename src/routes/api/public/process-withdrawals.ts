@@ -81,7 +81,12 @@ async function processOne(row: any, supabaseAdmin: any) {
     const contract = client.open(wallet);
 
     seqno = await contract.getSeqno();
-    value = toNano(String(row.net_amount));
+    const netAmount = Number(row.net_amount);
+    if (!Number.isFinite(netAmount) || netAmount <= 0) {
+      await fail("Invalid net withdrawal amount");
+      return { id: row.id, error: "invalid_net_amount" };
+    }
+    value = toNano(netAmount.toFixed(9));
 
     // A previous run may have broadcast successfully but timed out before it
     // could observe confirmation. A higher wallet seqno proves it landed.

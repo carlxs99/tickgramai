@@ -327,25 +327,23 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     const fee = data.amount * 0.05;
     const net = data.amount - fee;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Atomic balance decrement: returns the new balance if the user had enough
-    // funds, or NULL otherwise. Prevents concurrent withdrawals from
-    // double-spending against the same balance.
-    const { data: newBalance, error: dErr } = await supabaseAdmin
-      .rpc("atomic_decrement_balance" as never, { _user_id: userId, _amount: data.amount } as never);
-    if (dErr) throw dErr;
-    if (newBalance === null || newBalance === undefined) {
-      throw new Error("Insufficient balance");
-    }
-    const { error } = await supabaseAdmin.from("withdrawals").insert({
-      user_id: userId, amount: data.amount, address: data.address, memo: data.memo ?? null,
-      fee, net_amount: net, status: "pending",
-    });
+    // Debit and audit-row creation happen in one database transaction. A
+    // timeout can therefore never charge the user without recording the job.
+    const { data: created, error } = await supabaseAdmin.rpc("create_withdrawal_atomic" as never, {
+      _user_id: userId,
+      _amount: data.amount,
+      _address: data.address,
+      _memo: data.memo ?? null,
+      _fee: fee,
+      _net_amount: net,
+    } as never);
     if (error) {
-      // Refund on insert failure so the user is not charged for a non-existent withdrawal.
-      await supabaseAdmin.rpc("atomic_add_balance" as never, { _user_id: userId, _amount: data.amount } as never);
+      if (/insufficient balance/i.test(error.message)) throw new Error("Insufficient balance");
       throw error;
     }
-    return { ok: true, fee, net };
+    const createdRow: any = Array.isArray(created) ? created[0] : created;
+    if (!createdRow?.withdrawal_id) throw new Error("Withdrawal could not be recorded");
+    return { ok: true, fee, net, withdrawalId: createdRow.withdrawal_id };
   });
 
 
