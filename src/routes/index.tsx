@@ -1982,9 +1982,30 @@ function WithdrawTab() {
       if (!address.trim()) throw new Error(t("withdraw.address"));
       return wFn({ data: { amount: amountNum, address } });
     },
-    onSuccess: (r) => { toast.success(t("withdraw.requested_net", { amount: formatGram(r.net) })); qc.invalidateQueries(); },
-    onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
+    // Instant UX: deduct locally and clear the form right away; the request
+    // keeps running in the background (server also decrements atomically).
+    onMutate: async () => {
+      const prev = qc.getQueryData<any>(["me"]);
+      if (prev?.profile) {
+        qc.setQueryData(["me"], {
+          ...prev,
+          profile: { ...prev.profile, balance: Math.max(0, Number(prev.profile.balance ?? 0) - amountNum) },
+        });
+      }
+      setAmount("");
+      toast.success(t("withdraw.requested_net", { amount: formatGram(amountNum * 0.95) }));
+      return { prev };
+    },
+    onError: (e: any, _v, ctx: any) => {
+      if (ctx?.prev) qc.setQueryData(["me"], ctx.prev);
+      toast.error(e?.message ?? t("common.failed"));
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      qc.invalidateQueries({ queryKey: ["withdrawals"] });
+    },
   });
+
   return (
     <div className="space-y-3">
       <h2 className="text-2xl font-bold text-white text-glow-white">{t("withdraw.title")}</h2>
