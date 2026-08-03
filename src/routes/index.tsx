@@ -2039,8 +2039,15 @@ function WithdrawTab() {
         </div>
         <Field label={t("withdraw.amount")}>
           <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" />
-          {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minDisplay, 4) })}</p>}
+          <div className="flex gap-2 mt-2">
+            <button type="button" onClick={() => setAmount(String(minDisplay))}
+              className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MIN</button>
+            <button type="button" onClick={() => setAmount(String(Math.floor(balanceNum * 10000) / 10000))}
+              className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MAX</button>
+          </div>
+          {amount.trim() !== "" && amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minDisplay, 4) })}</p>}
         </Field>
+
         <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
         {!amountInvalid && (
           <div className="flex justify-between text-sm pt-1 border-t border-white/5">
