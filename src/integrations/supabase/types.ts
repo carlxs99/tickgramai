@@ -726,6 +726,20 @@ export type Database = {
         Args: { _user_id: string }
         Returns: number
       }
+      create_withdrawal_atomic: {
+        Args: {
+          _address: string
+          _amount: number
+          _fee: number
+          _memo: string
+          _net_amount: number
+          _user_id: string
+        }
+        Returns: {
+          new_balance: number
+          withdrawal_id: string
+        }[]
+      }
       expire_stale_pending_deposits: { Args: never; Returns: number }
       generate_memo_tag: { Args: never; Returns: string }
       generate_partner_memo: { Args: never; Returns: string }
