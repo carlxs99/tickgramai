@@ -31,6 +31,16 @@ const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
 
 export const Route = createFileRoute("/")({
   ssr: false,
+  head: () => ({
+    meta: [
+      { title: "TickGram — Mine and withdraw GRAM" },
+      { name: "description", content: "Mine GRAM, complete tasks, invite friends and manage deposits and withdrawals in TickGram." },
+      { property: "og:title", content: "TickGram — Mine and withdraw GRAM" },
+      { property: "og:description", content: "Mine GRAM, complete tasks, invite friends and manage your TickGram balance." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: MinerApp,
 });
 
@@ -1997,8 +2007,8 @@ function WithdrawTab() {
   const mut = useMutation({
     mutationFn: (request: { amount: number; address: string }) =>
       wFn({ data: request }),
-    // Instant UX: deduct locally and clear the form right away; the request
-    // keeps running in the background (server also decrements atomically).
+    // Reflect the debit immediately, but retain the form values until the
+    // authoritative server transaction succeeds so a rejection is recoverable.
     onMutate: async (request) => {
       const prev = qc.getQueryData<any>(["me"]);
       if (prev?.profile) {
@@ -2007,13 +2017,15 @@ function WithdrawTab() {
           profile: { ...prev.profile, balance: Math.max(0, Number(prev.profile.balance ?? 0) - request.amount) },
         });
       }
-      setAmount("");
-      toast.success(t("withdraw.requested_net", { amount: formatGram(request.amount * 0.95) }));
       return { prev };
     },
     onError: (e: any, _v, ctx: any) => {
       if (ctx?.prev) qc.setQueryData(["me"], ctx.prev);
       toast.error(e?.message ?? t("common.failed"));
+    },
+    onSuccess: (_result, request) => {
+      setAmount("");
+      toast.success(t("withdraw.requested_net", { amount: formatGram(request.amount * 0.95) }));
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
@@ -2024,10 +2036,6 @@ function WithdrawTab() {
   const requestWithdrawal = () => {
     if (amountEmpty || amountInvalid) {
       toast.error(t("withdraw.amount_required"));
-      return;
-    }
-    if (appearsBelowMinimum) {
-      toast.error(t("withdraw.min_error", { amount: formatGram(minDisplay, 4) }));
       return;
     }
     if (exceedsBalance) {
@@ -2068,12 +2076,12 @@ function WithdrawTab() {
               className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MAX</button>
           </div>
           {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.amount_required")}</p>}
-          {appearsBelowMinimum && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minDisplay, 4) })}</p>}
+          {appearsBelowMinimum && <p className="text-[10px] text-muted-foreground mt-1">{t("withdraw.minimum_hint", { amount: formatGram(minDisplay, 4) })}</p>}
           {exceedsBalance && <p className="text-[10px] text-destructive mt-1">{t("withdraw.insufficient")}</p>}
         </Field>
 
         <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
-        {!amountEmpty && !amountInvalid && !appearsBelowMinimum && !exceedsBalance && (
+        {!amountEmpty && !amountInvalid && !exceedsBalance && (
           <div className="flex justify-between text-sm pt-1 border-t border-white/5">
             <span className="text-muted-foreground">{t("withdraw.net_label")}</span>
             <span className="font-semibold text-[color:var(--success)]">{formatGram(amountNum * 0.95)} GRAM</span>
