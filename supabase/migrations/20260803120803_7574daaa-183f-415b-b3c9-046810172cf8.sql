@@ -1,0 +1,1 @@
+SELECT cron.unschedule('weekly-promo-drain');
