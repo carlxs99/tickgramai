@@ -1973,7 +1973,15 @@ function WithdrawTab() {
   const minGram = price > 0 ? 3 / price : 0;
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
-  const { data: hist } = useQuery({ queryKey: ["withdrawals"], queryFn: () => lFn() });
+  const { data: hist } = useQuery({
+    queryKey: ["withdrawals"],
+    queryFn: () => lFn(),
+    // Keep auditing live while an operation is still in flight.
+    refetchInterval: (q) => {
+      const rows = (q.state.data as any[]) ?? [];
+      return rows.some((w) => w.status === "pending" || w.status === "processing") ? 8000 : false;
+    },
+  });
   const amountNum = Number(amount);
   const amountInvalid = isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram);
   const mut = useMutation({
