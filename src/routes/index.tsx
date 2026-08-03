@@ -1985,8 +1985,11 @@ function WithdrawTab() {
       return rows.some((w) => w.status === "pending" || w.status === "processing") ? 8000 : false;
     },
   });
-  const amountNum = Number(amount);
-  const amountInvalid = isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram);
+  const amountNum = Number(String(amount).replace(",", "."));
+  // Small tolerance: the displayed/quick-filled minimum and price rounding must not
+  // block a user who actually has the minimum.
+  const amountInvalid =
+    isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram * 0.995);
   const mut = useMutation({
     mutationFn: () => {
       if (amountInvalid) throw new Error(t("withdraw.min_error", { amount: formatGram(minGram) }));
