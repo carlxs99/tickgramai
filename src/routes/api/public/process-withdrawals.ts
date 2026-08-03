@@ -13,15 +13,20 @@ async function processOne(row: any, supabaseAdmin: any) {
     "@/lib/telegram-notify.server"
   );
 
-  // 1) Claim the row atomically: only proceed if we can flip status pending -> processing.
-  const claim = await supabaseAdmin
-    .from("withdrawals")
-    .update({ status: "processing", processed_at: new Date().toISOString(), attempts: (row.attempts ?? 0) + 1 })
-    .eq("id", row.id)
-    .eq("status", "pending")
-    .select("id")
-    .maybeSingle();
-  if (!claim.data) return { id: row.id, skipped: true };
+  // 1) Claim new rows atomically. Existing processing rows are safe retries:
+  // wallet seqno prevents two equivalent transfers from both being accepted.
+  if (row.status === "pending") {
+    const claim = await supabaseAdmin
+      .from("withdrawals")
+      .update({ status: "processing", processed_at: new Date().toISOString(), attempts: (row.attempts ?? 0) + 1 })
+      .eq("id", row.id)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
+    if (!claim.data) return { id: row.id, skipped: true };
+  } else if (row.status !== "processing") {
+    return { id: row.id, skipped: true };
+  }
 
   const fail = async (msg: string) => {
     // Only the worker that successfully transitions processing -> failed may
@@ -77,6 +82,18 @@ async function processOne(row: any, supabaseAdmin: any) {
 
     seqno = await contract.getSeqno();
     value = toNano(String(row.net_amount));
+
+    // A previous run may have broadcast successfully but timed out before it
+    // could observe confirmation. A higher wallet seqno proves it landed.
+    const awaitingSeqno = String(row.error_message ?? "").match(/wallet_seqno=(\d+)/)?.[1];
+    if (row.status === "processing" && awaitingSeqno && seqno > Number(awaitingSeqno)) {
+      const { data: reconciled } = await supabaseAdmin.from("withdrawals").update({
+        status: "paid",
+        paid_at: new Date().toISOString(),
+        error_message: null,
+      }).eq("id", row.id).eq("status", "processing").select("id").maybeSingle();
+      return { id: row.id, ok: !!reconciled, reconciled: true, tx_hash: row.tx_hash };
+    }
 
     // Insufficient hot-wallet funds -> refund instead of leaving the row stuck.
     const balance: bigint = await client.getBalance(wallet.address);
@@ -139,7 +156,7 @@ async function processOne(row: any, supabaseAdmin: any) {
     // is ambiguous: refunding here could pay the user and also send the TON.
     // Keep it processing for reconciliation/retry instead.
     await supabaseAdmin.from("withdrawals").update({
-      error_message: `broadcast pending confirmation: ${e?.message ?? String(e)}`.slice(0, 500),
+      error_message: `wallet_seqno=${seqno}; broadcast pending confirmation: ${e?.message ?? String(e)}`.slice(0, 500),
     }).eq("id", row.id).eq("status", "processing");
     return { id: row.id, awaiting_confirmation: true };
   }
@@ -162,7 +179,7 @@ async function processOne(row: any, supabaseAdmin: any) {
   }
   if (!confirmed) {
     await supabaseAdmin.from("withdrawals").update({
-      error_message: "Broadcast accepted; waiting for on-chain confirmation",
+      error_message: `wallet_seqno=${seqno}; broadcast accepted; waiting for on-chain confirmation`,
     }).eq("id", row.id).eq("status", "processing");
     return { id: row.id, awaiting_confirmation: true, tx_hash: txHashHex };
   }
@@ -241,7 +258,8 @@ export const Route = createFileRoute("/api/public/process-withdrawals")({
         const { data: rows, error } = await supabaseAdmin
           .from("withdrawals")
           .select("*")
-          .in("status", ["pending"])
+          .in("status", ["pending", "processing"])
+          .order("status", { ascending: false })
           .order("created_at", { ascending: true })
           // One transfer per run guarantees each withdrawal gets a distinct
           // wallet seqno and avoids collisions while the prior tx confirms.
