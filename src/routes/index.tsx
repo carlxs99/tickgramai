@@ -1987,29 +1987,28 @@ function WithdrawTab() {
   });
   const normalizedAmount = String(amount).trim().replace(",", ".");
   const amountNum = Number(normalizedAmount);
-  const amountInvalid = !Number.isFinite(amountNum) || amountNum <= 0;
+  const amountEmpty = normalizedAmount === "";
+  const amountInvalid = !amountEmpty && (!Number.isFinite(amountNum) || amountNum <= 0);
   // The live browser quote is informative only. The server performs the definitive
   // $3 minimum check with its current trusted quote, avoiding client/server drift.
   const appearsBelowMinimum =
-    !amountInvalid && minGram > 0 && amountNum < minGram * 0.995;
+    !amountEmpty && !amountInvalid && minGram > 0 && amountNum < minGram * 0.995;
+  const exceedsBalance = !amountEmpty && !amountInvalid && amountNum > balanceNum;
   const mut = useMutation({
-    mutationFn: () => {
-      if (amountInvalid) throw new Error(t("withdraw.min_error", { amount: formatGram(minDisplay, 4) }));
-      if (!address.trim()) throw new Error(t("withdraw.address"));
-      return wFn({ data: { amount: amountNum, address } });
-    },
+    mutationFn: (request: { amount: number; address: string }) =>
+      wFn({ data: request }),
     // Instant UX: deduct locally and clear the form right away; the request
     // keeps running in the background (server also decrements atomically).
-    onMutate: async () => {
+    onMutate: async (request) => {
       const prev = qc.getQueryData<any>(["me"]);
       if (prev?.profile) {
         qc.setQueryData(["me"], {
           ...prev,
-          profile: { ...prev.profile, balance: Math.max(0, Number(prev.profile.balance ?? 0) - amountNum) },
+          profile: { ...prev.profile, balance: Math.max(0, Number(prev.profile.balance ?? 0) - request.amount) },
         });
       }
       setAmount("");
-      toast.success(t("withdraw.requested_net", { amount: formatGram(amountNum * 0.95) }));
+      toast.success(t("withdraw.requested_net", { amount: formatGram(request.amount * 0.95) }));
       return { prev };
     },
     onError: (e: any, _v, ctx: any) => {
@@ -2021,6 +2020,27 @@ function WithdrawTab() {
       qc.invalidateQueries({ queryKey: ["withdrawals"] });
     },
   });
+
+  const requestWithdrawal = () => {
+    if (amountEmpty || amountInvalid) {
+      toast.error(t("withdraw.amount_required"));
+      return;
+    }
+    if (appearsBelowMinimum) {
+      toast.error(t("withdraw.min_error", { amount: formatGram(minDisplay, 4) }));
+      return;
+    }
+    if (exceedsBalance) {
+      toast.error(t("withdraw.insufficient"));
+      return;
+    }
+    const cleanAddress = address.trim();
+    if (!cleanAddress) {
+      toast.error(t("withdraw.address"));
+      return;
+    }
+    mut.mutate({ amount: amountNum, address: cleanAddress });
+  };
 
   return (
     <div className="space-y-3">
@@ -2044,22 +2064,24 @@ function WithdrawTab() {
           <div className="flex gap-2 mt-2">
             <button type="button" onClick={() => setAmount(String(minDisplay))}
               className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MIN</button>
-            <button type="button" onClick={() => setAmount(String(Math.floor(balanceNum * 10000) / 10000))}
+            <button type="button" onClick={() => setAmount(String(balanceNum))}
               className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MAX</button>
           </div>
-          {amount.trim() !== "" && (amountInvalid || appearsBelowMinimum) && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minDisplay, 4) })}</p>}
+          {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.amount_required")}</p>}
+          {appearsBelowMinimum && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minDisplay, 4) })}</p>}
+          {exceedsBalance && <p className="text-[10px] text-destructive mt-1">{t("withdraw.insufficient")}</p>}
         </Field>
 
         <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
-        {!amountInvalid && !appearsBelowMinimum && (
+        {!amountEmpty && !amountInvalid && !appearsBelowMinimum && !exceedsBalance && (
           <div className="flex justify-between text-sm pt-1 border-t border-white/5">
             <span className="text-muted-foreground">{t("withdraw.net_label")}</span>
             <span className="font-semibold text-[color:var(--success)]">{formatGram(amountNum * 0.95)} GRAM</span>
           </div>
         )}
-        <button disabled={amountInvalid || !address.trim()} onClick={() => mut.mutate()}
+        <button disabled={mut.isPending} onClick={requestWithdrawal}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
-          {t("withdraw.request")}
+          {mut.isPending ? t("withdraw.submitting") : t("withdraw.request")}
 
         </button>
       </div>
