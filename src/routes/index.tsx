@@ -1971,6 +1971,9 @@ function WithdrawTab() {
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
   const price = useTonPrice();
   const minGram = price > 0 ? 3 / price : 0;
+  // Shown (and quick-filled) rounded UP so typing the displayed value always passes.
+  const minDisplay = minGram > 0 ? Math.ceil(minGram * 10000) / 10000 : 0;
+  const balanceNum = Number(me.profile.balance ?? 0);
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const { data: hist } = useQuery({
