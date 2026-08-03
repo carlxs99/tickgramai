@@ -1971,6 +1971,9 @@ function WithdrawTab() {
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
   const price = useTonPrice();
   const minGram = price > 0 ? 3 / price : 0;
+  // Shown (and quick-filled) rounded UP so typing the displayed value always passes.
+  const minDisplay = minGram > 0 ? Math.ceil(minGram * 10000) / 10000 : 0;
+  const balanceNum = Number(me.profile.balance ?? 0);
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const { data: hist } = useQuery({
@@ -1982,11 +1985,14 @@ function WithdrawTab() {
       return rows.some((w) => w.status === "pending" || w.status === "processing") ? 8000 : false;
     },
   });
-  const amountNum = Number(amount);
-  const amountInvalid = isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram);
+  const amountNum = Number(String(amount).replace(",", "."));
+  // Small tolerance: the displayed/quick-filled minimum and price rounding must not
+  // block a user who actually has the minimum.
+  const amountInvalid =
+    isNaN(amountNum) || amountNum <= 0 || (minGram > 0 && amountNum < minGram * 0.995);
   const mut = useMutation({
     mutationFn: () => {
-      if (amountInvalid) throw new Error(t("withdraw.min_error", { amount: formatGram(minGram) }));
+      if (amountInvalid) throw new Error(t("withdraw.min_error", { amount: formatGram(minDisplay, 4) }));
       if (!address.trim()) throw new Error(t("withdraw.address"));
       return wFn({ data: { amount: amountNum, address } });
     },
@@ -2017,7 +2023,7 @@ function WithdrawTab() {
   return (
     <div className="space-y-3">
       <h2 className="text-2xl font-bold text-white text-glow-white">{t("withdraw.title")}</h2>
-      <p className="text-sm text-white/80">{t("withdraw.subtitle", { amount: formatGram(minGram) })}</p>
+      <p className="text-sm text-white/80">{t("withdraw.subtitle", { amount: formatGram(minDisplay, 4) })}</p>
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.available")}</span>
@@ -2025,7 +2031,7 @@ function WithdrawTab() {
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.min_label")}</span>
-          <span className="font-semibold">{minGram > 0 ? `${formatGram(minGram)} GRAM (~$3)` : "$3"}</span>
+          <span className="font-semibold">{minGram > 0 ? `${formatGram(minDisplay, 4)} GRAM (~$3)` : "$3"}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.fee_label")}</span>
@@ -2033,8 +2039,15 @@ function WithdrawTab() {
         </div>
         <Field label={t("withdraw.amount")}>
           <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" />
-          {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minGram) })}</p>}
+          <div className="flex gap-2 mt-2">
+            <button type="button" onClick={() => setAmount(String(minDisplay))}
+              className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MIN</button>
+            <button type="button" onClick={() => setAmount(String(Math.floor(balanceNum * 10000) / 10000))}
+              className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MAX</button>
+          </div>
+          {amount.trim() !== "" && amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_error", { amount: formatGram(minDisplay, 4) })}</p>}
         </Field>
+
         <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
         {!amountInvalid && (
           <div className="flex justify-between text-sm pt-1 border-t border-white/5">
