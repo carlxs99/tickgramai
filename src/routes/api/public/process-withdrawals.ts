@@ -27,6 +27,25 @@ async function processOne(row: any, supabaseAdmin: any) {
     await supabaseAdmin.from("withdrawals").update({ status: "failed", error_message: msg.slice(0, 500) }).eq("id", row.id);
     // Atomic refund: prevents lost-update against concurrent balance mutations.
     await supabaseAdmin.rpc("atomic_add_balance", { _user_id: row.user_id, _amount: Number(row.amount) });
+    // Let the user know their balance was returned.
+    try {
+      const { data: prof } = await supabaseAdmin
+        .from("profiles")
+        .select("first_name, telegram_id")
+        .eq("user_id", row.user_id)
+        .maybeSingle();
+      if (prof?.telegram_id) {
+        const name = prof.first_name || "friend";
+        await sendTelegramMessage(
+          Number(prof.telegram_id),
+          `⚠️ <b>Withdrawal could not be processed</b>\n\n` +
+            `Hi ${escapeHtml(name)}, your withdrawal of <b>${Number(row.amount).toFixed(4)} GRAM</b> could not be sent right now.\n\n` +
+            `💰 The full amount has been returned to your balance. You can try again later.`,
+        );
+      }
+    } catch (e) {
+      console.error("refund notify failed", e);
+    }
   };
 
   // 2) Validate destination address
@@ -36,17 +55,34 @@ async function processOne(row: any, supabaseAdmin: any) {
   // 3) Load hot wallet
   const raw = process.env.TON_HOT_WALLET_MNEMONIC;
   if (!raw) { await fail("Missing hot wallet mnemonic"); return { id: row.id, error: "no_mnemonic" }; }
-  const words = raw.trim().split(/\s+/);
-  const keyPair = await mnemonicToPrivateKey(words);
-  const wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
 
-  const endpoint = "https://toncenter.com/api/v2/jsonRPC";
-  const apiKey = process.env.TONCENTER_API_KEY;
-  const client = new TonClient({ endpoint, apiKey });
-  const contract = client.open(wallet);
+  let keyPair: any, wallet: any, client: any, seqno: number, value: bigint;
+  try {
+    const words = raw.trim().split(/\s+/);
+    keyPair = await mnemonicToPrivateKey(words);
+    wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
 
-  const seqno = await contract.getSeqno();
-  const value = toNano(String(row.net_amount));
+    const endpoint = "https://toncenter.com/api/v2/jsonRPC";
+    const apiKey = process.env.TONCENTER_API_KEY;
+    client = new TonClient({ endpoint, apiKey });
+    const contract = client.open(wallet);
+
+    seqno = await contract.getSeqno();
+    value = toNano(String(row.net_amount));
+
+    // Insufficient hot-wallet funds -> refund instead of leaving the row stuck.
+    const balance: bigint = await client.getBalance(wallet.address);
+    // keep a small reserve for network fees
+    const reserve = toNano("0.05");
+    if (balance < value + reserve) {
+      await fail(`insufficient hot wallet funds: have ${balance}, need ${value + reserve}`);
+      return { id: row.id, error: "insufficient_funds" };
+    }
+  } catch (e: any) {
+    await fail(`prepare: ${e?.message ?? String(e)}`);
+    return { id: row.id, error: "prepare_failed" };
+  }
+
 
   let txHashB64 = "";
   let txHashHex = "";
@@ -164,8 +200,18 @@ export const Route = createFileRoute("/api/public/process-withdrawals")({
           try {
             results.push(await processOne(row, supabaseAdmin));
           } catch (e: any) {
-            results.push({ id: row.id, error: e?.message ?? String(e) });
+            // Unexpected crash: only refund if the row never reached "paid".
+            const { data: cur } = await supabaseAdmin
+              .from("withdrawals").select("status").eq("id", row.id).maybeSingle();
+            if (cur?.status === "processing") {
+              await supabaseAdmin.from("withdrawals")
+                .update({ status: "failed", error_message: String(e?.message ?? e).slice(0, 500) })
+                .eq("id", row.id).eq("status", "processing");
+              await supabaseAdmin.rpc("atomic_add_balance", { _user_id: row.user_id, _amount: Number(row.amount) });
+            }
+            results.push({ id: row.id, error: e?.message ?? String(e), refunded: cur?.status === "processing" });
           }
+
         }
         return Response.json({ processed: results.length, results });
       },
