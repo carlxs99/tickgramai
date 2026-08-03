@@ -200,8 +200,18 @@ export const Route = createFileRoute("/api/public/process-withdrawals")({
           try {
             results.push(await processOne(row, supabaseAdmin));
           } catch (e: any) {
-            results.push({ id: row.id, error: e?.message ?? String(e) });
+            // Unexpected crash: only refund if the row never reached "paid".
+            const { data: cur } = await supabaseAdmin
+              .from("withdrawals").select("status").eq("id", row.id).maybeSingle();
+            if (cur?.status === "processing") {
+              await supabaseAdmin.from("withdrawals")
+                .update({ status: "failed", error_message: String(e?.message ?? e).slice(0, 500) })
+                .eq("id", row.id).eq("status", "processing");
+              await supabaseAdmin.rpc("atomic_add_balance", { _user_id: row.user_id, _amount: Number(row.amount) });
+            }
+            results.push({ id: row.id, error: e?.message ?? String(e), refunded: cur?.status === "processing" });
           }
+
         }
         return Response.json({ processed: results.length, results });
       },
