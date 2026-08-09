@@ -129,6 +129,7 @@ function RootComponent() {
   useEffect(() => {
     let cancelled = false;
     let attempts = 0;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
 
     const start = () => {
       if (cancelled) return;
@@ -150,12 +151,17 @@ function RootComponent() {
         }
         return;
       }
-      if (attempts++ < 30) setTimeout(start, 500);
+      if (attempts++ < 30) {
+        timerId = setTimeout(start, 500);
+      }
     };
 
-    start();
+    // Delay the first ad by 10 seconds so users see the app first.
+    timerId = setTimeout(start, 10000);
+
     return () => {
       cancelled = true;
+      if (timerId) clearTimeout(timerId);
     };
   }, []);
 
