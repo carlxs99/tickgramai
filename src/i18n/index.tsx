@@ -134,6 +134,7 @@ const en: Dict = {
   "friends.milestone_reward_toast": "+{amount} GRAM added to your balance",
   "friends.signup_bonus_title": "Earn $0.10 per friend",
   "friends.signup_bonus_desc": "Invite friends and grow your earnings every day.",
+  "friends.invite_button": "Invite",
 
 
 
@@ -379,6 +380,7 @@ const es: Dict = {
   "friends.milestone_reward_toast": "+{amount} GRAM añadidos a tu balance",
   "friends.signup_bonus_title": "Gana $0.10 por cada amigo",
   "friends.signup_bonus_desc": "Invita amigos y aumenta tus ganancias cada día.",
+  "friends.invite_button": "Invitar",
 
 
 
@@ -615,6 +617,7 @@ const ru: Dict = {
   "friends.milestone_reward_toast": "+{amount} GRAM зачислено на баланс",
   "friends.signup_bonus_title": "$0.10 за каждого друга",
   "friends.signup_bonus_desc": "Приглашайте друзей и увеличивайте доход каждый день.",
+  "friends.invite_button": "Пригласить",
 
 
 
@@ -851,6 +854,7 @@ const hi: Dict = {
   "friends.milestone_reward_toast": "आपके बैलेंस में +{amount} GRAM जोड़ा गया",
   "friends.signup_bonus_title": "हर दोस्त पर $0.10",
   "friends.signup_bonus_desc": "दोस्तों को बुलाएं और रोज़ कमाई बढ़ाएं।",
+  "friends.invite_button": "आमंत्रित करें",
 
 
 
