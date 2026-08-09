@@ -849,8 +849,8 @@ const hi: Dict = {
   "friends.milestone_claimed": "प्राप्त",
   "friends.milestone_locked": "लॉक",
   "friends.milestone_reward_toast": "आपके बैलेंस में +{amount} GRAM जोड़ा गया",
-  "friends.signup_bonus_title": "हर दोस्त पर $0.10 कमाएं — डिपॉजिट जरूरी नहीं",
-  "friends.signup_bonus_desc": "आपके लिंक से जुड़ने वाला हर दोस्त तुरंत आपके खाते में $0.10 माइनिंग कैपिटल जोड़ता है। यह कैपिटल 24/7 माइन करता है (+3.3%/दिन), जिससे आपकी रोज़ की GRAM कमाई बढ़ती है। उनके डिपॉजिट पर 10% / 5% / 3% कमीशन अलग से मिलता रहेगा।",
+  "friends.signup_bonus_title": "हर दोस्त पर $0.10",
+  "friends.signup_bonus_desc": "दोस्तों को बुलाएं और रोज़ कमाई बढ़ाएं।",
 
 
 
