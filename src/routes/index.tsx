@@ -1980,7 +1980,7 @@ function WithdrawTab() {
   const qc = useQueryClient();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
   const price = useTonPrice();
-  const minGram = price > 0 ? 3 / price : 0;
+  const minGram = price > 0 ? 2 / price : 0;
   // Shown (and quick-filled) rounded UP so typing the displayed value always passes.
   const minDisplay = minGram > 0 ? Math.ceil(minGram * 10000) / 10000 : 0;
   const balanceNum = Number(me.profile.balance ?? 0);
@@ -2000,7 +2000,7 @@ function WithdrawTab() {
   const amountEmpty = normalizedAmount === "";
   const amountInvalid = !amountEmpty && (!Number.isFinite(amountNum) || amountNum <= 0);
   // The live browser quote is informative only. The server performs the definitive
-  // $3 minimum check with its current trusted quote, avoiding client/server drift.
+  // $2 minimum check with its current trusted quote, avoiding client/server drift.
   const appearsBelowMinimum =
     !amountEmpty && !amountInvalid && minGram > 0 && amountNum < minGram * 0.995;
   const exceedsBalance = !amountEmpty && !amountInvalid && amountNum > balanceNum;
@@ -2061,7 +2061,7 @@ function WithdrawTab() {
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.min_label")}</span>
-          <span className="font-semibold">{minGram > 0 ? `${formatGram(minDisplay, 4)} GRAM (~$3)` : "$3"}</span>
+          <span className="font-semibold">{minGram > 0 ? `${formatGram(minDisplay, 4)} GRAM (~$2)` : "$2"}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.fee_label")}</span>
