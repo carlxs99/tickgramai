@@ -1503,6 +1503,13 @@ function FriendsTab() {
         </div>
       </div>
 
+      {/* Signup bonus notice — $0.10 mining capital per referral */}
+      <div className="rounded-2xl border border-[color:var(--gold)]/30 bg-white/95 backdrop-blur-md p-4 shadow-[0_14px_36px_-20px_oklch(0.2_0.08_245_/_0.28)]">
+        <p className="text-sm font-bold text-foreground">{t("friends.signup_bonus_title")}</p>
+        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t("friends.signup_bonus_desc")}</p>
+      </div>
+
+
       {/* Referral milestones — show only the next unclaimed one */}
       {(() => {
         const next = (milestones ?? []).find((m) => !m.claimed);
