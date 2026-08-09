@@ -2000,7 +2000,7 @@ function WithdrawTab() {
   const amountEmpty = normalizedAmount === "";
   const amountInvalid = !amountEmpty && (!Number.isFinite(amountNum) || amountNum <= 0);
   // The live browser quote is informative only. The server performs the definitive
-  // $3 minimum check with its current trusted quote, avoiding client/server drift.
+  // $2 minimum check with its current trusted quote, avoiding client/server drift.
   const appearsBelowMinimum =
     !amountEmpty && !amountInvalid && minGram > 0 && amountNum < minGram * 0.995;
   const exceedsBalance = !amountEmpty && !amountInvalid && amountNum > balanceNum;
