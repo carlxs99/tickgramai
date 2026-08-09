@@ -1516,7 +1516,7 @@ function FriendsTab() {
             onClick={() => { const el = document.getElementById("referral-link"); el?.scrollIntoView({ behavior: "smooth", block: "center" }); }}
             className="shrink-0 px-3 py-1.5 rounded-full bg-[#1a1240] text-white text-xs font-bold active:scale-95 transition"
           >
-            Invite
+            {t("friends.invite_button")}
           </button>
         </div>
       </div>
