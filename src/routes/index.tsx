@@ -1503,10 +1503,22 @@ function FriendsTab() {
         </div>
       </div>
 
-      {/* Signup bonus notice — $0.10 mining capital per referral */}
-      <div className="rounded-2xl border border-[color:var(--gold)]/30 bg-white/95 backdrop-blur-md p-4 shadow-[0_14px_36px_-20px_oklch(0.2_0.08_245_/_0.28)]">
-        <p className="text-sm font-bold text-foreground">{t("friends.signup_bonus_title")}</p>
-        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t("friends.signup_bonus_desc")}</p>
+      {/* Signup bonus CTA — concise, inviting */}
+      <div className="rounded-2xl p-4 relative overflow-hidden bg-gradient-to-br from-[color:var(--gold)] to-amber-300 text-[#1a1240] shadow-[0_14px_36px_-20px_oklch(0.2_0.08_245_/_0.28)]">
+        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/30 blur-2xl pointer-events-none" />
+        <div className="relative flex items-center gap-3">
+          <div className="shrink-0 w-10 h-10 rounded-full bg-[#1a1240]/10 flex items-center justify-center text-xl">💰</div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-extrabold leading-tight">{t("friends.signup_bonus_title")}</p>
+            <p className="text-xs font-medium text-[#1a1240]/80 mt-0.5 leading-relaxed">{t("friends.signup_bonus_desc")}</p>
+          </div>
+          <button
+            onClick={() => { const el = document.getElementById("referral-link"); el?.scrollIntoView({ behavior: "smooth", block: "center" }); }}
+            className="shrink-0 px-3 py-1.5 rounded-full bg-[#1a1240] text-white text-xs font-bold active:scale-95 transition"
+          >
+            Invite
+          </button>
+        </div>
       </div>
 
 
