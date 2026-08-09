@@ -132,6 +132,8 @@ const en: Dict = {
   "friends.milestone_claimed": "Claimed",
   "friends.milestone_locked": "Locked",
   "friends.milestone_reward_toast": "+{amount} GRAM added to your balance",
+  "friends.signup_bonus_title": "Earn $0.10 per friend — no deposit needed",
+  "friends.signup_bonus_desc": "Every friend who joins with your link instantly adds $0.10 of mining capital to your account. That capital mines for you 24/7 (+3.3%/day), so your daily GRAM earnings grow with every invite. Deposits from your friends still pay you 10% / 5% / 3% commissions on top.",
 
 
 
@@ -375,6 +377,8 @@ const es: Dict = {
   "friends.milestone_claimed": "Reclamado",
   "friends.milestone_locked": "Bloqueado",
   "friends.milestone_reward_toast": "+{amount} GRAM añadidos a tu balance",
+  "friends.signup_bonus_title": "Gana $0.10 por cada amigo — sin depósito",
+  "friends.signup_bonus_desc": "Cada amigo que se registre con tu enlace suma al instante $0.10 de capital de minería a tu cuenta. Ese capital mina 24/7 (+3,3%/día), así que tus ganancias diarias en GRAM crecen con cada invitación. Además, si depositan, sigues cobrando comisiones del 10% / 5% / 3%.",
 
 
 
@@ -609,6 +613,8 @@ const ru: Dict = {
   "friends.milestone_claimed": "Получено",
   "friends.milestone_locked": "Заблокировано",
   "friends.milestone_reward_toast": "+{amount} GRAM зачислено на баланс",
+  "friends.signup_bonus_title": "Получайте $0.10 за каждого друга — без депозита",
+  "friends.signup_bonus_desc": "Каждый друг, зарегистрировавшийся по вашей ссылке, мгновенно добавляет $0.10 майнинг-капитала. Этот капитал майнит 24/7 (+3,3% в день), увеличивая ваш ежедневный доход в GRAM. А за их депозиты вы по-прежнему получаете 10% / 5% / 3%.",
 
 
 
@@ -843,6 +849,8 @@ const hi: Dict = {
   "friends.milestone_claimed": "प्राप्त",
   "friends.milestone_locked": "लॉक",
   "friends.milestone_reward_toast": "आपके बैलेंस में +{amount} GRAM जोड़ा गया",
+  "friends.signup_bonus_title": "हर दोस्त पर $0.10 कमाएं — डिपॉजिट जरूरी नहीं",
+  "friends.signup_bonus_desc": "आपके लिंक से जुड़ने वाला हर दोस्त तुरंत आपके खाते में $0.10 माइनिंग कैपिटल जोड़ता है। यह कैपिटल 24/7 माइन करता है (+3.3%/दिन), जिससे आपकी रोज़ की GRAM कमाई बढ़ती है। उनके डिपॉजिट पर 10% / 5% / 3% कमीशन अलग से मिलता रहेगा।",
 
 
 
