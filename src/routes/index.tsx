@@ -1597,7 +1597,7 @@ function FriendsTab() {
       {/* Referral link */}
 
 
-      <div className="card-glass rounded-2xl p-4 space-y-3">
+      <div id="referral-link" className="card-glass rounded-2xl p-4 space-y-3">
         <p className="text-sm font-semibold">{t("friends.your_link")}</p>
         <div className="flex items-center gap-2">
           <div className="flex-1 min-w-0 rounded-xl bg-background/50 border border-white/10 px-3 py-2.5 text-xs truncate">
