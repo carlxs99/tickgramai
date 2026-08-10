@@ -1999,7 +1999,7 @@ function WithdrawTab() {
   const qc = useQueryClient();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
   const price = useTonPrice();
-  const minGram = price > 0 ? 2 / price : 0;
+  const minGram = price > 0 ? 3 / price : 0;
   // Shown (and quick-filled) rounded UP so typing the displayed value always passes.
   const minDisplay = minGram > 0 ? Math.ceil(minGram * 10000) / 10000 : 0;
   const balanceNum = Number(me.profile.balance ?? 0);
@@ -2080,7 +2080,7 @@ function WithdrawTab() {
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.min_label")}</span>
-          <span className="font-semibold">{minGram > 0 ? `${formatGram(minDisplay, 4)} GRAM (~$2)` : "$2"}</span>
+          <span className="font-semibold">{minGram > 0 ? `${formatGram(minDisplay, 4)} GRAM (~$3)` : "$3"}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.fee_label")}</span>
