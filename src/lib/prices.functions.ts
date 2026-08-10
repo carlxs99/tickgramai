@@ -81,8 +81,8 @@ function median(values: number[]): number | null {
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
 
-export async function fetchTonPriceUsdt(): Promise<{ price: number; sources: string[] }> {
-  if (cache && Date.now() - cache.at < TTL_MS) return { price: cache.price, sources: cache.sources };
+export async function fetchTonPriceUsdt(): Promise<number> {
+  if (cache && Date.now() - cache.at < TTL_MS) return cache.price;
 
   const results = await Promise.all([
     fromBinance().then((p) => ({ name: "binance", price: p })),
@@ -97,15 +97,15 @@ export async function fetchTonPriceUsdt(): Promise<{ price: number; sources: str
   const price = median(prices);
   if (price != null) {
     cache = { price, at: Date.now(), sources: usedSources };
-    return { price, sources: usedSources };
+    return price;
   }
 
-  if (cache) return { price: cache.price, sources: [...cache.sources, "stale-cache"] };
-  return { price: 0, sources: [] };
+  if (cache) return cache.price;
+  return 0;
 }
 
 export const getTonPrice = createServerFn({ method: "GET" }).handler(async () => {
   const cachedHit = cache && Date.now() - cache.at < TTL_MS;
-  const { price, sources } = await fetchTonPriceUsdt();
-  return { price, cached: !!cachedHit, sources };
+  const price = await fetchTonPriceUsdt();
+  return { price, cached: !!cachedHit, sources: cache?.sources ?? [] };
 });
