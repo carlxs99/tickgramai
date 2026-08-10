@@ -416,7 +416,7 @@ const es: Dict = {
   "deposit.max": "Máx",
 
   "withdraw.title": "Retirar",
-  "withdraw.subtitle": "Mínimo {amount} GRAM (valor $2). Comisión de red del 5%.",
+  "withdraw.subtitle": "Mínimo {amount} GRAM (valor $3). Comisión de red del 5%.",
   "withdraw.available": "Disponible",
   "withdraw.amount": "Cantidad (GRAM)",
   "withdraw.min_error": "El retiro mínimo es {amount} GRAM",
