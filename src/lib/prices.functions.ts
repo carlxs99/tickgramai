@@ -17,7 +17,7 @@ async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Respon
 
 async function isBinanceTrading(): Promise<boolean> {
   try {
-    const r = await fetchWithTimeout("https://api.binance.com/api/v3/exchangeInfo?symbol=TONUSDT", {
+    const r = await fetchWithTimeout("https://api.binance.com/api/v3/exchangeInfo?symbol=GRAMUSDT", {
       headers: { accept: "application/json" },
     });
     if (!r.ok) return false;
@@ -33,7 +33,7 @@ async function fromBinance(): Promise<number | null> {
     // If the market is halted (BREAK, AUCTION, etc.) the price is stale.
     if (!(await isBinanceTrading())) return null;
 
-    const r = await fetchWithTimeout("https://api.binance.com/api/v3/ticker/price?symbol=TONUSDT", {
+    const r = await fetchWithTimeout("https://api.binance.com/api/v3/ticker/price?symbol=GRAMUSDT", {
       headers: { accept: "application/json" },
     });
     if (!r.ok) return null;
@@ -62,7 +62,7 @@ async function fromCoingecko(): Promise<number | null> {
 
 async function fromCoinbase(): Promise<number | null> {
   try {
-    const r = await fetchWithTimeout("https://api.coinbase.com/v2/prices/TON-USD/spot", {
+    const r = await fetchWithTimeout("https://api.coinbase.com/v2/prices/GRAM-USD/spot", {
       headers: { accept: "application/json" },
     });
     if (!r.ok) return null;
