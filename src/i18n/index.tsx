@@ -172,7 +172,7 @@ const en: Dict = {
   "deposit.max": "Max",
 
   "withdraw.title": "Withdraw",
-  "withdraw.subtitle": "Min {amount} GRAM ($2 value). 5% network fee.",
+  "withdraw.subtitle": "Min {amount} GRAM ($3 value). 5% network fee.",
   "withdraw.available": "Available",
   "withdraw.amount": "Amount (GRAM)",
   "withdraw.min_error": "Minimum withdrawal is {amount} GRAM",
@@ -653,7 +653,7 @@ const ru: Dict = {
   "deposit.max": "Макс",
 
   "withdraw.title": "Вывод",
-  "withdraw.subtitle": "Минимум {amount} GRAM (эквивалент $2). Комиссия сети 5%.",
+  "withdraw.subtitle": "Минимум {amount} GRAM (эквивалент $3). Комиссия сети 5%.",
   "withdraw.available": "Доступно",
   "withdraw.amount": "Сумма (GRAM)",
   "withdraw.min_error": "Минимальный вывод — {amount} GRAM",
@@ -890,7 +890,7 @@ const hi: Dict = {
   "deposit.max": "अधिकतम",
 
   "withdraw.title": "निकालें",
-  "withdraw.subtitle": "न्यूनतम {amount} GRAM ($2 मूल्य). 5% नेटवर्क शुल्क।",
+  "withdraw.subtitle": "न्यूनतम {amount} GRAM ($3 मूल्य). 5% नेटवर्क शुल्क।",
   "withdraw.available": "उपलब्ध",
   "withdraw.amount": "राशि (GRAM)",
   "withdraw.min_error": "न्यूनतम निकासी {amount} GRAM है",
