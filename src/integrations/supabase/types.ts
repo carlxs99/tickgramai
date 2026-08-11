@@ -794,6 +794,10 @@ export type Database = {
           withdrawal_id: string
         }[]
       }
+      expire_stale_daily_gift_boxes: {
+        Args: { _user_id: string }
+        Returns: number
+      }
       expire_stale_pending_deposits: { Args: never; Returns: number }
       generate_memo_tag: { Args: never; Returns: string }
       generate_partner_memo: { Args: never; Returns: string }
