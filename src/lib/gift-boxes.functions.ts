@@ -8,11 +8,21 @@ export const listGiftBoxes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+
+    // Daily gift boxes do not accumulate: unopened ones older than 24h are lost.
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.rpc("expire_stale_daily_gift_boxes" as never, { _user_id: userId } as never);
+    } catch {
+      // non-fatal
+    }
+
     const [boxes, bonus, profile] = await Promise.all([
       supabase
         .from("gift_boxes")
         .select("id, status, prize_type, prize_amount, opened_at, created_at")
         .eq("user_id", userId)
+        .neq("status", "expired")
         .order("created_at", { ascending: false }),
       supabase
         .from("deposit_bonuses")
