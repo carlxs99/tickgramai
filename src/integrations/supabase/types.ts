@@ -50,6 +50,60 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_broadcasts: {
+        Row: {
+          button_text: string | null
+          button_url: string | null
+          created_at: string
+          created_by: string | null
+          failed: number
+          finished_at: string | null
+          id: string
+          image_url: string | null
+          last_error: string | null
+          message: string
+          progress: number
+          sent: number
+          started_at: string | null
+          status: string
+          total: number
+        }
+        Insert: {
+          button_text?: string | null
+          button_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          image_url?: string | null
+          last_error?: string | null
+          message: string
+          progress?: number
+          sent?: number
+          started_at?: string | null
+          status?: string
+          total?: number
+        }
+        Update: {
+          button_text?: string | null
+          button_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          image_url?: string | null
+          last_error?: string | null
+          message?: string
+          progress?: number
+          sent?: number
+          started_at?: string | null
+          status?: string
+          total?: number
+        }
+        Relationships: []
+      }
       deposit_bonuses: {
         Row: {
           created_at: string

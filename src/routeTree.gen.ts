@@ -19,6 +19,7 @@ import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksWeeklyPromoBroadcastRouteImport } from './routes/api/public/hooks/weekly-promo-broadcast'
 import { Route as ApiPublicHooksDailyGiftBroadcastRouteImport } from './routes/api/public/hooks/daily-gift-broadcast'
 import { Route as ApiPublicHooksDailyCheckinBroadcastRouteImport } from './routes/api/public/hooks/daily-checkin-broadcast'
+import { Route as ApiPublicHooksCustomBroadcastRouteImport } from './routes/api/public/hooks/custom-broadcast'
 import { Route as ApiPublicHooksBootstrapCronSecretRouteImport } from './routes/api/public/hooks/bootstrap-cron-secret'
 
 const TonconnectManifestDotjsonRoute =
@@ -77,6 +78,12 @@ const ApiPublicHooksDailyCheckinBroadcastRoute =
     path: '/api/public/hooks/daily-checkin-broadcast',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksCustomBroadcastRoute =
+  ApiPublicHooksCustomBroadcastRouteImport.update({
+    id: '/api/public/hooks/custom-broadcast',
+    path: '/api/public/hooks/custom-broadcast',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksBootstrapCronSecretRoute =
   ApiPublicHooksBootstrapCronSecretRouteImport.update({
     id: '/api/public/hooks/bootstrap-cron-secret',
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
   '/api/public/hooks/bootstrap-cron-secret': typeof ApiPublicHooksBootstrapCronSecretRoute
+  '/api/public/hooks/custom-broadcast': typeof ApiPublicHooksCustomBroadcastRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
   '/api/public/hooks/weekly-promo-broadcast': typeof ApiPublicHooksWeeklyPromoBroadcastRoute
@@ -105,6 +113,7 @@ export interface FileRoutesByTo {
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
   '/api/public/hooks/bootstrap-cron-secret': typeof ApiPublicHooksBootstrapCronSecretRoute
+  '/api/public/hooks/custom-broadcast': typeof ApiPublicHooksCustomBroadcastRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
   '/api/public/hooks/weekly-promo-broadcast': typeof ApiPublicHooksWeeklyPromoBroadcastRoute
@@ -119,6 +128,7 @@ export interface FileRoutesById {
   '/api/public/process-withdrawals': typeof ApiPublicProcessWithdrawalsRoute
   '/api/public/verify-deposits': typeof ApiPublicVerifyDepositsRoute
   '/api/public/hooks/bootstrap-cron-secret': typeof ApiPublicHooksBootstrapCronSecretRoute
+  '/api/public/hooks/custom-broadcast': typeof ApiPublicHooksCustomBroadcastRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
   '/api/public/hooks/weekly-promo-broadcast': typeof ApiPublicHooksWeeklyPromoBroadcastRoute
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
     | '/api/public/hooks/bootstrap-cron-secret'
+    | '/api/public/hooks/custom-broadcast'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
     | '/api/public/hooks/weekly-promo-broadcast'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
     | '/api/public/hooks/bootstrap-cron-secret'
+    | '/api/public/hooks/custom-broadcast'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
     | '/api/public/hooks/weekly-promo-broadcast'
@@ -160,6 +172,7 @@ export interface FileRouteTypes {
     | '/api/public/process-withdrawals'
     | '/api/public/verify-deposits'
     | '/api/public/hooks/bootstrap-cron-secret'
+    | '/api/public/hooks/custom-broadcast'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
     | '/api/public/hooks/weekly-promo-broadcast'
@@ -174,6 +187,7 @@ export interface RootRouteChildren {
   ApiPublicProcessWithdrawalsRoute: typeof ApiPublicProcessWithdrawalsRoute
   ApiPublicVerifyDepositsRoute: typeof ApiPublicVerifyDepositsRoute
   ApiPublicHooksBootstrapCronSecretRoute: typeof ApiPublicHooksBootstrapCronSecretRoute
+  ApiPublicHooksCustomBroadcastRoute: typeof ApiPublicHooksCustomBroadcastRoute
   ApiPublicHooksDailyCheckinBroadcastRoute: typeof ApiPublicHooksDailyCheckinBroadcastRoute
   ApiPublicHooksDailyGiftBroadcastRoute: typeof ApiPublicHooksDailyGiftBroadcastRoute
   ApiPublicHooksWeeklyPromoBroadcastRoute: typeof ApiPublicHooksWeeklyPromoBroadcastRoute
@@ -252,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailyCheckinBroadcastRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/custom-broadcast': {
+      id: '/api/public/hooks/custom-broadcast'
+      path: '/api/public/hooks/custom-broadcast'
+      fullPath: '/api/public/hooks/custom-broadcast'
+      preLoaderRoute: typeof ApiPublicHooksCustomBroadcastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/bootstrap-cron-secret': {
       id: '/api/public/hooks/bootstrap-cron-secret'
       path: '/api/public/hooks/bootstrap-cron-secret'
@@ -271,6 +292,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicVerifyDepositsRoute: ApiPublicVerifyDepositsRoute,
   ApiPublicHooksBootstrapCronSecretRoute:
     ApiPublicHooksBootstrapCronSecretRoute,
+  ApiPublicHooksCustomBroadcastRoute: ApiPublicHooksCustomBroadcastRoute,
   ApiPublicHooksDailyCheckinBroadcastRoute:
     ApiPublicHooksDailyCheckinBroadcastRoute,
   ApiPublicHooksDailyGiftBroadcastRoute: ApiPublicHooksDailyGiftBroadcastRoute,
@@ -281,13 +303,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

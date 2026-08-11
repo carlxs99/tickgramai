@@ -359,3 +359,111 @@ export const adminSetBan = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+// ---------------------------------------------------------------------------
+// Custom broadcasts (queued; processed in the background by pg_cron)
+// ---------------------------------------------------------------------------
+
+const BroadcastInput = z.object({
+  message: z.string().trim().min(1).max(3500),
+  image_url: z.string().trim().url().max(600).optional().nullable(),
+  button_text: z.string().trim().min(1).max(60).optional().nullable(),
+  button_url: z.string().trim().url().max(600).optional().nullable(),
+});
+
+export const adminCreateBroadcast = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: z.infer<typeof BroadcastInput>) => BroadcastInput.parse(d))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.button_url && !data.button_text) throw new Error("Falta el texto del botón");
+    if (data.button_text && !data.button_url) throw new Error("Falta el link del botón");
+    const { data: row, error } = await supabaseAdmin
+      .from("custom_broadcasts")
+      .insert({
+        created_by: context.userId,
+        message: data.message,
+        image_url: data.image_url || null,
+        button_text: data.button_text || null,
+        button_url: data.button_url || null,
+        status: "queued",
+      } as never)
+      .select("id")
+      .single();
+    if (error) throw error;
+    return { ok: true, id: (row as any)?.id as string };
+  });
+
+export const adminListBroadcasts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("custom_broadcasts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) throw error;
+    return (data ?? []) as any[];
+  });
+
+export const adminCancelBroadcast = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("custom_broadcasts")
+      .update({ status: "cancelled", finished_at: new Date().toISOString() } as never)
+      .eq("id", data.id)
+      .in("status", ["queued", "running"]);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// Send a preview of the broadcast to the admin's own Telegram account.
+export const adminTestBroadcast = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: z.infer<typeof BroadcastInput>) => BroadcastInput.parse(d))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles").select("telegram_id").eq("user_id", context.userId).maybeSingle();
+    const chatId = (profile as any)?.telegram_id;
+    if (!chatId) throw new Error("Tu cuenta no tiene Telegram vinculado");
+
+    const LOVABLE_API_KEY = process.env['LOVABLE_API_KEY'];
+    const TELEGRAM_API_KEY = process.env['TELEGRAM_API_KEY'];
+    if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY) throw new Error("Telegram no está configurado");
+
+    const reply_markup = data.button_url && data.button_text
+      ? { inline_keyboard: [[{ text: data.button_text, url: data.button_url }]] }
+      : undefined;
+    const usePhoto = !!data.image_url;
+    const body: Record<string, unknown> = usePhoto
+      ? { chat_id: chatId, photo: data.image_url, caption: data.message, parse_mode: "HTML" }
+      : { chat_id: chatId, text: data.message, parse_mode: "HTML", disable_web_page_preview: true };
+    if (reply_markup) body.reply_markup = reply_markup;
+
+    const res = await fetch(
+      `https://connector-gateway.lovable.dev/telegram/${usePhoto ? "sendPhoto" : "sendMessage"}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "X-Connection-Api-Key": TELEGRAM_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      },
+    );
+    const json: any = await res.json().catch(() => ({}));
+    if (!res.ok || json?.ok === false) {
+      throw new Error(`Telegram [${res.status}]: ${JSON.stringify(json).slice(0, 300)}`);
+    }
+    return { ok: true };
+  });

@@ -12,7 +12,7 @@ import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWith
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { getActivePromotion } from "@/lib/promotions.functions";
 
-import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan } from "@/lib/admin.functions";
+import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan, adminCreateBroadcast, adminListBroadcasts, adminCancelBroadcast, adminTestBroadcast } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
 import { formatGram, formatReward, avatarSrc } from "@/lib/format";
@@ -2715,7 +2715,169 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 
 
 
-type AdminSection = "overview" | "tasks" | "users" | "security";
+type AdminSection = "overview" | "tasks" | "users" | "broadcast" | "security";
+
+function AdminBroadcastSection() {
+  const createFn = useServerFn(adminCreateBroadcast);
+  const listFn = useServerFn(adminListBroadcasts);
+  const cancelFn = useServerFn(adminCancelBroadcast);
+  const testFn = useServerFn(adminTestBroadcast);
+  const qc = useQueryClient();
+
+  const [message, setMessage] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [buttonText, setButtonText] = useState("");
+  const [buttonUrl, setButtonUrl] = useState("");
+
+  const { data: runs } = useQuery({
+    queryKey: ["admin-broadcasts"],
+    queryFn: () => listFn(),
+    refetchInterval: 5_000,
+  });
+
+  const payload = () => ({
+    message: message.trim(),
+    image_url: imageUrl.trim() || null,
+    button_text: buttonText.trim() || null,
+    button_url: buttonUrl.trim() || null,
+  });
+
+  const create = useMutation({
+    mutationFn: () => createFn({ data: payload() }),
+    onSuccess: () => {
+      toast.success("Broadcast queued — se enviará en segundo plano");
+      setMessage(""); setImageUrl(""); setButtonText(""); setButtonUrl("");
+      qc.invalidateQueries({ queryKey: ["admin-broadcasts"] });
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
+  const test = useMutation({
+    mutationFn: () => testFn({ data: payload() }),
+    onSuccess: () => toast.success("Preview enviado a tu Telegram"),
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
+  const cancel = useMutation({
+    mutationFn: (id: string) => cancelFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Broadcast cancelado");
+      qc.invalidateQueries({ queryKey: ["admin-broadcasts"] });
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
+  const disabled = message.trim().length === 0 || create.isPending;
+
+  return (
+    <div className="space-y-3">
+      <div className="card-glass rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Megaphone className="w-4 h-4 text-primary" />
+          <p className="font-semibold text-sm">New broadcast</p>
+        </div>
+
+        <AdminField label="Message (HTML supported)">
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={5}
+            maxLength={3500}
+            placeholder="🚀 <b>Big news!</b> ..."
+            className="w-full bg-background/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50"
+          />
+        </AdminField>
+
+        <AdminField label="Image URL (optional)">
+          <input
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://..."
+            className="w-full bg-background/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50"
+          />
+        </AdminField>
+
+        <div className="grid grid-cols-2 gap-2">
+          <AdminField label="Button text">
+            <input
+              value={buttonText}
+              onChange={(e) => setButtonText(e.target.value)}
+              placeholder="🚀 Open app"
+              className="w-full bg-background/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50"
+            />
+          </AdminField>
+          <AdminField label="Button link">
+            <input
+              value={buttonUrl}
+              onChange={(e) => setButtonUrl(e.target.value)}
+              placeholder="https://t.me/..."
+              className="w-full bg-background/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50"
+            />
+          </AdminField>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => test.mutate()}
+            disabled={message.trim().length === 0 || test.isPending}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border border-white/10 bg-background/60 disabled:opacity-50"
+          >
+            {test.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            Test to me
+          </button>
+          <button
+            onClick={() => { if (confirm("¿Enviar este broadcast a TODOS los usuarios?")) create.mutate(); }}
+            disabled={disabled}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-primary to-accent text-primary-foreground disabled:opacity-50"
+          >
+            {create.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Megaphone className="w-3.5 h-3.5" />}
+            Send to all
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          El envío se procesa en segundo plano cada minuto: puedes cerrar la app y continuará solo.
+        </p>
+      </div>
+
+      <div className="card-glass rounded-2xl p-4 space-y-2.5">
+        <p className="font-semibold text-sm mb-1">History</p>
+        {(runs ?? []).map((r: any) => {
+          const pct = r.total > 0 ? Math.min(100, Math.round((r.progress / r.total) * 100)) : 0;
+          const tone =
+            r.status === "done" ? "text-[color:var(--success)]"
+            : r.status === "running" ? "text-[color:var(--info)]"
+            : r.status === "cancelled" ? "text-destructive"
+            : "text-muted-foreground";
+          return (
+            <div key={r.id} className="rounded-xl border border-white/5 bg-background/40 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs line-clamp-2 flex-1">{r.message}</p>
+                <span className={`text-[10px] font-bold uppercase shrink-0 ${tone}`}>{r.status}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-white/5 mt-2 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-primary to-accent" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex items-center justify-between mt-1.5">
+                <p className="text-[10px] text-muted-foreground tabular-nums">
+                  {r.progress}/{r.total} · sent {r.sent} · failed {r.failed}
+                </p>
+                {(r.status === "queued" || r.status === "running") && (
+                  <button onClick={() => cancel.mutate(r.id)} className="text-[10px] text-destructive font-semibold">
+                    Cancel
+                  </button>
+                )}
+              </div>
+              {r.last_error && <p className="text-[9px] text-destructive mt-1 truncate">{r.last_error}</p>}
+            </div>
+          );
+        })}
+        {(runs ?? []).length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-6">No broadcasts yet</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function AdminTab() {
   const { t: tr } = useT();
@@ -2749,12 +2911,13 @@ function AdminTab() {
         </div>
 
         {/* Segmented sub-nav */}
-        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
+        <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
           {([
-            { id: "overview", label: "Overview", icon: LayoutDashboard },
+            { id: "overview", label: "Home", icon: LayoutDashboard },
             { id: "tasks", label: "Tasks", icon: ListChecks },
             { id: "users", label: "Users", icon: Users },
-            { id: "security", label: "Multi-acc", icon: ShieldAlert },
+            { id: "broadcast", label: "Send", icon: Megaphone },
+            { id: "security", label: "Multi", icon: ShieldAlert },
           ] as { id: AdminSection; label: string; icon: any }[]).map((s) => {
             const Icon = s.icon;
             const active = section === s.id;
@@ -2762,7 +2925,7 @@ function AdminTab() {
               <button
                 key={s.id}
                 onClick={() => setSection(s.id)}
-                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold transition ${
+                className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg text-[10px] font-semibold transition ${
                   active
                     ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -2779,6 +2942,7 @@ function AdminTab() {
       {section === "overview" && <AdminOverview stats={stats} tr={tr} />}
       {section === "tasks" && <AdminTasksSection tr={tr} />}
       {section === "users" && <AdminUsersSection />}
+      {section === "broadcast" && <AdminBroadcastSection />}
       {section === "security" && <AdminSecuritySection />}
     </div>
   );
