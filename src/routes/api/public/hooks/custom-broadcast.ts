@@ -153,7 +153,6 @@ function authorized(request: Request): boolean {
   const provided =
     header.replace(/^Bearer\s+/i, "").trim() ||
     request.headers.get("x-cron-secret") ||
-    new URL(request.url).searchParams.get("secret") ||
     "";
   return provided.length > 0 && safeEqual(provided, expected);
 }
