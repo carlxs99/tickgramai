@@ -2749,12 +2749,13 @@ function AdminTab() {
         </div>
 
         {/* Segmented sub-nav */}
-        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
+        <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
           {([
-            { id: "overview", label: "Overview", icon: LayoutDashboard },
+            { id: "overview", label: "Home", icon: LayoutDashboard },
             { id: "tasks", label: "Tasks", icon: ListChecks },
             { id: "users", label: "Users", icon: Users },
-            { id: "security", label: "Multi-acc", icon: ShieldAlert },
+            { id: "broadcast", label: "Send", icon: Megaphone },
+            { id: "security", label: "Multi", icon: ShieldAlert },
           ] as { id: AdminSection; label: string; icon: any }[]).map((s) => {
             const Icon = s.icon;
             const active = section === s.id;
@@ -2762,7 +2763,7 @@ function AdminTab() {
               <button
                 key={s.id}
                 onClick={() => setSection(s.id)}
-                className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold transition ${
+                className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg text-[10px] font-semibold transition ${
                   active
                     ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -2779,6 +2780,7 @@ function AdminTab() {
       {section === "overview" && <AdminOverview stats={stats} tr={tr} />}
       {section === "tasks" && <AdminTasksSection tr={tr} />}
       {section === "users" && <AdminUsersSection />}
+      {section === "broadcast" && <AdminBroadcastSection />}
       {section === "security" && <AdminSecuritySection />}
     </div>
   );
