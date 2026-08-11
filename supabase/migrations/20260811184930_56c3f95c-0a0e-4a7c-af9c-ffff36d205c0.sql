@@ -1,0 +1,2 @@
+ALTER TABLE public.gift_boxes DROP CONSTRAINT IF EXISTS gift_boxes_status_check;
+ALTER TABLE public.gift_boxes ADD CONSTRAINT gift_boxes_status_check CHECK (status = ANY (ARRAY['unopened'::text, 'opened'::text, 'expired'::text]));
