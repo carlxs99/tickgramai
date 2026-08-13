@@ -29,6 +29,15 @@ import tickgramLogoImg from "@/assets/tickgram-logo.png.asset.json";
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
 
+// Always shared in English so every recipient understands it.
+const INVITE_SHARE_TEXT =
+  "🤖 I found something crazy — TickGram AI mines GRAM for me 24/7, even while I sleep.\n\n" +
+  "⛏️ Your AI miner starts the second you open the app\n" +
+  "💎 Earnings tick up every single second\n" +
+  "🎁 Free daily gift boxes + bonuses for new miners\n" +
+  "🚀 No investment needed to start\n\n" +
+  "Tap the link and claim your miner before the daily bonus resets 👇";
+
 export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
@@ -1059,8 +1068,7 @@ function TasksTab() {
     return /share|invita|invite|friend|amig|refer/.test(s);
   };
   const openShare = (t: any) => {
-    const text = t.description || tr("tasks.share_default");
-    const url = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(text)}`;
+    const url = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(INVITE_SHARE_TEXT)}`;
     const tg: any = getTelegram();
     if (tg?.openTelegramLink) tg.openTelegramLink(url);
     else window.open(url, "_blank");
@@ -1424,7 +1432,7 @@ function FriendsTab() {
   });
   const code = me.profile.referral_code as string;
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
-  const shareText = t("tasks.share_default");
+  const shareText = INVITE_SHARE_TEXT;
   const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(shareText)}`;
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(1);
