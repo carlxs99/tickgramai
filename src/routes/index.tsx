@@ -1432,7 +1432,7 @@ function FriendsTab() {
   });
   const code = me.profile.referral_code as string;
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
-  const shareText = t("tasks.share_default");
+  const shareText = INVITE_SHARE_TEXT;
   const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(shareText)}`;
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(1);
