@@ -1068,8 +1068,7 @@ function TasksTab() {
     return /share|invita|invite|friend|amig|refer/.test(s);
   };
   const openShare = (t: any) => {
-    const text = t.description || tr("tasks.share_default");
-    const url = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(text)}`;
+    const url = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(INVITE_SHARE_TEXT)}`;
     const tg: any = getTelegram();
     if (tg?.openTelegramLink) tg.openTelegramLink(url);
     else window.open(url, "_blank");
