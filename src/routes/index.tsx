@@ -29,6 +29,15 @@ import tickgramLogoImg from "@/assets/tickgram-logo.png.asset.json";
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
 
+// Always shared in English so every recipient understands it.
+const INVITE_SHARE_TEXT =
+  "🤖 I found something crazy — TickGram AI mines GRAM for me 24/7, even while I sleep.\n\n" +
+  "⛏️ Your AI miner starts the second you open the app\n" +
+  "💎 Earnings tick up every single second\n" +
+  "🎁 Free daily gift boxes + bonuses for new miners\n" +
+  "🚀 No investment needed to start\n\n" +
+  "Tap the link and claim your miner before the daily bonus resets 👇";
+
 export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
