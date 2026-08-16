@@ -12,7 +12,7 @@ import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWith
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { getActivePromotion } from "@/lib/promotions.functions";
 
-import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan, adminCreateBroadcast, adminListBroadcasts, adminCancelBroadcast, adminTestBroadcast } from "@/lib/admin.functions";
+import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan, adminCreateBroadcast, adminListBroadcasts, adminCancelBroadcast, adminTestBroadcast, adminResendBroadcast } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
 import { getTelegram, restoreSession } from "@/lib/telegram";
 import { formatGram, formatReward, avatarSrc } from "@/lib/format";
@@ -2729,6 +2729,7 @@ function AdminBroadcastSection() {
   const createFn = useServerFn(adminCreateBroadcast);
   const listFn = useServerFn(adminListBroadcasts);
   const cancelFn = useServerFn(adminCancelBroadcast);
+  const resendFn = useServerFn(adminResendBroadcast);
   const testFn = useServerFn(adminTestBroadcast);
   const qc = useQueryClient();
 
@@ -2774,6 +2775,25 @@ function AdminBroadcastSection() {
     },
     onError: (e: any) => toast.error(String(e?.message ?? e)),
   });
+
+  const resend = useMutation({
+    mutationFn: (id: string) => resendFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Broadcast reenviado — se procesará en segundo plano");
+      qc.invalidateQueries({ queryKey: ["admin-broadcasts"] });
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
+  const loadIntoForm = (r: any) => {
+    setMessage(r.message ?? "");
+    setImageUrl(r.image_url ?? "");
+    setButtonText(r.button_text ?? "");
+    setButtonUrl(r.button_url ?? "");
+    toast.success("Cargado en el formulario");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
 
   const disabled = message.trim().length === 0 || create.isPending;
 
@@ -2865,15 +2885,36 @@ function AdminBroadcastSection() {
               <div className="h-1.5 rounded-full bg-white/5 mt-2 overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-primary to-accent" style={{ width: `${pct}%` }} />
               </div>
-              <div className="flex items-center justify-between mt-1.5">
+              <div className="flex items-center justify-between gap-2 mt-1.5">
                 <p className="text-[10px] text-muted-foreground tabular-nums">
                   {r.progress}/{r.total} · sent {r.sent} · failed {r.failed}
                 </p>
-                {(r.status === "queued" || r.status === "running") && (
-                  <button onClick={() => cancel.mutate(r.id)} className="text-[10px] text-destructive font-semibold">
-                    Cancel
-                  </button>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {(r.status === "queued" || r.status === "running") ? (
+                    <button onClick={() => cancel.mutate(r.id)} className="text-[10px] text-destructive font-semibold">
+                      Cancel
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => loadIntoForm(r)}
+                        className="text-[10px] text-muted-foreground font-semibold"
+                      >
+                        Edit copy
+                      </button>
+                      <button
+                        onClick={() => { if (confirm("¿Volver a enviar este broadcast a TODOS los usuarios?")) resend.mutate(r.id); }}
+                        disabled={resend.isPending}
+                        className="flex items-center gap-1 text-[10px] font-bold text-primary disabled:opacity-50"
+                      >
+                        {resend.isPending && resend.variables === r.id
+                          ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : <Send className="w-3 h-3" />}
+                        Resend
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               {r.last_error && <p className="text-[9px] text-destructive mt-1 truncate">{r.last_error}</p>}
             </div>
