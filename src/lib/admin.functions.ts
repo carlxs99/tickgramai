@@ -424,6 +424,37 @@ export const adminCancelBroadcast = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Re-queue an already-sent broadcast with the exact same content.
+export const adminResendBroadcast = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: src, error: readErr } = await supabaseAdmin
+      .from("custom_broadcasts")
+      .select("message, image_url, button_text, button_url")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw readErr;
+    if (!src) throw new Error("Broadcast no encontrado");
+
+    const { data: row, error } = await supabaseAdmin
+      .from("custom_broadcasts")
+      .insert({
+        created_by: context.userId,
+        message: (src as any).message,
+        image_url: (src as any).image_url,
+        button_text: (src as any).button_text,
+        button_url: (src as any).button_url,
+        status: "queued",
+      } as never)
+      .select("id")
+      .single();
+    if (error) throw error;
+    return { ok: true, id: (row as any)?.id as string };
+  });
+
 // Send a preview of the broadcast to the admin's own Telegram account.
 export const adminTestBroadcast = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
