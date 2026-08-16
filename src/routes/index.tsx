@@ -2885,15 +2885,36 @@ function AdminBroadcastSection() {
               <div className="h-1.5 rounded-full bg-white/5 mt-2 overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-primary to-accent" style={{ width: `${pct}%` }} />
               </div>
-              <div className="flex items-center justify-between mt-1.5">
+              <div className="flex items-center justify-between gap-2 mt-1.5">
                 <p className="text-[10px] text-muted-foreground tabular-nums">
                   {r.progress}/{r.total} · sent {r.sent} · failed {r.failed}
                 </p>
-                {(r.status === "queued" || r.status === "running") && (
-                  <button onClick={() => cancel.mutate(r.id)} className="text-[10px] text-destructive font-semibold">
-                    Cancel
-                  </button>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {(r.status === "queued" || r.status === "running") ? (
+                    <button onClick={() => cancel.mutate(r.id)} className="text-[10px] text-destructive font-semibold">
+                      Cancel
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => loadIntoForm(r)}
+                        className="text-[10px] text-muted-foreground font-semibold"
+                      >
+                        Edit copy
+                      </button>
+                      <button
+                        onClick={() => { if (confirm("¿Volver a enviar este broadcast a TODOS los usuarios?")) resend.mutate(r.id); }}
+                        disabled={resend.isPending}
+                        className="flex items-center gap-1 text-[10px] font-bold text-primary disabled:opacity-50"
+                      >
+                        {resend.isPending && resend.variables === r.id
+                          ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : <Send className="w-3 h-3" />}
+                        Resend
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               {r.last_error && <p className="text-[9px] text-destructive mt-1 truncate">{r.last_error}</p>}
             </div>
