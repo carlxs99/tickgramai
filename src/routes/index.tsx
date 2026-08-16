@@ -2729,6 +2729,7 @@ function AdminBroadcastSection() {
   const createFn = useServerFn(adminCreateBroadcast);
   const listFn = useServerFn(adminListBroadcasts);
   const cancelFn = useServerFn(adminCancelBroadcast);
+  const resendFn = useServerFn(adminResendBroadcast);
   const testFn = useServerFn(adminTestBroadcast);
   const qc = useQueryClient();
 
