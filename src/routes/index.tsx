@@ -2776,6 +2776,25 @@ function AdminBroadcastSection() {
     onError: (e: any) => toast.error(String(e?.message ?? e)),
   });
 
+  const resend = useMutation({
+    mutationFn: (id: string) => resendFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Broadcast reenviado — se procesará en segundo plano");
+      qc.invalidateQueries({ queryKey: ["admin-broadcasts"] });
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
+  const loadIntoForm = (r: any) => {
+    setMessage(r.message ?? "");
+    setImageUrl(r.image_url ?? "");
+    setButtonText(r.button_text ?? "");
+    setButtonUrl(r.button_url ?? "");
+    toast.success("Cargado en el formulario");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+
   const disabled = message.trim().length === 0 || create.isPending;
 
   return (
