@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronRight, Loader2, Sparkles, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { listWheelSpins, spinWheel } from "@/lib/wheel.functions";
+import { formatReward } from "@/lib/format";
 import { useT } from "@/i18n";
 
 type Segment = { key: string; label: string; sub: string; tone: "gram" | "bonus" | "box" | "spin" };
@@ -68,7 +69,7 @@ function useWheelSize(max = 260, min = 180) {
   return size;
 }
 
-export function PrizeWheelCard() {
+export function PrizeWheelCard({ price = 0 }: { price?: number }) {
   const { t } = useT();
   const listFn = useServerFn(listWheelSpins);
   const spinFn = useServerFn(spinWheel);
@@ -78,6 +79,7 @@ export function PrizeWheelCard() {
   const [spinning, setSpinning] = useState(false);
   const [prize, setPrize] = useState<null | { prizeType: string; prizeAmount: number }>(null);
   const size = useWheelSize();
+  const gramPer10 = price > 0 ? 10 / price : 0;
 
   const { data } = useQuery({
     queryKey: ["wheel-spins"],
@@ -155,7 +157,9 @@ export function PrizeWheelCard() {
         </div>
       </div>
 
-      <p className="mt-1 text-[11px] text-white/70">{t("wheel.rule")}</p>
+      <p className="mt-1 text-[11px] text-white/70">
+        {gramPer10 > 0 ? t("wheel.rule", { gram: formatReward(gramPer10) }) : t("wheel.rule", { gram: "—" })}
+      </p>
 
       <div className="mt-4 flex flex-col items-center">
         <div className="relative mx-auto" style={{ width: size, height: size }}>
@@ -260,7 +264,7 @@ export function PrizeWheelCard() {
  * Compact, graphic entry card for the Prize Wheel — visually matching the
  * gift boxes card. Tapping it opens the full wheel page.
  */
-export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
+export function WheelTeaserCard({ onClick, price = 0 }: { onClick: () => void; price?: number }) {
   const { t } = useT();
   const listFn = useServerFn(listWheelSpins);
   const { data } = useQuery({
@@ -269,6 +273,7 @@ export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
     refetchInterval: 60_000,
   });
   const spins = data?.spins ?? 0;
+  const gramPer10 = price > 0 ? 10 / price : 0;
 
   const background = useMemo(() => {
     const stops = SEGMENTS.map((s, i) => `${toneColor(s.tone, i)} ${i * SLICE}deg ${(i + 1) * SLICE}deg`);
@@ -324,7 +329,9 @@ export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
               ? t(spins === 1 ? "wheel.teaser_have" : "wheel.teaser_have_plural", { count: spins })
               : t("wheel.teaser_idle")}
           </div>
-          <div className="text-[11px] text-white/70 mt-0.5">{t("wheel.teaser_rule")}</div>
+          <div className="text-[11px] text-white/70 mt-0.5">
+            {gramPer10 > 0 ? t("wheel.teaser_rule", { gram: formatReward(gramPer10) }) : t("wheel.teaser_rule", { gram: "—" })}
+          </div>
           <div className="text-[11px] font-bold text-amber-200 mt-0.5">{t("wheel.teaser_prizes")}</div>
         </div>
 
