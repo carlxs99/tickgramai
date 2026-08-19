@@ -504,6 +504,7 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
 
 function WheelTab({ onBack }: { onBack: () => void }) {
   const { t } = useT();
+  const price = useTonPrice();
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-4">
       <button
@@ -512,7 +513,7 @@ function WheelTab({ onBack }: { onBack: () => void }) {
       >
         <ChevronLeft className="w-4 h-4 shrink-0" /> {t("wheel.back")}
       </button>
-      <PrizeWheelCard />
+      <PrizeWheelCard price={price} />
     </div>
   );
 }
