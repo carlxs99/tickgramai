@@ -329,7 +329,9 @@ export function WheelTeaserCard({ onClick, price = 0 }: { onClick: () => void; p
               ? t(spins === 1 ? "wheel.teaser_have" : "wheel.teaser_have_plural", { count: spins })
               : t("wheel.teaser_idle")}
           </div>
-          <div className="text-[11px] text-white/70 mt-0.5">{t("wheel.teaser_rule")}</div>
+          <div className="text-[11px] text-white/70 mt-0.5">
+            {gramPer10 > 0 ? t("wheel.teaser_rule", { gram: formatReward(gramPer10) }) : t("wheel.teaser_rule", { gram: "—" })}
+          </div>
           <div className="text-[11px] font-bold text-amber-200 mt-0.5">{t("wheel.teaser_prizes")}</div>
         </div>
 
