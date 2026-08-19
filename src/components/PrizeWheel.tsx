@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronRight, Loader2, Sparkles, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { listWheelSpins, spinWheel } from "@/lib/wheel.functions";
+import { formatReward } from "@/lib/format";
 import { useT } from "@/i18n";
 
 type Segment = { key: string; label: string; sub: string; tone: "gram" | "bonus" | "box" | "spin" };
