@@ -497,7 +497,7 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
 
       <GiftBoxesCard />
 
-      <WheelTeaserCard onClick={() => { getTelegram()?.HapticFeedback?.impactOccurred?.("light"); setTab("wheel"); }} />
+      <WheelTeaserCard price={price} onClick={() => { getTelegram()?.HapticFeedback?.impactOccurred?.("light"); setTab("wheel"); }} />
     </div>
   );
 }
