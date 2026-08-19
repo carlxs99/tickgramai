@@ -10,6 +10,7 @@ import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
 import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getMyRank, getFriends, getReferralStats, listReferralMilestones, claimReferralMilestone, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
+import { PrizeWheelCard } from "@/components/PrizeWheel";
 import { getActivePromotion } from "@/lib/promotions.functions";
 
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan, adminCreateBroadcast, adminListBroadcasts, adminCancelBroadcast, adminTestBroadcast, adminResendBroadcast } from "@/lib/admin.functions";
@@ -494,6 +495,8 @@ function MineTab() {
       </div>
 
       <GiftBoxesCard />
+
+      <PrizeWheelCard />
     </div>
   );
 }

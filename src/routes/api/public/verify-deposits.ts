@@ -186,13 +186,26 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               continue;
             }
 
-            await supabaseAdmin.from("deposits").insert({
+            const { data: depositRow } = await supabaseAdmin.from("deposits").insert({
               user_id: profile.user_id,
               amount_ton: effectiveAmountTon,
               gram_per_day: gramPerDay,
               tx_hash: txHash,
               status: "confirmed",
-            });
+            }).select("id").single();
+
+            // Prize wheel: 1 spin per full $10 of THIS deposit (bonus excluded).
+            let spinsGranted = 0;
+            try {
+              const { data: g } = await supabaseAdmin.rpc("grant_wheel_spins" as never, {
+                _user_id: profile.user_id,
+                _deposit_id: (depositRow as any)?.id ?? null,
+                _usd_value: amountTon * priceForCredit,
+              } as never);
+              spinsGranted = Number(g ?? 0);
+            } catch (e) {
+              console.error("grant_wheel_spins failed", e);
+            }
 
             // Atomic increment — prevents lost-updates with completeTask /
             // reinvestBalance running concurrently for the same user.
@@ -316,7 +329,11 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                     bonusLine +
                     `⚡ Mining rate added: <b>+$${formatReward(usdPerDay)} USDT/day</b>\n` +
                     `🪙 GRAM per day: <b>+${gramPerDayStr} GRAM</b>\n` +
-                    `📈 Daily ROI: 3.3%\n\n` +
+                    `📈 Daily ROI: 3.3%\n` +
+                    (spinsGranted > 0
+                      ? `🎰 Prize wheel: <b>${spinsGranted} free spin${spinsGranted > 1 ? "s" : ""}</b> unlocked (valid 7 days)\n`
+                      : "") +
+                    `\n` +
                     `Open TICK GRAM AI to check your balance.`,
                 );
               }

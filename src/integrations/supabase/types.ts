@@ -633,6 +633,45 @@ export type Database = {
           },
         ]
       }
+      wheel_spins: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          prize_amount: number | null
+          prize_type: string | null
+          source: string
+          source_ref_id: string | null
+          status: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          prize_amount?: number | null
+          prize_type?: string | null
+          source?: string
+          source_ref_id?: string | null
+          status?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          prize_amount?: number | null
+          prize_type?: string | null
+          source?: string
+          source_ref_id?: string | null
+          status?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       withdrawals: {
         Row: {
           address: string
@@ -799,6 +838,7 @@ export type Database = {
         Returns: number
       }
       expire_stale_pending_deposits: { Args: never; Returns: number }
+      expire_stale_wheel_spins: { Args: { _user_id: string }; Returns: number }
       generate_memo_tag: { Args: never; Returns: string }
       generate_partner_memo: { Args: never; Returns: string }
       get_active_deposit_promotion: {
@@ -831,6 +871,10 @@ export type Database = {
           mining_rate_usd: number
           username: string
         }[]
+      }
+      grant_wheel_spins: {
+        Args: { _deposit_id: string; _usd_value: number; _user_id: string }
+        Returns: number
       }
       has_role: {
         Args: {
@@ -870,6 +914,16 @@ export type Database = {
           mining_rate_gram: number
           prize_amount: number
           prize_type: string
+        }[]
+      }
+      spin_wheel: {
+        Args: { _gram_price?: number; _user_id: string }
+        Returns: {
+          bonus_expires_at: string
+          new_mining_rate: number
+          prize_amount: number
+          prize_type: string
+          spins_left: number
         }[]
       }
       start_weekly_deposit_promotion: {
