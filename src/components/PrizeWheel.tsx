@@ -69,7 +69,7 @@ function useWheelSize(max = 260, min = 180) {
   return size;
 }
 
-export function PrizeWheelCard() {
+export function PrizeWheelCard({ price = 0 }: { price?: number }) {
   const { t } = useT();
   const listFn = useServerFn(listWheelSpins);
   const spinFn = useServerFn(spinWheel);
@@ -79,6 +79,7 @@ export function PrizeWheelCard() {
   const [spinning, setSpinning] = useState(false);
   const [prize, setPrize] = useState<null | { prizeType: string; prizeAmount: number }>(null);
   const size = useWheelSize();
+  const gramPer10 = price > 0 ? 10 / price : 0;
 
   const { data } = useQuery({
     queryKey: ["wheel-spins"],
