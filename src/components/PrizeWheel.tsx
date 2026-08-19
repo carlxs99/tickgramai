@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronRight, Loader2, Sparkles, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { listWheelSpins, spinWheel } from "@/lib/wheel.functions";
+import { useT } from "@/i18n";
 
 type Segment = { key: string; label: string; sub: string; tone: "gram" | "bonus" | "box" | "spin" };
 
@@ -51,7 +52,24 @@ function toneColor(tone: Segment["tone"], i: number) {
   return i % 2 === 0 ? "rgba(14, 165, 233, 0.75)" : "rgba(30, 64, 175, 0.85)";
 }
 
+/** Responsive wheel diameter: never wider than the phone screen. */
+function useWheelSize(max = 260, min = 180) {
+  const [size, setSize] = useState(max);
+  useEffect(() => {
+    const compute = () => {
+      // page padding (16*2) + card padding (16*2) + a little breathing room
+      const avail = Math.min(window.innerWidth, 448) - 32 - 32 - 16;
+      setSize(Math.max(min, Math.min(max, avail)));
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, [max, min]);
+  return size;
+}
+
 export function PrizeWheelCard() {
+  const { t } = useT();
   const listFn = useServerFn(listWheelSpins);
   const spinFn = useServerFn(spinWheel);
   const qc = useQueryClient();
@@ -59,6 +77,7 @@ export function PrizeWheelCard() {
   const rotationRef = useRef(0);
   const [spinning, setSpinning] = useState(false);
   const [prize, setPrize] = useState<null | { prizeType: string; prizeAmount: number }>(null);
+  const size = useWheelSize();
 
   const { data } = useQuery({
     queryKey: ["wheel-spins"],
@@ -100,7 +119,7 @@ export function PrizeWheelCard() {
       qc.invalidateQueries({ queryKey: ["gift-boxes"] });
     } catch (e: any) {
       const msg = String(e?.message ?? e);
-      toast.error(msg.includes("no spins") ? "No spins available" : "Spin failed, try again");
+      toast.error(msg.includes("no spins") ? t("wheel.no_spins") : t("wheel.error"));
     } finally {
       setSpinning(false);
     }
@@ -110,32 +129,34 @@ export function PrizeWheelCard() {
     if (!prize) return null;
     if (prize.prizeType === "gram_mining")
       return {
-        title: `+${prize.prizeAmount} GRAM mining power`,
-        sub: `Adds +${(prize.prizeAmount * 0.033).toFixed(4)} GRAM/day forever`,
+        title: t("wheel.prize_gram", { amount: prize.prizeAmount }),
+        sub: t("wheel.prize_gram_sub", { rate: (prize.prizeAmount * 0.033).toFixed(4) }),
       };
     if (prize.prizeType === "deposit_bonus_pct")
-      return { title: `+${prize.prizeAmount}% deposit bonus`, sub: "Valid for your next deposit (48h)" };
-    if (prize.prizeType === "gift_box") return { title: "Free gift box!", sub: "Open it in the gift box section" };
-    return { title: "Extra spin!", sub: "One more free spin added" };
+      return {
+        title: t("wheel.prize_bonus", { amount: prize.prizeAmount }),
+        sub: t("wheel.prize_bonus_sub"),
+      };
+    if (prize.prizeType === "gift_box")
+      return { title: t("wheel.prize_box"), sub: t("wheel.prize_box_sub") };
+    return { title: t("wheel.prize_spin"), sub: t("wheel.prize_spin_sub") };
   })();
 
   return (
-    <div className="glass-card rounded-3xl p-4 border border-white/10">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-sky-200">
-          <Sparkles className="w-3 h-3" /> Prize Wheel
+    <div className="glass-card w-full max-w-full overflow-hidden rounded-3xl p-4 border border-white/10">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-sky-200">
+          <Sparkles className="w-3 h-3 shrink-0" /> <span className="truncate">{t("wheel.title")}</span>
         </div>
-        <div className="flex items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-[11px] font-bold text-white">
+        <div className="flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-[11px] font-bold text-white">
           <Ticket className="w-3 h-3" /> {spins}
         </div>
       </div>
 
-      <p className="mt-1 text-[11px] text-white/70">
-        Earn 1 free spin for every $10 in a single deposit. Prizes from 0.1 to 10 GRAM of mining power.
-      </p>
+      <p className="mt-1 text-[11px] text-white/70">{t("wheel.rule")}</p>
 
       <div className="mt-4 flex flex-col items-center">
-        <div className="relative" style={{ width: 240, height: 240 }}>
+        <div className="relative mx-auto" style={{ width: size, height: size }}>
           {/* pointer */}
           <div className="absolute left-1/2 -top-1 z-20 -translate-x-1/2">
             <div className="h-0 w-0 border-x-[10px] border-x-transparent border-t-[16px] border-t-amber-300 drop-shadow" />
@@ -144,7 +165,7 @@ export function PrizeWheelCard() {
           <motion.div
             animate={controls}
             className="absolute inset-0 rounded-full border-4 border-white/20 shadow-2xl"
-            style={{ background }}
+            style={{ background, willChange: "transform" }}
           >
             {SEGMENTS.map((s, i) => {
               const angle = i * SLICE + SLICE / 2;
@@ -154,7 +175,7 @@ export function PrizeWheelCard() {
                   className="absolute inset-0"
                   style={{ transform: `rotate(${angle}deg)` }}
                 >
-                  <div className="absolute left-1/2 top-0 w-16 -translate-x-1/2 pt-3 flex flex-col items-center text-center leading-none">
+                  <div className="absolute left-1/2 top-0 w-14 -translate-x-1/2 pt-3 flex flex-col items-center text-center leading-none">
                     <span className="text-[13px] font-black text-white drop-shadow">{s.label}</span>
                     <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/80">
                       {s.sub}
@@ -162,7 +183,6 @@ export function PrizeWheelCard() {
                   </div>
                 </div>
               );
-
             })}
           </motion.div>
 
@@ -176,18 +196,18 @@ export function PrizeWheelCard() {
         >
           {spinning ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Spinning…
+              <Loader2 className="w-4 h-4 animate-spin" /> {t("wheel.spinning")}
             </>
           ) : spins > 0 ? (
-            <>Spin now ({spins})</>
+            <>{t("wheel.spin_now", { count: spins })}</>
           ) : (
-            <>Deposit $10 to unlock a spin</>
+            <>{t("wheel.locked")}</>
           )}
         </button>
 
         {nextExpiryAt && spins > 0 && (
           <div className="mt-2 text-[10px] text-white/60">
-            Spins expire on {new Date(nextExpiryAt).toLocaleDateString()}
+            {t("wheel.expires_on", { date: new Date(nextExpiryAt).toLocaleDateString() })}
           </div>
         )}
 
@@ -209,17 +229,17 @@ export function PrizeWheelCard() {
         {!!data?.history?.length && (
           <div className="mt-3 w-full space-y-1">
             {data.history.slice(0, 3).map((h) => (
-              <div key={h.id} className="flex items-center justify-between text-[11px] font-medium text-white/85">
-                <span>
+              <div key={h.id} className="flex items-center justify-between gap-2 text-[11px] font-medium text-white/85">
+                <span className="min-w-0 truncate">
                   {h.prize_type === "gram_mining"
-                    ? `+${h.prize_amount} GRAM mining`
+                    ? t("wheel.hist_gram", { amount: h.prize_amount ?? 0 })
                     : h.prize_type === "deposit_bonus_pct"
-                      ? `+${h.prize_amount}% deposit bonus`
+                      ? t("wheel.hist_bonus", { amount: h.prize_amount ?? 0 })
                       : h.prize_type === "gift_box"
-                        ? "Gift box"
-                        : "Extra spin"}
+                        ? t("wheel.hist_box")
+                        : t("wheel.hist_spin")}
                 </span>
-                <span>{h.used_at ? new Date(h.used_at).toLocaleDateString() : ""}</span>
+                <span className="shrink-0">{h.used_at ? new Date(h.used_at).toLocaleDateString() : ""}</span>
               </div>
             ))}
           </div>
@@ -234,6 +254,7 @@ export function PrizeWheelCard() {
  * gift boxes card. Tapping it opens the full wheel page.
  */
 export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
+  const { t } = useT();
   const listFn = useServerFn(listWheelSpins);
   const { data } = useQuery({
     queryKey: ["wheel-spins"],
@@ -254,7 +275,7 @@ export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
       whileTap={{ scale: 0.98 }}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative w-full text-left rounded-3xl p-5 overflow-hidden"
+      className="relative w-full max-w-full text-left rounded-3xl p-5 overflow-hidden"
       style={{
         background:
           "linear-gradient(135deg, oklch(0.24 0.08 300) 0%, oklch(0.30 0.10 280) 55%, oklch(0.42 0.14 250) 100%)",
@@ -262,8 +283,8 @@ export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
     >
       <div className="absolute -bottom-10 -left-8 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
 
-      <div className="relative flex items-center gap-4">
-        <div className="relative shrink-0" style={{ width: 84, height: 84 }}>
+      <div className="relative flex items-center gap-3">
+        <div className="relative shrink-0" style={{ width: 72, height: 72 }}>
           <motion.div
             className="absolute inset-0 rounded-full blur-2xl"
             animate={spins > 0 ? { opacity: [0.45, 0.85, 0.45], scale: [0.92, 1.1, 0.92] } : { opacity: 0.35 }}
@@ -275,7 +296,7 @@ export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
           </div>
           <motion.div
             className="absolute inset-0 rounded-full border-[3px] border-white/25 shadow-xl"
-            style={{ background }}
+            style={{ background, willChange: "transform" }}
             animate={{ rotate: 360 }}
             transition={{ duration: spins > 0 ? 9 : 26, repeat: Infinity, ease: "linear" }}
           />
@@ -289,25 +310,25 @@ export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
 
         <div className="flex-1 min-w-0">
           <div className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest text-sky-200 uppercase">
-            <Sparkles className="w-3 h-3" /> Prize Wheel
+            <Sparkles className="w-3 h-3 shrink-0" /> <span className="truncate">{t("wheel.title")}</span>
           </div>
-          <div className="text-lg font-extrabold text-white leading-tight mt-0.5">
-            {spins > 0 ? `You have ${spins} spin${spins === 1 ? "" : "s"}!` : "Spin & win GRAM"}
+          <div className="text-base font-extrabold text-white leading-tight mt-0.5 break-words">
+            {spins > 0
+              ? t(spins === 1 ? "wheel.teaser_have" : "wheel.teaser_have_plural", { count: spins })
+              : t("wheel.teaser_idle")}
           </div>
-          <div className="text-[11px] text-white/70 mt-0.5">
-            1 free spin for every $10 in a single deposit.
-          </div>
-          <div className="text-[11px] font-bold text-amber-200 mt-0.5">
-            Prizes from 0.1 to 10 GRAM mining power
-          </div>
+          <div className="text-[11px] text-white/70 mt-0.5">{t("wheel.teaser_rule")}</div>
+          <div className="text-[11px] font-bold text-amber-200 mt-0.5">{t("wheel.teaser_prizes")}</div>
         </div>
 
         <ChevronRight className="w-5 h-5 text-white/70 shrink-0" />
       </div>
 
       <div className="relative mt-4 w-full py-3 rounded-2xl font-bold text-sm bg-white text-purple-900 shadow-lg flex items-center justify-center gap-2">
-        <Ticket className="w-4 h-4" />
-        {spins > 0 ? `Open the wheel (${spins})` : "Open the wheel"}
+        <Ticket className="w-4 h-4 shrink-0" />
+        <span className="truncate">
+          {spins > 0 ? t("wheel.open_count", { count: spins }) : t("wheel.open")}
+        </span>
       </div>
     </motion.button>
   );

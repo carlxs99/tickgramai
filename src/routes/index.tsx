@@ -503,13 +503,14 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
 }
 
 function WheelTab({ onBack }: { onBack: () => void }) {
+  const { t } = useT();
   return (
-    <div className="space-y-4">
+    <div className="w-full max-w-full overflow-x-hidden space-y-4">
       <button
         onClick={onBack}
         className="flex items-center gap-1.5 text-sm font-semibold text-white/80"
       >
-        <ChevronLeft className="w-4 h-4" /> Back
+        <ChevronLeft className="w-4 h-4 shrink-0" /> {t("wheel.back")}
       </button>
       <PrizeWheelCard />
     </div>
