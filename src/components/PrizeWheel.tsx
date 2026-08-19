@@ -151,10 +151,10 @@ export function PrizeWheelCard() {
               return (
                 <div
                   key={s.key}
-                  className="absolute left-1/2 top-1/2 origin-top"
-                  style={{ transform: `rotate(${angle}deg) translate(-50%, 8px)` }}
+                  className="absolute inset-0"
+                  style={{ transform: `rotate(${angle}deg)` }}
                 >
-                  <div className="flex w-16 flex-col items-center text-center leading-none">
+                  <div className="absolute left-1/2 top-0 w-16 -translate-x-1/2 pt-3 flex flex-col items-center text-center leading-none">
                     <span className="text-[13px] font-black text-white drop-shadow">{s.label}</span>
                     <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/80">
                       {s.sub}
@@ -162,6 +162,7 @@ export function PrizeWheelCard() {
                   </div>
                 </div>
               );
+
             })}
           </motion.div>
 
