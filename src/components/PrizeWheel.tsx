@@ -264,7 +264,7 @@ export function PrizeWheelCard({ price = 0 }: { price?: number }) {
  * Compact, graphic entry card for the Prize Wheel — visually matching the
  * gift boxes card. Tapping it opens the full wheel page.
  */
-export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
+export function WheelTeaserCard({ onClick, price = 0 }: { onClick: () => void; price?: number }) {
   const { t } = useT();
   const listFn = useServerFn(listWheelSpins);
   const { data } = useQuery({
@@ -273,6 +273,7 @@ export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
     refetchInterval: 60_000,
   });
   const spins = data?.spins ?? 0;
+  const gramPer10 = price > 0 ? 10 / price : 0;
 
   const background = useMemo(() => {
     const stops = SEGMENTS.map((s, i) => `${toneColor(s.tone, i)} ${i * SLICE}deg ${(i + 1) * SLICE}deg`);
