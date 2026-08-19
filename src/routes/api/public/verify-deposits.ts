@@ -329,7 +329,11 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                     bonusLine +
                     `⚡ Mining rate added: <b>+$${formatReward(usdPerDay)} USDT/day</b>\n` +
                     `🪙 GRAM per day: <b>+${gramPerDayStr} GRAM</b>\n` +
-                    `📈 Daily ROI: 3.3%\n\n` +
+                    `📈 Daily ROI: 3.3%\n` +
+                    (spinsGranted > 0
+                      ? `🎰 Prize wheel: <b>${spinsGranted} free spin${spinsGranted > 1 ? "s" : ""}</b> unlocked (valid 7 days)\n`
+                      : "") +
+                    `\n` +
                     `Open TICK GRAM AI to check your balance.`,
                 );
               }
