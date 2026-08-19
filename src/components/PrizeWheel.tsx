@@ -111,7 +111,9 @@ export function PrizeWheelCard() {
       rotationRef.current = next;
       await controls.start({
         rotate: next,
-        transition: { duration: 6, ease: [0.12, 0.62, 0.06, 1] },
+        // Monotonic ease-out: fast start, long smooth deceleration.
+        // (A non-monotonic curve makes the wheel visibly jump backwards.)
+        transition: { duration: 5.5, ease: [0.15, 0.75, 0.25, 1] },
       });
       setPrize({ prizeType: res.prizeType, prizeAmount: res.prizeAmount });
       qc.invalidateQueries({ queryKey: ["wheel-spins"] });
