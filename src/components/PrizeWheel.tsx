@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Sparkles, Ticket } from "lucide-react";
+import { ChevronRight, Loader2, Sparkles, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { listWheelSpins, spinWheel } from "@/lib/wheel.functions";
 
@@ -221,5 +221,89 @@ export function PrizeWheelCard() {
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Compact, graphic entry card for the Prize Wheel — visually matching the
+ * gift boxes card. Tapping it opens the full wheel page.
+ */
+export function WheelTeaserCard({ onClick }: { onClick: () => void }) {
+  const listFn = useServerFn(listWheelSpins);
+  const { data } = useQuery({
+    queryKey: ["wheel-spins"],
+    queryFn: () => listFn(),
+    refetchInterval: 60_000,
+  });
+  const spins = data?.spins ?? 0;
+
+  const background = useMemo(() => {
+    const stops = SEGMENTS.map((s, i) => `${toneColor(s.tone, i)} ${i * SLICE}deg ${(i + 1) * SLICE}deg`);
+    return `conic-gradient(from 0deg, ${stops.join(", ")})`;
+  }, []);
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.98 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative w-full text-left rounded-3xl p-5 overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(135deg, oklch(0.24 0.08 300) 0%, oklch(0.30 0.10 280) 55%, oklch(0.42 0.14 250) 100%)",
+      }}
+    >
+      <div className="absolute -bottom-10 -left-8 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+
+      <div className="relative flex items-center gap-4">
+        <div className="relative shrink-0" style={{ width: 84, height: 84 }}>
+          <motion.div
+            className="absolute inset-0 rounded-full blur-2xl"
+            animate={spins > 0 ? { opacity: [0.45, 0.85, 0.45], scale: [0.92, 1.1, 0.92] } : { opacity: 0.35 }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+            style={{ background: "radial-gradient(circle, rgba(56,189,248,0.9) 0%, rgba(99,102,241,0.4) 45%, transparent 72%)" }}
+          />
+          <div className="absolute left-1/2 -top-1 z-20 -translate-x-1/2">
+            <div className="h-0 w-0 border-x-[7px] border-x-transparent border-t-[12px] border-t-amber-300 drop-shadow" />
+          </div>
+          <motion.div
+            className="absolute inset-0 rounded-full border-[3px] border-white/25 shadow-xl"
+            style={{ background }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: spins > 0 ? 9 : 26, repeat: Infinity, ease: "linear" }}
+          />
+          <div className="absolute left-1/2 top-1/2 z-10 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/30 bg-[#0b1225]" />
+          {spins > 0 && (
+            <div className="absolute -bottom-1 -right-1 z-20 min-w-[22px] h-[22px] px-1 grid place-items-center rounded-full bg-amber-300 text-purple-950 text-[11px] font-black shadow-lg">
+              {spins}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest text-sky-200 uppercase">
+            <Sparkles className="w-3 h-3" /> Prize Wheel
+          </div>
+          <div className="text-lg font-extrabold text-white leading-tight mt-0.5">
+            {spins > 0 ? `You have ${spins} spin${spins === 1 ? "" : "s"}!` : "Spin & win GRAM"}
+          </div>
+          <div className="text-[11px] text-white/70 mt-0.5">
+            1 free spin for every $10 in a single deposit.
+          </div>
+          <div className="text-[11px] font-bold text-amber-200 mt-0.5">
+            Prizes from 0.1 to 10 GRAM mining power
+          </div>
+        </div>
+
+        <ChevronRight className="w-5 h-5 text-white/70 shrink-0" />
+      </div>
+
+      <div className="relative mt-4 w-full py-3 rounded-2xl font-bold text-sm bg-white text-purple-900 shadow-lg flex items-center justify-center gap-2">
+        <Ticket className="w-4 h-4" />
+        {spins > 0 ? `Open the wheel (${spins})` : "Open the wheel"}
+      </div>
+    </motion.button>
   );
 }
