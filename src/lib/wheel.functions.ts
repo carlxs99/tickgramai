@@ -51,8 +51,8 @@ export const listWheelSpins = createServerFn({ method: "GET" })
 export const spinWheel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { userId } = context;
-    await assertNotBanned(userId);
+    const { userId, supabase } = context;
+    await assertNotBanned(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { fetchTonPriceUsdt } = await import("@/lib/prices.functions");
