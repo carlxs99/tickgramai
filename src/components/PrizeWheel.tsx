@@ -111,7 +111,9 @@ export function PrizeWheelCard() {
       rotationRef.current = next;
       await controls.start({
         rotate: next,
-        transition: { duration: 6, ease: [0.12, 0.62, 0.06, 1] },
+        // Monotonic ease-out: fast start, long smooth deceleration.
+        // (A non-monotonic curve makes the wheel visibly jump backwards.)
+        transition: { duration: 5.5, ease: [0.15, 0.75, 0.25, 1] },
       });
       setPrize({ prizeType: res.prizeType, prizeAmount: res.prizeAmount });
       qc.invalidateQueries({ queryKey: ["wheel-spins"] });
@@ -176,7 +178,12 @@ export function PrizeWheelCard() {
                   style={{ transform: `rotate(${angle}deg)` }}
                 >
                   <div className="absolute left-1/2 top-0 w-14 -translate-x-1/2 pt-3 flex flex-col items-center text-center leading-none">
-                    <span className="text-[13px] font-black text-white drop-shadow">{s.label}</span>
+                    <span
+                      className="text-[13px] font-black text-white"
+                      style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}
+                    >
+                      {s.label}
+                    </span>
                     <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/80">
                       {s.sub}
                     </span>
