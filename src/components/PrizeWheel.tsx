@@ -92,7 +92,7 @@ export function PrizeWheelCard() {
       rotationRef.current = next;
       await controls.start({
         rotate: next,
-        transition: { duration: 4.2, ease: [0.15, 0.9, 0.2, 1] },
+        transition: { duration: 6, ease: [0.12, 0.62, 0.06, 1] },
       });
       setPrize({ prizeType: res.prizeType, prizeAmount: res.prizeAmount });
       qc.invalidateQueries({ queryKey: ["wheel-spins"] });
@@ -195,10 +195,14 @@ export function PrizeWheelCard() {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-3 w-full rounded-2xl border border-amber-300/30 bg-amber-400/10 p-3 text-center"
+            className="mt-3 w-full rounded-2xl border-2 border-amber-300/70 bg-amber-400/25 p-4 text-center shadow-[0_0_24px_rgba(251,191,36,0.35)]"
           >
-            <div className="text-sm font-black text-amber-200">{prizeText.title}</div>
-            <div className="text-[11px] text-white/70">{prizeText.sub}</div>
+            <div className="text-base font-black text-amber-100 drop-shadow-[0_1px_6px_rgba(0,0,0,0.9)]">
+              {prizeText.title}
+            </div>
+            <div className="mt-1 text-xs font-semibold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+              {prizeText.sub}
+            </div>
           </motion.div>
         )}
 
