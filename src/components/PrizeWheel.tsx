@@ -209,7 +209,7 @@ export function PrizeWheelCard() {
         {!!data?.history?.length && (
           <div className="mt-3 w-full space-y-1">
             {data.history.slice(0, 3).map((h) => (
-              <div key={h.id} className="flex items-center justify-between text-[10px] text-white/60">
+              <div key={h.id} className="flex items-center justify-between text-[11px] font-medium text-white/85">
                 <span>
                   {h.prize_type === "gram_mining"
                     ? `+${h.prize_amount} GRAM mining`
