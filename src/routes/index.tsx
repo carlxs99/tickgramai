@@ -10,7 +10,7 @@ import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
 import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getMyRank, getFriends, getReferralStats, listReferralMilestones, claimReferralMilestone, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
-import { PrizeWheelCard } from "@/components/PrizeWheel";
+import { PrizeWheelCard, WheelTeaserCard } from "@/components/PrizeWheel";
 import { getActivePromotion } from "@/lib/promotions.functions";
 
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan, adminCreateBroadcast, adminListBroadcasts, adminCancelBroadcast, adminTestBroadcast, adminResendBroadcast } from "@/lib/admin.functions";
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/")({
   component: MinerApp,
 });
 
-type Tab = "mine" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "stats" | "admin";
+type Tab = "mine" | "wheel" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "stats" | "admin";
 
 function MinerApp() {
   return (
@@ -204,7 +204,8 @@ function MinerAppInner() {
             className="px-4 pt-4"
           >
             <Suspense fallback={<div className="min-h-[50vh]" aria-hidden />}>
-              {tab === "mine" && <MineTab />}
+              {tab === "mine" && <MineTab setTab={setTab} />}
+              {tab === "wheel" && <WheelTab onBack={() => setTab("mine")} />}
               {tab === "tasks" && <TasksTab />}
               {tab === "top" && <LeaderboardTab />}
               {tab === "friends" && <FriendsTab />}
@@ -372,7 +373,7 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
 
 const meQO = (fn: () => Promise<any>) => queryOptions({ queryKey: ["me"], queryFn: fn, refetchInterval: 30000 });
 
-function MineTab() {
+function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
   const { t } = useT();
   const meFn = useServerFn(getMe);
   const collectFn = useServerFn(collectIncome);
@@ -496,6 +497,20 @@ function MineTab() {
 
       <GiftBoxesCard />
 
+      <WheelTeaserCard onClick={() => { getTelegram()?.HapticFeedback?.impactOccurred?.("light"); setTab("wheel"); }} />
+    </div>
+  );
+}
+
+function WheelTab({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-sm font-semibold text-white/80"
+      >
+        <ChevronLeft className="w-4 h-4" /> Back
+      </button>
       <PrizeWheelCard />
     </div>
   );
