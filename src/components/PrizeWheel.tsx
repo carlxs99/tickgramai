@@ -157,7 +157,9 @@ export function PrizeWheelCard({ price = 0 }: { price?: number }) {
         </div>
       </div>
 
-      <p className="mt-1 text-[11px] text-white/70">{t("wheel.rule")}</p>
+      <p className="mt-1 text-[11px] text-white/70">
+        {gramPer10 > 0 ? t("wheel.rule", { gram: formatReward(gramPer10) }) : t("wheel.rule", { gram: "—" })}
+      </p>
 
       <div className="mt-4 flex flex-col items-center">
         <div className="relative mx-auto" style={{ width: size, height: size }}>
