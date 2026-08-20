@@ -2,7 +2,6 @@ import { assertNotBanned } from "@/lib/ban-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { fetchTonPriceUsdt } from "@/lib/prices.functions";
 
 
 // Mining rate is stored in USDT/day on profiles.mining_rate_usd (source of truth).
@@ -30,6 +29,7 @@ export const getMe = createServerFn({ method: "GET" })
     });
 
     const rateUsdPerDay = Number((profile as any).mining_rate_usd ?? 0);
+    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
     const rateGramPerDay = rateUsdPerDay / tonPrice;
     const now = Date.now();
@@ -56,6 +56,7 @@ export const collectIncome = createServerFn({ method: "POST" })
     await assertNotBanned(context.supabase, context.userId);
     const { userId } = context;
     // Fetch current TON price server-side (never trust the client for economic inputs).
+    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     const tonPrice = await fetchTonPriceUsdt();
     if (!(tonPrice > 0)) throw new Error("Precio TON no disponible");
 
@@ -164,6 +165,7 @@ export const completeTask = createServerFn({ method: "POST" })
     // Partner tasks credit the balance directly (see completePartnerTask).
     const rewardCapitalGram = Number(task.reward);
     const dailyAddGram = rewardCapitalGram * 0.033;
+    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
     const dailyAddUsd = dailyAddGram * tonPrice;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -262,6 +264,7 @@ export const reinvestBalance = createServerFn({ method: "POST" })
       throw new Error("Insufficient balance");
     }
     // 3.3% daily denominated in USDT. Snapshot TON price to lock the USD value in.
+    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
     const usdPerDay = data.amount * tonPrice * 0.033;
     const gramPerDay = data.amount * 0.033; // snapshot for deposit history
@@ -315,6 +318,7 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
       throw new Error("Invalid address format");
     }
     // Minimum withdrawal is $3 worth of GRAM at current TON price.
+    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     const tonPrice = await fetchTonPriceUsdt();
     if (!(tonPrice > 0)) throw new Error("Precio TON no disponible");
     const minGram = 3 / tonPrice;

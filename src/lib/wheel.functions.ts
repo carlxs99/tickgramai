@@ -55,7 +55,7 @@ export const spinWheel = createServerFn({ method: "POST" })
     await assertNotBanned(supabase, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { fetchTonPriceUsdt } = await import("@/lib/prices.functions");
+    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     let price = 1;
     try {
       const p = await fetchTonPriceUsdt();
