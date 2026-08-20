@@ -194,7 +194,7 @@ export const authWithTelegram = createServerFn({ method: "POST" })
           // income at the standard 3.3% daily ROI ($0.0033/day).
           if (refRow) {
             try {
-              const { fetchTonPriceUsdt } = await import("@/lib/prices.functions");
+              const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
               const price = await fetchTonPriceUsdt();
               const SIGNUP_CAPITAL_USD = 0.1;
               const DAILY_ROI = 0.033;

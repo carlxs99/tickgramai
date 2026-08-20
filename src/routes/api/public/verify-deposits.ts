@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { Address } = await import("@ton/core");
         const { sendTelegramMessage } = await import("@/lib/telegram-notify.server");
-        const { fetchTonPriceUsdt } = await import("@/lib/prices.functions");
+        const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
 
         // TON price at the moment of confirmation — used to lock in the USD-denominated ROI.
         const tonPriceAtDeposit = await fetchTonPriceUsdt();
