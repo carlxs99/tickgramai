@@ -2150,6 +2150,18 @@ function WithdrawTab() {
     return next > Date.now() ? next : null;
   }, [hist]);
   const locked = nextAllowedAt !== null;
+  // First withdrawal is free; from the second one on the account must have
+  // deposited at least 1 GRAM.
+  const successfulWithdrawals = useMemo(
+    () =>
+      ((hist as any[]) ?? []).filter(
+        (w) => !["failed", "refunded", "rejected", "cancelled"].includes(String(w.status)),
+      ).length,
+    [hist],
+  );
+  const depositRequired =
+    successfulWithdrawals >= 1 && Number(me.profile.deposit_total ?? 0) < 1;
+
   const normalizedAmount = String(amount).trim().replace(",", ".");
   const amountNum = Number(normalizedAmount);
   const amountEmpty = normalizedAmount === "";
@@ -2181,6 +2193,11 @@ function WithdrawTab() {
         qc.invalidateQueries({ queryKey: ["withdrawals"] });
         return;
       }
+      if (/deposit required/i.test(msg)) {
+        toast.error(t("withdraw.deposit_required"));
+        qc.invalidateQueries({ queryKey: ["me"] });
+        return;
+      }
       toast.error(msg || t("common.failed"));
 
     },
@@ -2195,6 +2212,10 @@ function WithdrawTab() {
   });
 
   const requestWithdrawal = () => {
+    if (depositRequired) {
+      toast.error(t("withdraw.deposit_required"));
+      return;
+    }
     if (locked) {
       toast.error(t("withdraw.limit_hint", { time: formatCountdown(nextAllowedAt! - Date.now()) }));
       return;
@@ -2219,6 +2240,12 @@ function WithdrawTab() {
     <div className="space-y-3">
       <h2 className="text-2xl font-bold text-white text-glow-white">{t("withdraw.title")}</h2>
       <p className="text-sm text-white/80">{t("withdraw.subtitle")}</p>
+      {depositRequired && (
+        <div className="rounded-2xl p-3 border border-amber-400/40 bg-amber-400/10 flex gap-2 items-start">
+          <AlertTriangle className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+          <p className="text-[12px] leading-snug text-amber-100">{t("withdraw.deposit_required")}</p>
+        </div>
+      )}
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.available")}</span>
@@ -2254,7 +2281,7 @@ function WithdrawTab() {
             {t("withdraw.limit_hint", { time: formatCountdown(nextAllowedAt! - Date.now()) })}
           </p>
         )}
-        <button disabled={mut.isPending || locked} onClick={requestWithdrawal}
+        <button disabled={mut.isPending || locked || depositRequired} onClick={requestWithdrawal}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
           {mut.isPending ? t("withdraw.submitting") : locked ? t("withdraw.limit_value") : t("withdraw.request")}
 
