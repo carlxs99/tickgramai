@@ -2166,7 +2166,8 @@ function WithdrawTab() {
   const amountNum = Number(normalizedAmount);
   const amountEmpty = normalizedAmount === "";
   const amountInvalid = !amountEmpty && (!Number.isFinite(amountNum) || amountNum <= 0);
-  const exceedsBalance = !amountEmpty && !amountInvalid && amountNum > balanceNum;
+  const belowMinimum = !amountEmpty && !amountInvalid && amountNum < 1;
+  const exceedsBalance = !amountEmpty && !amountInvalid && !belowMinimum && amountNum > balanceNum;
 
   const mut = useMutation({
     mutationFn: (request: { amount: number; address: string }) =>
@@ -2224,6 +2225,10 @@ function WithdrawTab() {
       toast.error(t("withdraw.amount_required"));
       return;
     }
+    if (belowMinimum) {
+      toast.error(t("withdraw.min_amount", { min: "1" }));
+      return;
+    }
     if (exceedsBalance) {
       toast.error(t("withdraw.insufficient"));
       return;
@@ -2266,11 +2271,12 @@ function WithdrawTab() {
               className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MAX</button>
           </div>
           {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.amount_required")}</p>}
+          {belowMinimum && <p className="text-[10px] text-destructive mt-1">{t("withdraw.min_amount", { min: "1" })}</p>}
           {exceedsBalance && <p className="text-[10px] text-destructive mt-1">{t("withdraw.insufficient")}</p>}
         </Field>
 
         <Field label={t("withdraw.address")}><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="UQ…" className="input" /></Field>
-        {!amountEmpty && !amountInvalid && !exceedsBalance && (
+        {!amountEmpty && !amountInvalid && !belowMinimum && !exceedsBalance && (
           <div className="flex justify-between text-sm pt-1 border-t border-white/5">
             <span className="text-muted-foreground">{t("withdraw.net_label")}</span>
             <span className="font-semibold text-[color:var(--success)]">{formatGram(amountNum * 0.95)} GRAM</span>
@@ -2281,7 +2287,7 @@ function WithdrawTab() {
             {t("withdraw.limit_hint", { time: formatCountdown(nextAllowedAt! - Date.now()) })}
           </p>
         )}
-        <button disabled={mut.isPending || locked || depositRequired} onClick={requestWithdrawal}
+        <button disabled={mut.isPending || locked || depositRequired || belowMinimum} onClick={requestWithdrawal}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
           {mut.isPending ? t("withdraw.submitting") : locked ? t("withdraw.limit_value") : t("withdraw.request")}
 
