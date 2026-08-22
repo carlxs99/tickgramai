@@ -6,9 +6,12 @@ import { createClient } from "@supabase/supabase-js";
 // without embedding the plaintext in cron.job SQL.
 //
 // Safe to expose: does not echo the secret. Idempotent (upserts vault entry).
-async function bootstrap(): Promise<Response> {
+async function bootstrap(request: Request): Promise<Response> {
   const secret = process.env.CRON_SECRET;
   if (!secret) return new Response("CRON_SECRET not configured", { status: 500 });
+  // Only a caller that already knows the secret may (re)write the vault entry.
+  const header = request.headers.get("authorization") ?? "";
+  if (header !== `Bearer ${secret}`) return new Response("Unauthorized", { status: 401 });
 
   const supabase = createClient(
     process.env.SUPABASE_URL!,
