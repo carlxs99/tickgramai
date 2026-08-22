@@ -307,7 +307,7 @@ const en: Dict = {
   "tutorial.s6.title": "3-level referrals",
   "tutorial.s6.body": "Earn 10% from level 1, 5% from level 2 and 3% from level 3 of every deposit, plus $0.10 of mining power for each friend who joins.",
   "tutorial.s7.title": "Withdraw your GRAM",
-  "tutorial.s7.body": "No minimum amount: withdraw whenever you want, once every 24h. Payments are processed automatically to your wallet.",
+  "tutorial.s7.body": "Minimum 1 GRAM: withdraw once every 24h. Payments are processed automatically to your wallet.",
 };
 
 
@@ -604,7 +604,7 @@ const es: Dict = {
   "tutorial.s6.title": "Referidos de 3 niveles",
   "tutorial.s6.body": "Gana 10% del nivel 1, 5% del nivel 2 y 3% del nivel 3 de cada depósito, más 0,10$ de potencia de minado por cada amigo que se una.",
   "tutorial.s7.title": "Retira tu GRAM",
-  "tutorial.s7.body": "Sin mínimo: retira cuando quieras, una vez cada 24h. Los pagos se procesan automáticamente a tu wallet.",
+  "tutorial.s7.body": "Mínimo 1 GRAM: retira una vez cada 24h. Los pagos se procesan automáticamente a tu wallet.",
 };
 
 
@@ -902,7 +902,7 @@ const ru: Dict = {
   "tutorial.s6.title": "Рефералы 3 уровней",
   "tutorial.s6.body": "10% с 1-го уровня, 5% со 2-го и 3% с 3-го от каждого депозита, плюс $0.10 майнинг-мощности за каждого друга.",
   "tutorial.s7.title": "Выводите GRAM",
-  "tutorial.s7.body": "Минимальной суммы нет: выводите когда угодно, раз в 24 часа. Выплаты обрабатываются автоматически.",
+  "tutorial.s7.body": "Минимум 1 GRAM: выводите раз в 24 часа. Выплаты обрабатываются автоматически.",
 };
 
 
@@ -1200,7 +1200,7 @@ const hi: Dict = {
   "tutorial.s6.title": "3-स्तरीय रेफरल",
   "tutorial.s6.body": "हर जमा पर स्तर 1 से 10%, स्तर 2 से 5% और स्तर 3 से 3% कमाएँ, साथ ही हर नए मित्र पर $0.10 माइनिंग पावर।",
   "tutorial.s7.title": "अपना GRAM निकालें",
-  "tutorial.s7.body": "कोई न्यूनतम राशि नहीं: जब चाहें निकालें, हर 24 घंटे में एक बार। भुगतान अपने आप प्रोसेस होते हैं।",
+  "tutorial.s7.body": "न्यूनतम 1 GRAM: हर 24 घंटे में एक बार निकालें। भुगतान अपने आप प्रोसेस होते हैं।",
 };
 
 
