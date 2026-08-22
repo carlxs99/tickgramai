@@ -144,8 +144,8 @@ export const adminAddRevenue = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.rpc("add_revenue_event", {
       _source: data.source,
       _amount_usd: data.amountUsd,
-      _note: data.note ?? null,
-      _ref: null,
+      _note: data.note ?? undefined,
+      _ref: undefined,
       _created_by: context.userId,
     });
     if (error) throw error;
@@ -215,7 +215,7 @@ export const adminRunPayout = createServerFn({ method: "POST" })
     const day =
       data.day ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-    const out: unknown[] = [];
+    const out: Array<{ status: string; remaining: number } | null> = [];
     for (let i = 0; i < 20; i++) {
       const { data: r, error } = await supabaseAdmin.rpc("run_daily_payout", {
         _day: day,
@@ -227,7 +227,7 @@ export const adminRunPayout = createServerFn({ method: "POST" })
       const row = (Array.isArray(r) ? r[0] : r) as
         | { status: string; remaining: number }
         | undefined;
-      out.push(row);
+      out.push(row ?? null);
       if (!row || row.status === "done" || Number(row.remaining ?? 0) === 0) break;
     }
     return { ok: true, day, treasuryTon, gramPrice: price, rounds: out };
