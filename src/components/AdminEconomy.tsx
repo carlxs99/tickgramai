@@ -48,6 +48,7 @@ export function AdminEconomySection() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2">
         <Stat label="Revenue today" value={`$${(data?.revenueToday ?? 0).toFixed(2)}`} />
+        <Stat label="From deposits (daily)" value={`$${(data?.deferredDaily ?? 0).toFixed(2)}`} />
         <Stat label="Payout ratio" value={`${((data?.payoutRatio ?? 0) * 100).toFixed(0)}%`} />
         <Stat
           label="Network hashrate"

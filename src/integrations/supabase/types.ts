@@ -125,6 +125,39 @@ export type Database = {
         }
         Relationships: []
       }
+      deferred_revenue: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          daily_usd: number
+          ends_on: string
+          id: string
+          ref: string | null
+          source: string
+          starts_on: string
+        }
+        Insert: {
+          amount_usd: number
+          created_at?: string
+          daily_usd: number
+          ends_on: string
+          id?: string
+          ref?: string | null
+          source: string
+          starts_on?: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          daily_usd?: number
+          ends_on?: string
+          id?: string
+          ref?: string | null
+          source?: string
+          starts_on?: string
+        }
+        Relationships: []
+      }
       deposit_bonuses: {
         Row: {
           created_at: string
@@ -930,6 +963,15 @@ export type Database = {
     }
     Functions: {
       _set_cron_secret: { Args: { _value: string }; Returns: undefined }
+      add_deferred_revenue: {
+        Args: {
+          _amount_usd: number
+          _days?: number
+          _ref?: string
+          _source: string
+        }
+        Returns: string
+      }
       add_revenue_event: {
         Args: {
           _amount_usd: number
