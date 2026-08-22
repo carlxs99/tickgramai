@@ -10,7 +10,7 @@ export const getNetworkMining = createServerFn({ method: "GET" })
     const userId = context.userId;
 
     const today = new Date().toISOString().slice(0, 10);
-    const [mine, net, flag, pools, entries, ratioRow, revToday, deferred] = await Promise.all([
+    const [mine, net, flag, pools, entries, ratioRow, revToday, deferred, pending] = await Promise.all([
       supabaseAdmin.rpc("user_active_hashrate", { _user_id: userId }),
       supabaseAdmin.rpc("network_active_hashrate"),
       supabaseAdmin.from("app_settings").select("value").eq("key", "economy_v2").maybeSingle(),
