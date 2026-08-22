@@ -65,7 +65,7 @@ async function processOne(row: any, supabaseAdmin: any) {
         await sendTelegramMessage(
           Number(prof.telegram_id),
           `⚠️ <b>Withdrawal could not be processed</b>\n\n` +
-            `Hi ${escapeHtml(name)}, your withdrawal of <b>${Number(row.amount).toFixed(4)} GRAM</b> could not be sent right now.\n\n` +
+            `Hi ${escapeHtml(name)}, your withdrawal of <b>${formatGramAmount(row.amount)} GRAM</b> could not be sent right now.\n\n` +
             `💰 The full amount has been returned to your balance. You can try again later.`,
         );
       }
