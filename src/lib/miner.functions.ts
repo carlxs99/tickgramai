@@ -291,13 +291,23 @@ export const reinvestBalance = createServerFn({ method: "POST" })
       throw uErr;
     }
 
-    await supabaseAdmin.from("deposits").insert({
+    const { data: reinvestDeposit } = await supabaseAdmin.from("deposits").insert({
       user_id: userId,
       amount_ton: data.amount,
       gram_per_day: gramPerDay,
       tx_hash: null,
       status: "confirmed",
-    });
+    } as never).select("id").maybeSingle();
+
+    // Economy v2: reinvesting converts balance into real mining power.
+    // Without this grant the user would simply lose the reinvested balance.
+    await supabaseAdmin.rpc("grant_hashrate" as never, {
+      _user_id: userId,
+      _points: data.amount * tonPrice * 100,
+      _source: "reinvest",
+      _source_ref_id: (reinvestDeposit as any)?.id ?? null,
+      _days: 180,
+    } as never);
     return { ok: true, balance: Number(newBalance), gramPerDay, usdPerDay };
   });
 
