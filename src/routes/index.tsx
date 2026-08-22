@@ -949,10 +949,11 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
         <div className="mt-1 text-3xl font-extrabold text-white tabular-nums">
           {isGram
             ? ecoGift.enabled
-              ? `+${formatPoints(prize.prizeAmount * 2.5 * 100)} pts`
-              : `+${(prize.prizeAmount * 0.033).toFixed(10).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
+              ? `+${formatPoints(prize.prizeAmount)} pts`
+              : `+${((prize.prizeAmount / 100) * 0.033 / 2.5).toFixed(8).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
             : `+${prize.prizeAmount.toFixed(2)}%`}
         </div>
+
         <div className="text-xs text-white/70 mt-1">
           {isGram ? t("gift.prize_gram_sub") : t("gift.prize_bonus_sub")}
         </div>
