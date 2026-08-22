@@ -2112,7 +2112,15 @@ function Row({ k, v, strong, muted }: { k: string; v: string; strong?: boolean; 
 
 
 
+function formatCountdown(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
 function WithdrawTab() {
+
   const { t } = useT();
   const meFn = useServerFn(getMe);
   const wFn = useServerFn(submitWithdrawal);
