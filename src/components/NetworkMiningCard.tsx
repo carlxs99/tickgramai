@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Activity, Gauge, PieChart, TrendingUp } from "lucide-react";
 import { getNetworkMining } from "@/lib/economy.functions";
 import { formatReward } from "@/lib/format";
+import { useT } from "@/i18n";
 
 function Metric({
   icon,
@@ -29,6 +30,7 @@ function Metric({
 
 /** Shows the user's share of the network mining pool (Dynamic Mining v2). */
 export function NetworkMiningCard() {
+  const { t } = useT();
   const fn = useServerFn(getNetworkMining);
   const { data } = useQuery({
     queryKey: ["network-mining"],
@@ -49,57 +51,57 @@ export function NetworkMiningCard() {
             <Activity className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <p className="eyebrow text-muted-foreground !text-[9px]">Dynamic Mining</p>
-            <h3 className="text-sm font-display font-bold leading-tight">Network Mining</h3>
+            <p className="eyebrow text-muted-foreground !text-[9px]">{t("mining.eyebrow")}</p>
+            <h3 className="text-sm font-display font-bold leading-tight">{t("mining.title")}</h3>
           </div>
         </div>
         <span className="text-[10px] px-2 py-1 rounded-full bg-[color:var(--success)]/10 border border-[color:var(--success)]/20 text-[color:var(--success)] font-semibold">
-          Live pool
+          {t("mining.live")}
         </span>
       </div>
 
       <div className="rounded-xl p-3 mb-2 bg-gradient-to-br from-primary/15 to-accent/10 border border-primary/25">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">
-          Estimated earnings today
+          {t("mining.est_today")}
         </p>
         <p className="text-xl font-display font-bold text-gradient-gold leading-tight">
           ≈ {formatReward(data.estDailyGram)} GRAM
         </p>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          ≈ ${data.estDailyUsd.toFixed(4)} · ≈ {formatReward(data.estMonthlyGram)} GRAM / 30d
+          {t("mining.est_sub", {
+            usd: data.estDailyUsd.toFixed(4),
+            gram: formatReward(data.estMonthlyGram),
+          })}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <Metric
           icon={<Gauge className="w-3 h-3" />}
-          label="Your hashrate"
+          label={t("mining.hashrate")}
           value={`${Math.round(data.myHashrate).toLocaleString()} pts`}
-          sub={`Network ${Math.round(data.netHashrate).toLocaleString()} pts`}
+          sub={t("mining.network_pts", { pts: Math.round(data.netHashrate).toLocaleString() })}
         />
         <Metric
           icon={<PieChart className="w-3 h-3" />}
-          label="Network share"
+          label={t("mining.share")}
           value={`${sharePct}%`}
         />
         <Metric
           icon={<TrendingUp className="w-3 h-3" />}
-          label="Yesterday"
+          label={t("mining.yesterday")}
           value={last ? `${formatReward(Number(last.amount_gram))} GRAM` : "—"}
-          sub={last ? `≈ $${Number(last.amount_usd).toFixed(4)}` : "First payout pending"}
+          sub={last ? `≈ $${Number(last.amount_usd).toFixed(4)}` : t("mining.first_payout")}
         />
         <Metric
           icon={<TrendingUp className="w-3 h-3" />}
-          label="Est. APY (7d)"
+          label={t("mining.apy")}
           value={data.apy > 0 ? `${data.apy.toFixed(1)}%` : "—"}
-          sub="Variable, based on real revenue"
+          sub={t("mining.apy_sub")}
         />
       </div>
 
-      <p className="text-[10px] text-muted-foreground mt-3 leading-snug">
-        Paid once a day in GRAM, straight to your balance, from the network revenue pool split by
-        hashrate. The estimate is indicative and moves with real revenue.
-      </p>
+      <p className="text-[10px] text-muted-foreground mt-3 leading-snug">{t("mining.footer")}</p>
     </div>
   );
 }

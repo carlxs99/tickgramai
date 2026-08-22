@@ -57,7 +57,7 @@ export const Route = createFileRoute("/")({
   component: MinerApp,
 });
 
-type Tab = "mine" | "wheel" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "stats" | "admin";
+type Tab = "mine" | "wheel" | "mining" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "stats" | "admin";
 
 function MinerApp() {
   return (
@@ -209,6 +209,7 @@ function MinerAppInner() {
             <Suspense fallback={<div className="min-h-[50vh]" aria-hidden />}>
               {tab === "mine" && <MineTab setTab={setTab} />}
               {tab === "wheel" && <WheelTab onBack={() => setTab("mine")} />}
+              {tab === "mining" && <MiningTab onBack={() => setTab("mine")} />}
               {tab === "tasks" && <TasksTab />}
               {tab === "top" && <LeaderboardTab />}
               {tab === "friends" && <FriendsTab />}
@@ -440,29 +441,40 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
 
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-white/90 eyebrow">
-            <Sparkles className="w-3.5 h-3.5" /> {eco.enabled ? "Mining power" : t("mine.uncollected")}
+            <Sparkles className="w-3.5 h-3.5" /> {eco.enabled ? t("mine.mining_power") : t("mine.uncollected")}
           </div>
           <div className="mt-1 font-display text-4xl sm:text-5xl font-bold tabular-nums text-white leading-none text-glow-white">
             {eco.enabled ? formatPoints(eco.myHashrate) : formatGram(live, 6)}
           </div>
           <div className="mt-1 text-[11px] text-emerald-200 tabular-nums font-semibold">
             {eco.enabled
-              ? `${(eco.share * 100).toFixed(eco.share < 0.001 ? 4 : 2)}% of the network pool`
+              ? t("mine.of_pool", { pct: (eco.share * 100).toFixed(eco.share < 0.001 ? 4 : 2) })
               : `≈ $${usdt(live, price)} USDT`}
           </div>
+
+          {eco.enabled && (
+            <button
+              onClick={() => {
+                getTelegram()?.HapticFeedback?.impactOccurred?.("light");
+                setTab("mining");
+              }}
+              className="mt-2 inline-flex items-center gap-1.5 pl-3 pr-2.5 py-1.5 rounded-full bg-white/95 border border-white/60 text-emerald-700 text-[12px] font-semibold shadow-sm active:scale-[0.97] transition-transform"
+            >
+              <Activity className="w-3.5 h-3.5" />
+              {t("mining.pill")}
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           {eco.enabled ? (
             <div className="mt-4 max-w-[72%] space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums">
                 <Coins className="w-3.5 h-3.5 text-amber-200" />
                 {eco.lastPayout
-                  ? `Last payout +${formatGram(Number(eco.lastPayout.amount_gram), 6)} GRAM`
-                  : "First daily payout pending"}
+                  ? t("mine.last_payout", { amount: formatGram(Number(eco.lastPayout.amount_gram), 6) })
+                  : t("mine.first_payout_pending")}
               </div>
-              <p className="text-[11px] text-white/75 leading-snug">
-                Rewards are credited automatically once a day from the network revenue pool — no
-                need to collect.
-              </p>
+              <p className="text-[11px] text-white/75 leading-snug">{t("mine.auto_credited")}</p>
             </div>
           ) : (
           <div className="mt-4 flex items-center gap-2 max-w-[70%]">
@@ -505,7 +517,7 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
           <div className="mt-3 text-[11px] text-white/70 max-w-[65%]">
             {eco.enabled
               ? eco.myHashrate > 0
-                ? <>Network {formatPoints(eco.netHashrate)} pts · variable daily rewards</>
+                ? t("mine.network_variable", { pts: formatPoints(eco.netHashrate) })
                 : t("mine.deposit_to_start")
               : rateUsd > 0
                 ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
@@ -519,8 +531,6 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
         <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} valueClassName="text-black" />
         <StatCard label={t("mine.deposits")} value={formatReward(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} valueClassName="text-black" />
       </div>
-
-      <NetworkMiningCard />
 
       <GiftBoxesCard />
 
@@ -541,6 +551,22 @@ function WheelTab({ onBack }: { onBack: () => void }) {
         <ChevronLeft className="w-4 h-4 shrink-0" /> {t("wheel.back")}
       </button>
       <PrizeWheelCard price={price} />
+    </div>
+  );
+}
+
+function MiningTab({ onBack }: { onBack: () => void }) {
+  const { t } = useT();
+  return (
+    <div className="w-full max-w-full overflow-x-hidden space-y-4">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-sm font-semibold text-white/80"
+      >
+        <ChevronLeft className="w-4 h-4 shrink-0" /> {t("wheel.back")}
+      </button>
+      <h2 className="text-lg font-display font-bold">{t("mining.pill")}</h2>
+      <NetworkMiningCard />
     </div>
   );
 }
