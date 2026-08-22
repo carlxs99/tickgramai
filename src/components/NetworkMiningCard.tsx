@@ -17,12 +17,12 @@ function Metric({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl bg-background/50 border border-white/5 p-2.5">
+    <div className="rounded-xl bg-secondary/60 border border-border p-2.5">
       <div className="flex items-center gap-1.5 mb-1 text-muted-foreground">
         {icon}
         <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
       </div>
-      <p className="text-sm font-display font-bold leading-tight">{value}</p>
+      <p className="text-sm font-display font-bold leading-tight text-card-foreground">{value}</p>
       {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
