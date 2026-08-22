@@ -2,6 +2,7 @@ import { assertNotBanned } from "@/lib/ban-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { PARTNER_COST_PER_CLICK, PARTNER_MIN_CLICKS } from "@/lib/partner-config";
 
 
 // Economy v2: earnings come from the dynamic daily pool (hashrate share),
@@ -577,8 +578,6 @@ export const claimReferralMilestone = createServerFn({ method: "POST" })
 // promote them. Cost: 0.001 TON per click, minimum 250 clicks (0.25 TON).
 // Reward per click: 0.001 GRAM. Auto-completes when target_clicks is reached.
 
-const PARTNER_COST_PER_CLICK = 0.001; // TON
-const PARTNER_MIN_CLICKS = 250;
 
 // Public list: active partner tasks the user has not completed and does not own.
 export const listPartnerTasks = createServerFn({ method: "GET" })
