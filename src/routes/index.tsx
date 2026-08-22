@@ -989,10 +989,22 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
   }[rank];
   const { t } = useT();
   const price = useTonPrice();
+  const eco = useEconomy();
   const name = miner ? (miner.first_name || miner.username || t("leaderboard.anon")) : "—";
-  const rateUsd = miner ? Number(miner.mining_rate_usd ?? 0) : 0;
-  const rateGram = price > 0 ? rateUsd / price : 0;
-  const rateLabel = miner ? `$${rateUsd.toFixed(5)}` : "—";
+  const v2 = eco.enabled;
+  const rateUsd = miner ? Number((v2 ? miner.est_daily_usd : miner.mining_rate_usd) ?? 0) : 0;
+  const rateGram = miner
+    ? v2
+      ? Number(miner.est_daily_gram ?? 0)
+      : price > 0
+        ? rateUsd / price
+        : 0
+    : 0;
+  const rateLabel = miner
+    ? v2
+      ? formatPoints(Number(miner.hashrate ?? 0))
+      : `$${rateUsd.toFixed(5)}`
+    : "—";
   return (
     <div className={`flex-1 basis-0 min-w-0 flex flex-col items-center ${styles.order}`}>
       <div className="relative shrink-0">
@@ -1015,7 +1027,7 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
       <div className={`mt-2 w-full ${styles.height} ${styles.bar} rounded-t-2xl relative overflow-hidden`}>
         <div className="absolute inset-x-0 top-2 text-center">
           <div className="text-base font-extrabold text-black/90 drop-shadow">{rateLabel}</div>
-          <div className="text-[9px] font-semibold text-black/70 tracking-wider">USDT/d</div>
+          <div className="text-[9px] font-semibold text-black/70 tracking-wider">{v2 ? "PTS" : "USDT/d"}</div>
         </div>
       </div>
     </div>
@@ -1027,6 +1039,7 @@ function LeaderboardTab() {
   const fn = useServerFn(getTopMiners);
   const rankFn = useServerFn(getMyRank);
   const price = useTonPrice();
+  const ecoLb = useEconomy();
   const { data } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
   const { data: myRank, isLoading: isMyRankLoading, isError: isMyRankError } = useQuery({ queryKey: ["myRank"], queryFn: () => rankFn(), refetchInterval: 60_000 });
   const list = (data ?? []) as any[];
@@ -1083,9 +1096,13 @@ function LeaderboardTab() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{name}</p>
-                    <p className="text-[10px] text-muted-foreground">≈ {formatGram(price > 0 ? Number(m.mining_rate_usd ?? 0) / price : 0, 5)} GRAM/d</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      ≈ {formatGram(ecoLb.enabled ? Number(m.est_daily_gram ?? 0) : price > 0 ? Number(m.mining_rate_usd ?? 0) / price : 0, 5)} GRAM/d
+                    </p>
                   </div>
-                  <span className="text-sm tabular-nums text-[color:var(--success)] font-semibold">${Number(m.mining_rate_usd ?? 0).toFixed(5)}/d</span>
+                  <span className="text-sm tabular-nums text-[color:var(--success)] font-semibold">
+                    {ecoLb.enabled ? `${formatPoints(Number(m.hashrate ?? 0))} pts` : `$${Number(m.mining_rate_usd ?? 0).toFixed(5)}/d`}
+                  </span>
                 </div>
               );
             }}
