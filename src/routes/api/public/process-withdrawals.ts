@@ -5,6 +5,19 @@ import { createFileRoute } from "@tanstack/react-router";
 //
 // Uses @ton/ton + @ton/crypto — Cloudflare Workers-compatible with
 // nodejs_compat (pure JS + tweetnacl).
+// Show the real withdrawn amount with all meaningful decimals (never "0.00").
+function formatGramAmount(n: number | string) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "0";
+  let s = v.toFixed(9).replace(/0+$/, "").replace(/\.$/, "");
+  if (!s.includes(".")) s = `${s}.00`;
+  else {
+    const [i, d] = s.split(".");
+    s = `${i}.${d.padEnd(2, "0")}`;
+  }
+  return s;
+}
+
 async function processOne(row: any, supabaseAdmin: any) {
   const { mnemonicToPrivateKey } = await import("@ton/crypto");
   const { TonClient, WalletContractV4, internal, toNano, Address } = await import("@ton/ton");
@@ -52,7 +65,7 @@ async function processOne(row: any, supabaseAdmin: any) {
         await sendTelegramMessage(
           Number(prof.telegram_id),
           `⚠️ <b>Withdrawal could not be processed</b>\n\n` +
-            `Hi ${escapeHtml(name)}, your withdrawal of <b>${Number(row.amount).toFixed(4)} GRAM</b> could not be sent right now.\n\n` +
+            `Hi ${escapeHtml(name)}, your withdrawal of <b>${formatGramAmount(row.amount)} GRAM</b> could not be sent right now.\n\n` +
             `💰 The full amount has been returned to your balance. You can try again later.`,
         );
       }
@@ -228,7 +241,7 @@ async function processOne(row: any, supabaseAdmin: any) {
       .eq("user_id", row.user_id)
       .maybeSingle();
     const handle = prof?.username ? `@${prof.username}` : (prof?.first_name || "user");
-    const amount = Number(row.net_amount ?? row.amount).toFixed(2);
+    const amount = formatGramAmount(row.net_amount ?? row.amount);
     const explorerUrl = txHashHex
       ? `https://tonscan.org/tx/${txHashHex}`
       : `https://tonscan.org/address/${dest.toString({ urlSafe: true, bounceable: false })}`;
