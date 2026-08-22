@@ -58,6 +58,18 @@ export function NetworkMiningCard() {
         </span>
       </div>
 
+      <div className="rounded-xl p-3 mb-2 bg-gradient-to-br from-primary/15 to-accent/10 border border-primary/25">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">
+          Estimated earnings today
+        </p>
+        <p className="text-xl font-display font-bold text-gradient-gold leading-tight">
+          ≈ {formatReward(data.estDailyGram)} GRAM
+        </p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          ≈ ${data.estDailyUsd.toFixed(4)} · ≈ {formatReward(data.estMonthlyGram)} GRAM / 30d
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-2">
         <Metric
           icon={<Gauge className="w-3 h-3" />}
@@ -85,8 +97,8 @@ export function NetworkMiningCard() {
       </div>
 
       <p className="text-[10px] text-muted-foreground mt-3 leading-snug">
-        Rewards are paid once a day from the network revenue pool, split by hashrate. No fixed
-        rate — the more the network earns, the more you earn.
+        Paid once a day in GRAM, straight to your balance, from the network revenue pool split by
+        hashrate. The estimate is indicative and moves with real revenue.
       </p>
     </div>
   );
