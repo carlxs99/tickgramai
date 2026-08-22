@@ -467,16 +467,17 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
           )}
 
           {eco.enabled ? (
-            <div className="mt-4 max-w-[72%] space-y-2">
+            <div className="mt-4 max-w-[78%] space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums">
                 <Coins className="w-3.5 h-3.5 text-amber-200" />
                 {eco.lastPayout
                   ? t("mine.last_payout", { amount: formatGram(Number(eco.lastPayout.amount_gram), 6) })
                   : t("mine.first_payout_pending")}
               </div>
-              <p className="text-[11px] text-white/75 leading-snug">{t("mine.auto_credited")}</p>
+              <PayoutCollect />
             </div>
           ) : (
+
           <div className="mt-4 flex items-center gap-2 max-w-[70%]">
             <motion.button
               whileTap={{ scale: 0.96 }}
