@@ -240,12 +240,13 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                 _source_ref_id: (depositRow as any)?.id ?? null,
                 _days: 180,
               } as never);
-              await supabaseAdmin.rpc("add_revenue_event" as never, {
+              // Deposits are capital, not same-day profit: they are recognised
+              // as revenue gradually over 180 days (same window as the hashrate).
+              await supabaseAdmin.rpc("add_deferred_revenue" as never, {
                 _source: "deposit",
                 _amount_usd: amountTon * priceForCredit,
-                _note: `deposit ${txHash}`,
                 _ref: txHash,
-                _created_by: null,
+                _days: 180,
               } as never);
             } catch (e) {
               console.error("economy v2 deposit hooks failed", e);
