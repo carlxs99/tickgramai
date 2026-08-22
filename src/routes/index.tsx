@@ -2225,6 +2225,10 @@ function WithdrawTab() {
       toast.error(t("withdraw.amount_required"));
       return;
     }
+    if (belowMinimum) {
+      toast.error(t("withdraw.min_amount", { min: "1" }));
+      return;
+    }
     if (exceedsBalance) {
       toast.error(t("withdraw.insufficient"));
       return;
