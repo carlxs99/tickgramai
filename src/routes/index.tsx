@@ -2150,6 +2150,18 @@ function WithdrawTab() {
     return next > Date.now() ? next : null;
   }, [hist]);
   const locked = nextAllowedAt !== null;
+  // First withdrawal is free; from the second one on the account must have
+  // deposited at least 1 GRAM.
+  const successfulWithdrawals = useMemo(
+    () =>
+      ((hist as any[]) ?? []).filter(
+        (w) => !["failed", "refunded", "rejected", "cancelled"].includes(String(w.status)),
+      ).length,
+    [hist],
+  );
+  const depositRequired =
+    successfulWithdrawals >= 1 && Number(me.profile.deposit_total ?? 0) < 1;
+
   const normalizedAmount = String(amount).trim().replace(",", ".");
   const amountNum = Number(normalizedAmount);
   const amountEmpty = normalizedAmount === "";
