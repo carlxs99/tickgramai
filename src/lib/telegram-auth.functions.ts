@@ -49,6 +49,12 @@ export const authWithTelegram = createServerFn({ method: "POST" })
       if (!verifyTelegramHash(parsed.dataCheckString, parsed.hash, botToken)) {
         throw new Error("Invalid Telegram initData signature");
       }
+      // Freshness check: reject replayed initData older than 24h (or future-dated).
+      const authDate = Number(new URLSearchParams(data.initData).get("auth_date") ?? 0);
+      const ageSeconds = Math.floor(Date.now() / 1000) - authDate;
+      if (!authDate || ageSeconds > 86400 || ageSeconds < -300) {
+        throw new Error("Expired Telegram session, please reopen the app");
+      }
       tgUser = parsed.user;
       startParam = parsed.startParam;
     } else if (data.demoId && process.env.ENABLE_DEMO_AUTH === "1") {
