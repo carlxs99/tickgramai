@@ -1,101 +1,85 @@
-# Ultra Gram Miner — Plan
+# Dynamic Mining v2 — Presupuesto de pagos dinámico (una sola moneda: GRAM)
 
-Clone funcional del bot tipo CakeMinerBot, adaptado como **Telegram Mini App** con backend real en Lovable Cloud. Nombre: **Ultra Gram Miner**, token: **Gram**.
+Sustituye el ROI fijo del 3.3% diario por un reparto diario proporcional al **hashrate** de cada usuario, financiado únicamente por los ingresos reales del día más una reserva estabilizadora. Con esto el sistema nunca puede quedarse sin fondos: si un día entra menos, todos cobran menos, pero todos cobran.
 
-## Alcance de esta versión
+## Cómo lo vive el usuario
 
-5 pantallas con navegación inferior fija (Mining / Tasks / Friends / Deposit / Withdraw), autenticación por Telegram `initData`, balance y velocidad de minado persistentes, referidos y tareas diarias funcionales. **Sin pagos TON reales** en esta iteración (los depósitos/retiros se registran como solicitudes pendientes; se puede añadir TON Connect después).
+- Su depósito ya no compra "3.3% diario", compra **mining power (hashrate)** que dura 180 días y decae poco a poco.
+- En la pantalla principal ve: su hashrate, su cuota de la red (%), lo que ganó ayer y un **APY estimado (media 7 días)** — nunca una promesa fija.
+- Cada día, a una hora fija, se reparte el pool y su balance sube automáticamente.
 
-## Pantallas
+## Fórmula
 
-1. **Mining** — Ingreso acumulado (se incrementa en vivo según `mining_rate`), botón "Collect income" (mín 0.1 Gram), botones Increase speed / Withdraw income, ranking Top miners.
-2. **Tasks** — Daily tasks (Just check in, Share with Friends, Check for Updates, Deposit X+ Gram) con estado Completed/Pending y Partner Tasks (placeholder, sin creación real de tasks pagados en v1).
-3. **Friends** — Contador de referidos, botones Invite / Copy (usa `t.me/<bot>?start=ref_<user_id>`), Friends Rewards con Claim (mín 1 Gram), lista de bonuses por # de amigos.
-4. **Deposit** — Estado "TON Wallet: Not connected" + botón Connect (stub), formulario Deposit amount con cálculo "+X Gram per day", sección Reinvest que consume balance para subir mining rate.
-5. **Withdraw** — Formulario con Amount, Address (Gram~Ton), Tag/memo, muestra Amount to be received (15% + 0.1 Gram fee), Payment history.
+```
+Pool_diario = Ingresos_reales_del_día × payout_ratio  +  Reserva_liberada
+Pago_usuario = Pool_diario × (hashrate_usuario / hashrate_total_activo)
+```
 
-Header sticky con logo Ultra Gram Miner, chip de balance (0.0140 💎) y avatar. Tab bar inferior fija con 5 iconos (lucide-react).
+- `payout_ratio` por defecto 0.65 (20% a reserva, 15% beneficio de la banca).
+- Suavizado: el pool nunca baja del 70% ni sube del 130% de la media de los últimos 7 días; la diferencia sale de / entra en la reserva.
+- Freno de solvencia: si `Tesoro / Deuda_retirable < 1.2`, el `payout_ratio` se recorta automáticamente al 40%.
 
-## Diseño
+## Fuentes de ingreso que alimentan el pool
 
-Tema **dark premium**, tipografía Inter (bold para títulos), acentos:
-- Background `oklch(0.14 0.02 265)` casi negro
-- Cards `oklch(0.19 0.02 265)` con borde sutil `oklch(1 0 0 / 6%)`
-- Primary púrpura suave `oklch(0.68 0.14 275)` (botones Deposit/Withdraw)
-- Success verde `oklch(0.72 0.17 155)` (Increase speed / Completed)
-- Token accent cian `oklch(0.72 0.14 230)` para el diamante 💎
-- Radios grandes (rounded-2xl / rounded-full para botones)
+Todo evento de ingreso se registra en una tabla única `revenue_events`:
 
-Animaciones sutiles con framer-motion: contador de ingreso tickeando, tap feedback en botones.
+| Fuente | Cómo entra |
+|---|---|
+| Publicidad (AdSense/interstitial) | importe diario introducido por el admin o vía cron |
+| Fees de retiro | automático al procesar un retiro |
+| Partner tasks pagadas | automático al activarse la task |
+| Rake de ruleta / cofres de pago | automático |
+| Subastas de hashrate | automático |
+| Rendimiento on-chain del tesoro (staking TON) | entrada manual/cron |
+| Aporte del operador (bootstrap) | entrada manual del admin |
 
-## Backend (Lovable Cloud)
+## Sinks (lo que vuelve al tesoro)
 
-Tablas:
-- `profiles` (user_id PK → auth.users, telegram_id, username, first_name, avatar_url, balance numeric, mining_rate numeric default 0, deposit_total numeric, last_collect_at timestamptz, referred_by uuid, referral_code text, created_at)
-- `user_roles` (id, user_id, role enum: admin/user) + `has_role()` security definer
-- `tasks` (id, code text unique, title, reward numeric, kind enum: daily/one_off, is_active) — seed con las 4 daily tasks
-- `user_tasks` (id, user_id, task_id, completed_at) — unique (user_id, task_id, date) para daily
-- `deposits` (id, user_id, amount_ton numeric, gram_per_day numeric, status enum: pending/confirmed, tx_hash, created_at)
-- `withdrawals` (id, user_id, amount_gram, address, memo, fee, net_amount, status enum: pending/completed, created_at)
-- `referrals` (id, referrer_id, referred_id unique, bonus_paid numeric)
+- Ruleta y cofres extra comprados con balance (rake 10%).
+- Subastas de hashrate: se puja con balance, el GRAM pujado va íntegro al tesoro.
+- Boosts temporales y slots de referido premium.
+- Fee de retiro escalonado.
 
-RLS: cada usuario solo ve/edita lo suyo. `GRANT`s explícitos a `authenticated` y `service_role` en cada tabla del schema public.
+## Hashrate
 
-Server functions (`createServerFn`, `.middleware([requireSupabaseAuth])`):
-- `getMe` — perfil + balance calculado (balance + mining_rate * horas desde last_collect_at)
-- `collectIncome` — mueve ingreso acumulado a balance
-- `completeTask({ code })` — marca daily task y suma reward al balance
-- `submitDeposit({ amount_ton })` — crea deposit pending y aumenta mining_rate (v1: aprobación instantánea simulada; después TON Connect real)
-- `reinvest({ amount_gram })` — resta del balance y sube mining_rate
-- `submitWithdrawal({ amount, address, memo })` — valida balance, crea withdrawal pending
-- `getTopMiners` — top 10 por profit_24h
-- `getFriends` — lista de referidos + total ganado
-- `claimReferralRewards`
+- Comprado con depósito: `hashrate = usd_depositado × 100` puntos, `expires_at = +180 días`, decaimiento lineal 1/180 diario.
+- Otros orígenes (ruleta, cofres, bonus de referido $0.10) generan grants de hashrate con la misma mecánica y su propia duración.
+- El hashrate total activo se recalcula en el cron diario.
 
-Server route público:
-- `/api/public/telegram/webhook` — recibe updates del bot (comando `/start ref_<id>` para atribuir referidos, `/start` para enlace a la Mini App).
+## Cambios técnicos
 
-## Integración Telegram
+Tablas nuevas:
+- `revenue_events` (source, amount_usd, occurred_at, note, created_by) — registro de ingresos.
+- `hashrate_grants` (user_id, points, source, source_ref_id, starts_at, expires_at, decay_per_day, active) — reemplaza conceptualmente `mining_rate_usd`.
+- `payout_pool_daily` (day, revenue_usd, payout_ratio, pool_usd, reserve_delta, total_hashrate, paid_usd, status) — un registro por día.
+- `payout_entries` (day, user_id, hashrate, share, amount_gram, amount_usd) — auditoría por usuario.
+- `treasury_ledger` (direction, amount_usd, reason, ref) — saldo del tesoro y reserva.
 
-- Cargar `https://telegram.org/js/telegram-web-app.js` en `__root.tsx` (link tag).
-- Al montar, leer `window.Telegram.WebApp.initData` y llamar `serverFn: telegramLogin({ initData })` que:
-  1. Valida HMAC-SHA256 con `TELEGRAM_BOT_TOKEN` (secreto).
-  2. Extrae `user.id`, `first_name`, `username`, `photo_url`, `start_param` (para ref).
-  3. Con `supabaseAdmin` hace upsert en `profiles` y crea/obtiene un usuario en `auth.users` (email sintético `tg_<id>@ultragram.local`), devuelve un access token vía `admin.generateLink` o `signInWithPassword` con contraseña derivada — usaremos `admin.createUser` + `signInWithPassword` con password determinística basada en HMAC del bot token + telegram_id (secreto server-side).
-  4. Devuelve `{ access_token, refresh_token }` al cliente, que llama `supabase.auth.setSession(...)`.
-- Si `window.Telegram` no existe (navegador normal), mostrar un modal "Abrir en Telegram" con QR/link al bot.
+Funciones SQL:
+- `add_revenue_event(...)`, `grant_hashrate(...)`, `user_active_hashrate(uuid)`, `network_active_hashrate()`.
+- `run_daily_payout(_day date, _gram_price numeric)` — idempotente por día: calcula el pool, aplica suavizado y freno de solvencia, inserta `payout_entries` por lotes y acredita balances de forma atómica.
 
-Telegram como connector: preferimos conectar el bot vía `standard_connectors--connect` (conector Telegram) para obtener `TELEGRAM_API_KEY` en el gateway y usarlo para `setWebhook`, `sendMessage`, `answerCallbackQuery`. El **bot token crudo** para validar `initData` se guarda aparte como secreto `TELEGRAM_BOT_TOKEN` (no lo maneja el gateway).
+Endpoint y cron:
+- `src/routes/api/public/hooks/daily-payout.ts` — worker resumable (mismo patrón que los broadcasts, por lotes con `progress`) protegido por `CRON_SECRET`, invocado por pg_cron una vez al día.
+- Los fees de retiro y el rake de la ruleta insertan automáticamente en `revenue_events`.
 
-## Secretos necesarios
+Frontend:
+- Nueva tarjeta "Network Mining" en la home: hashrate propio, cuota de la red, pago de ayer, APY estimado 7 días.
+- Deposit muestra "≈ X pts de hashrate · duración 180 días" en vez de "3.3% diario".
+- Admin panel: pestaña **Economy** con ingresos del día, pool, ratio de solvencia, historial de pagos y formulario para registrar ingresos manuales (publicidad, staking, aporte del operador).
 
-- `TELEGRAM_BOT_TOKEN` — te pido pegarlo con `add_secret` (lo obtienes de @BotFather → `/newbot`, luego "API Token").
-- `TELEGRAM_API_KEY` — se linkea automáticamente al conectar el conector Telegram (para llamadas al gateway).
-- `LOVABLE_API_KEY` — ya provisionado.
+## Migración desde el modelo actual
 
-## Detalles técnicos
-
-- Botón "Connect TON Wallet" queda como stub (abre modal "Próximamente"). Depósitos v1 suman `mining_rate` inmediatamente al enviar el form (para poder demostrar el flujo); marcado como MOCK en el código para reemplazar con verificación TON Connect después.
-- Cálculo de ingreso acumulado en cliente con `setInterval` + `last_collect_at`; el servidor recalcula al hacer collect para prevenir cheating.
-- Fee de retiro: `max(amount * 0.15 + 0.1, 0.1)`, coincidiendo con la captura.
-- Referral bonus: 10% del `amount_ton` del depósito del referido, se acredita a `referrer.balance` (via server fn en `submitDeposit`).
-
-## Fuera de alcance (siguiente iteración)
-
-- TON Connect real (@tonconnect/ui-react) y verificación on-chain de depósitos/retiros.
-- Panel admin para aprobar retiros manualmente.
-- Partner Tasks reales pagados en TON.
-- i18n (por ahora inglés como el bot original; te pregunto al final si quieres español).
+1. Convertir el `mining_rate_usd` actual de cada usuario en hashrate equivalente: `points = mining_rate_usd / 0.033 × 100`, con `expires_at` a 180 días desde hoy.
+2. Mantener `mining_rate_usd` en la base de datos como campo legado (solo lectura) durante la transición para no romper nada.
+3. Feature flag `ECONOMY_V2`: mientras esté apagado, todo sigue igual; al encenderlo, el cron diario pasa a ser la única fuente de ingresos del usuario y el acumulador en vivo del 3.3% se apaga.
+4. Broadcast en inglés anunciando "Dynamic Mining v2" con explicación y bonus de hashrate de cortesía para los usuarios existentes.
 
 ## Orden de implementación
 
-1. Habilitar Lovable Cloud.
-2. Conectar conector Telegram + pedirte el `TELEGRAM_BOT_TOKEN`.
-3. Migración DB (tablas + RLS + grants + seed de tasks) + design tokens en `styles.css`.
-4. Server functions + `/api/public/telegram/webhook` + `telegramLogin`.
-5. Layout con tab bar + 5 rutas bajo `_authenticated/`.
-6. Ruta pública `/` = pantalla "Abrir en Telegram" cuando no hay initData.
-7. Registrar webhook con `setWebhook` desde el sandbox.
-8. Verificar flujo end-to-end (login por initData mockeado en dev + un colector real).
-
-¿Apruebas el plan? Si quieres cambiar algo (ej. incluir TON Connect real ya, cambiar el nombre del token, idioma español), dime antes de empezar.
+1. Migración SQL (tablas + grants + RLS + funciones).
+2. Backfill de hashrate desde `mining_rate_usd` + `treasury_ledger` inicial.
+3. Endpoint de payout diario + cron + hooks de ingresos automáticos.
+4. Admin: pestaña Economy.
+5. Frontend usuario: tarjeta Network Mining + textos del depósito.
+6. Encender el flag y broadcast.
