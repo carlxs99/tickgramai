@@ -142,7 +142,7 @@ export function PrizeWheelCard({ price = 0 }: { price?: number }) {
     if (prize.prizeType === "gram_mining") {
       const points = price > 0 ? Math.round(prize.prizeAmount * price * 100) : 0;
       return {
-        title: t("wheel.prize_gram", { amount: prize.prizeAmount }),
+        title: t("wheel.prize_gram", { points }),
         sub: t("wheel.prize_gram_sub", { points }),
       };
     }
