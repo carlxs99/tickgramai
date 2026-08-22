@@ -354,23 +354,24 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                 const name = profile.first_name || "friend";
                 const gramPerDayStr = formatReward(gramPerDay);
                 const bonusLine = bonusPercent > 0
-                  ? `🎁 Deposit bonus: <b>+${bonusPercent.toFixed(2)}%</b> (+${formatReward(bonusAmountTon)} TON)\n` +
-                    `💎 Effective deposit: <b>${formatReward(effectiveAmountTon)} TON</b>\n`
+                  ? `🎁 Deposit bonus: <b>+${bonusPercent.toFixed(2)}%</b> (+${formatReward(bonusAmountTon)} GRAM)\n` +
+                    `💎 Effective deposit: <b>${formatReward(effectiveAmountTon)} GRAM</b>\n`
                   : "";
                 await sendTelegramMessage(
                   Number(profile.telegram_id),
                   `✅ <b>Deposit confirmed!</b>\n\n` +
-                    `Hi ${name}, we received your deposit of <b>${formatReward(amountTon)} TON</b>.\n\n` +
+                    `Hi ${name}, we received your deposit of <b>${formatReward(amountTon)} GRAM</b>.\n\n` +
                     bonusLine +
-                    `⚡ Mining rate added: <b>+$${formatReward(usdPerDay)} USDT/day</b>\n` +
-                    `🪙 GRAM per day: <b>+${gramPerDayStr} GRAM</b>\n` +
-                    `📈 Daily ROI: 3.3%\n` +
+                    `⚡ Hashrate added: <b>+${Math.round(usdValue * 100).toLocaleString("en-US")} pts</b> (active 180 days)\n` +
+                    `🌐 You now earn a share of the daily network pool based on your hashrate\n` +
+                    `🕛 Rewards are paid automatically every day (~00:00 UTC) straight to your balance\n` +
                     (spinsGranted > 0
                       ? `🎰 Prize wheel: <b>${spinsGranted} free spin${spinsGranted > 1 ? "s" : ""}</b> unlocked (valid 7 days)\n`
                       : "") +
                     `\n` +
-                    `Open TICK GRAM AI to check your balance.`,
+                    `Open TICK GRAM AI to check your mining power.`,
                 );
+
               }
 
               for (const rn of referrerNotifies) {
