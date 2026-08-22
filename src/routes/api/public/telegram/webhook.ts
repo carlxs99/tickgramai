@@ -49,7 +49,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               : `https://t.me/Tickgramaibot/app`;
             await sendMessage(
               chatId,
-              `🤖 <b>TickGram AI</b>\n\nWelcome back! Your AI agent has never stopped analyzing the market. Open the app to view your updated reports and earnings.\n\n📍 Income without investment\n📍 Earnings every second`,
+              `🤖 <b>TICK GRAM AI</b>\n\nWelcome! Mine GRAM with <b>Dynamic Mining</b>: your deposits, boxes and wheel prizes give you hashrate points, and every day the network shares its real revenue between all miners.\n\n⚡ More hashrate = bigger share of the daily pool\n🕛 Rewards paid automatically every day (~00:00 UTC)\n🎁 Free daily gift box, prize wheel and 3-level referrals (10% / 5% / 3%)\n💸 No minimum withdrawal — once every 24h`,
               {
                 reply_markup: {
                   inline_keyboard: [[
