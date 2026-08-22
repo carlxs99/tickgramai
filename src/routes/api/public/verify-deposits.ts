@@ -123,9 +123,21 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                 .from("partner_tasks")
                 .update({ status: "active", tx_hash: txHash })
                 .eq("id", ptask.id);
+              try {
+                await supabaseAdmin.rpc("add_revenue_event" as never, {
+                  _source: "partner_task",
+                  _amount_usd: amountTon * (tonPriceAtDeposit > 0 ? tonPriceAtDeposit : 1),
+                  _note: `partner task ${ptask.id}`,
+                  _ref: txHash,
+                  _created_by: null,
+                } as never);
+              } catch (e) {
+                console.error("revenue_event partner_task failed", e);
+              }
               credited += 1;
               results.push({ txHash, memo: comment, partnerTask: ptask.id, activated: true });
               continue;
+
             }
 
             // Enforce minimum deposit of 0.1 GRAM (TON) for user deposits.
