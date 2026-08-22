@@ -3,7 +3,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send, Activity, LayoutDashboard, ChevronRight, ChevronLeft, TrendingUp, Circle, ShieldAlert, Ban, Fingerprint, AlertTriangle } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send, Activity, LayoutDashboard, ChevronRight, ChevronLeft, TrendingUp, Circle, ShieldAlert, Ban, Fingerprint, AlertTriangle, Clock } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
@@ -15,6 +15,7 @@ import { NetworkMiningCard } from "@/components/NetworkMiningCard";
 import { useEconomy, pointsForGram, formatPoints } from "@/lib/useEconomy";
 import { AdminEconomySection } from "@/components/AdminEconomy";
 import { getActivePromotion } from "@/lib/promotions.functions";
+import { claimPayouts } from "@/lib/economy.functions";
 
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan, adminCreateBroadcast, adminListBroadcasts, adminCancelBroadcast, adminTestBroadcast, adminResendBroadcast } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
