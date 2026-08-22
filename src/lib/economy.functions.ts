@@ -36,7 +36,17 @@ export const getNetworkMining = createServerFn({ method: "GET" })
         .lte("starts_on", today)
         .gte("ends_on", today)
         .limit(5000),
+      supabaseAdmin
+        .from("payout_entries")
+        .select("day, amount_gram, amount_usd")
+        .eq("user_id", userId)
+        .is("claimed_at", null)
+        .limit(365),
     ]);
+
+    const pendingRows = (pending.data ?? []) as Array<{ day: string; amount_gram: number }>;
+    const pendingGram = pendingRows.reduce((s, r) => s + Number(r.amount_gram || 0), 0);
+
 
     const myHashrate = Number(mine.data ?? 0);
     const netHashrate = Number(net.data ?? 0);
