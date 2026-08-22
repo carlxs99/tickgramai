@@ -32,6 +32,9 @@ export function useEconomy() {
     share: Number(data?.share ?? 0),
     lastPayout: data?.lastPayout ?? null,
     apy: Number(data?.apy ?? 0),
+    pendingGram: Number(data?.pendingGram ?? 0),
+    pendingDays: Number(data?.pendingDays ?? 0),
+    nextPayoutAt: data?.nextPayoutAt ?? null,
     data,
   };
 }

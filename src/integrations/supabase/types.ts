@@ -441,6 +441,7 @@ export type Database = {
         Row: {
           amount_gram: number
           amount_usd: number
+          claimed_at: string | null
           created_at: string
           day: string
           hashrate: number
@@ -450,6 +451,7 @@ export type Database = {
         Insert: {
           amount_gram: number
           amount_usd: number
+          claimed_at?: string | null
           created_at?: string
           day: string
           hashrate: number
@@ -459,6 +461,7 @@ export type Database = {
         Update: {
           amount_gram?: number
           amount_usd?: number
+          claimed_at?: string | null
           created_at?: string
           day?: string
           hashrate?: number
@@ -1035,6 +1038,14 @@ export type Database = {
         }[]
       }
       claim_deposit_promotion: { Args: { _user_id: string }; Returns: number }
+      claim_payouts: {
+        Args: { _user_id: string }
+        Returns: {
+          days: number
+          gained: number
+          new_balance: number
+        }[]
+      }
       claim_referral_milestone:
         | {
             Args: { _tier: number }

@@ -357,7 +357,7 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                     bonusLine +
                     `⚡ Hashrate added: <b>+${Math.round(usdValue * 100).toLocaleString("en-US")} pts</b> (active 180 days)\n` +
                     `🌐 You now earn a share of the daily network pool based on your hashrate\n` +
-                    `🕛 Rewards are paid automatically every day (~00:00 UTC) straight to your balance\n` +
+                    `🕛 Rewards unlock every day (~00:00 UTC) — open the app and tap Collect\n` +
                     (spinsGranted > 0
                       ? `🎰 Prize wheel: <b>${spinsGranted} free spin${spinsGranted > 1 ? "s" : ""}</b> unlocked (valid 7 days)\n`
                       : "") +

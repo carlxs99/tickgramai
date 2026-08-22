@@ -10,7 +10,7 @@ export const getNetworkMining = createServerFn({ method: "GET" })
     const userId = context.userId;
 
     const today = new Date().toISOString().slice(0, 10);
-    const [mine, net, flag, pools, entries, ratioRow, revToday, deferred] = await Promise.all([
+    const [mine, net, flag, pools, entries, ratioRow, revToday, deferred, pending] = await Promise.all([
       supabaseAdmin.rpc("user_active_hashrate", { _user_id: userId }),
       supabaseAdmin.rpc("network_active_hashrate"),
       supabaseAdmin.from("app_settings").select("value").eq("key", "economy_v2").maybeSingle(),
@@ -36,7 +36,17 @@ export const getNetworkMining = createServerFn({ method: "GET" })
         .lte("starts_on", today)
         .gte("ends_on", today)
         .limit(5000),
+      supabaseAdmin
+        .from("payout_entries")
+        .select("day, amount_gram, amount_usd")
+        .eq("user_id", userId)
+        .is("claimed_at", null)
+        .limit(365),
     ]);
+
+    const pendingRows = (pending.data ?? []) as Array<{ day: string; amount_gram: number }>;
+    const pendingGram = pendingRows.reduce((s, r) => s + Number(r.amount_gram || 0), 0);
+
 
     const myHashrate = Number(mine.data ?? 0);
     const netHashrate = Number(net.data ?? 0);
@@ -96,8 +106,33 @@ export const getNetworkMining = createServerFn({ method: "GET" })
       estDailyUsd,
       estDailyGram,
       estMonthlyGram: estDailyGram * 30,
+      pendingGram,
+      pendingDays: pendingRows.length,
+      nextPayoutAt: `${new Date(Date.now() + 86400000).toISOString().slice(0, 10)}T00:00:00.000Z`,
     };
   });
+
+/** Claim all unclaimed daily payouts into the user's balance. */
+export const claimPayouts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("claim_payouts" as never, {
+      _user_id: context.userId,
+    } as never);
+    if (error) throw new Error(error.message);
+    const row = (Array.isArray(data) ? data[0] : data) as
+      | { gained: number; days: number; new_balance: number }
+      | null;
+    const gained = Number(row?.gained ?? 0);
+    if (gained <= 0) throw new Error("Nothing to collect yet");
+    return {
+      gained,
+      days: Number(row?.days ?? 0),
+      newBalance: Number(row?.new_balance ?? 0),
+    };
+  });
+
 
 export const adminEconomyOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
