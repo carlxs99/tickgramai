@@ -9,7 +9,8 @@ export const getNetworkMining = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
-    const [mine, net, flag, pools, entries] = await Promise.all([
+    const today = new Date().toISOString().slice(0, 10);
+    const [mine, net, flag, pools, entries, ratioRow, revToday, deferred] = await Promise.all([
       supabaseAdmin.rpc("user_active_hashrate", { _user_id: userId }),
       supabaseAdmin.rpc("network_active_hashrate"),
       supabaseAdmin.from("app_settings").select("value").eq("key", "economy_v2").maybeSingle(),
@@ -24,10 +25,22 @@ export const getNetworkMining = createServerFn({ method: "GET" })
         .eq("user_id", userId)
         .order("day", { ascending: false })
         .limit(7),
+      supabaseAdmin.from("app_settings").select("value").eq("key", "payout_ratio").maybeSingle(),
+      supabaseAdmin
+        .from("revenue_events")
+        .select("amount_usd")
+        .gte("occurred_at", `${today}T00:00:00Z`),
+      supabaseAdmin
+        .from("deferred_revenue")
+        .select("daily_usd")
+        .lte("starts_on", today)
+        .gte("ends_on", today)
+        .limit(5000),
     ]);
 
     const myHashrate = Number(mine.data ?? 0);
     const netHashrate = Number(net.data ?? 0);
+    const share = netHashrate > 0 ? myHashrate / netHashrate : 0;
     const myEntries = (entries.data ?? []) as Array<{
       day: string;
       amount_usd: number;
@@ -42,17 +55,47 @@ export const getNetworkMining = createServerFn({ method: "GET" })
     const investedUsd = myHashrate / 100;
     const apy = investedUsd > 0 ? (avgDailyUsd / investedUsd) * 365 * 100 : 0;
 
+    // Projected payout for today: revenue accrued so far x payout ratio, split by hashrate.
+    const payoutRatio = Number(
+      (ratioRow.data as { value?: { value?: number } } | null)?.value?.value ?? 0.65,
+    );
+    const revenueToday =
+      ((revToday.data ?? []) as Array<{ amount_usd: number }>).reduce(
+        (s, r) => s + Number(r.amount_usd || 0),
+        0,
+      ) +
+      ((deferred.data ?? []) as Array<{ daily_usd: number }>).reduce(
+        (s, r) => s + Number(r.daily_usd || 0),
+        0,
+      );
+    const poolRows = (pools.data ?? []) as Array<{ pool_usd: number }>;
+    const avgPoolUsd =
+      poolRows.length > 0
+        ? poolRows.reduce((s, p) => s + Number(p.pool_usd || 0), 0) / poolRows.length
+        : 0;
+    const estPoolUsd = Math.max(revenueToday * payoutRatio, avgPoolUsd);
+    const estDailyUsd = share * estPoolUsd;
+
+    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
+    const gramPrice = await fetchTonPriceUsdt().catch(() => 0);
+    const estDailyGram = gramPrice > 0 ? estDailyUsd / gramPrice : 0;
+
     return {
       enabled: Boolean(
         (flag.data as { value?: { enabled?: boolean } } | null)?.value?.enabled,
       ),
       myHashrate,
       netHashrate,
-      share: netHashrate > 0 ? myHashrate / netHashrate : 0,
+      share,
       lastPayout: myEntries[0] ?? null,
       history: myEntries,
       pools: pools.data ?? [],
       apy,
+      gramPrice,
+      estPoolUsd,
+      estDailyUsd,
+      estDailyGram,
+      estMonthlyGram: estDailyGram * 30,
     };
   });
 
