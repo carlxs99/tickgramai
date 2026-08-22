@@ -1116,10 +1116,11 @@ const hi: Dict = {
   "deposit.max": "अधिकतम",
 
   "withdraw.title": "निकालें",
-  "withdraw.subtitle": "कोई न्यूनतम नहीं। हर 24 घंटे में एक निकासी। 5% नेटवर्क शुल्क।",
+  "withdraw.subtitle": "न्यूनतम 1 GRAM। हर 24 घंटे में एक निकासी। 5% नेटवर्क शुल्क।",
   "withdraw.available": "उपलब्ध",
   "withdraw.amount": "राशि (GRAM)",
   "withdraw.amount_required": "मान्य निकासी राशि दर्ज करें",
+  "withdraw.min_amount": "न्यूनतम निकासी {min} GRAM है",
   "withdraw.insufficient": "राशि आपके उपलब्ध बैलेंस से अधिक है",
   "withdraw.address": "GRAM पता",
   "withdraw.request": "निकासी अनुरोध",
