@@ -2119,10 +2119,6 @@ function WithdrawTab() {
   const lFn = useServerFn(listWithdrawals);
   const qc = useQueryClient();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
-  const price = useTonPrice();
-  const minGram = price > 0 ? 3 / price : 0;
-  // Shown (and quick-filled) rounded UP so typing the displayed value always passes.
-  const minDisplay = minGram > 0 ? Math.ceil(minGram * 10000) / 10000 : 0;
   const balanceNum = Number(me.profile.balance ?? 0);
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
@@ -2135,15 +2131,23 @@ function WithdrawTab() {
       return rows.some((w) => w.status === "pending" || w.status === "processing") ? 8000 : false;
     },
   });
+  // One withdrawal per 24h. Failed/refunded attempts don't consume the slot.
+  const nextAllowedAt = useMemo(() => {
+    const rows = ((hist as any[]) ?? []).filter(
+      (w) => !["failed", "refunded", "rejected", "cancelled"].includes(String(w.status)),
+    );
+    if (!rows.length) return null;
+    const last = Math.max(...rows.map((w) => new Date(w.created_at).getTime()));
+    const next = last + 24 * 60 * 60 * 1000;
+    return next > Date.now() ? next : null;
+  }, [hist]);
+  const locked = nextAllowedAt !== null;
   const normalizedAmount = String(amount).trim().replace(",", ".");
   const amountNum = Number(normalizedAmount);
   const amountEmpty = normalizedAmount === "";
   const amountInvalid = !amountEmpty && (!Number.isFinite(amountNum) || amountNum <= 0);
-  // The live browser quote is informative only. The server performs the definitive
-  // $2 minimum check with its current trusted quote, avoiding client/server drift.
-  const appearsBelowMinimum =
-    !amountEmpty && !amountInvalid && minGram > 0 && amountNum < minGram * 0.995;
   const exceedsBalance = !amountEmpty && !amountInvalid && amountNum > balanceNum;
+
   const mut = useMutation({
     mutationFn: (request: { amount: number; address: string }) =>
       wFn({ data: request }),
