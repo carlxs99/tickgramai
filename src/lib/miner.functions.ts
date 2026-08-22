@@ -178,6 +178,15 @@ export const completeTask = createServerFn({ method: "POST" })
         _add_deposit_ton: 0,
       } as never);
     if (uErr) throw uErr;
+    // Economy v2: task rewards must also produce real hashrate, otherwise the
+    // reward shown in the UI would never translate into daily pool payouts.
+    await supabaseAdmin.rpc("grant_hashrate" as never, {
+      _user_id: userId,
+      _points: rewardCapitalGram * tonPrice * 100,
+      _source: "task",
+      _source_ref_id: null,
+      _days: 180,
+    } as never);
     const rpc: any = Array.isArray(rpcRow) ? rpcRow[0] : rpcRow;
     const { data: cur } = await supabaseAdmin
       .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
@@ -282,13 +291,23 @@ export const reinvestBalance = createServerFn({ method: "POST" })
       throw uErr;
     }
 
-    await supabaseAdmin.from("deposits").insert({
+    const { data: reinvestDeposit } = await supabaseAdmin.from("deposits").insert({
       user_id: userId,
       amount_ton: data.amount,
       gram_per_day: gramPerDay,
       tx_hash: null,
       status: "confirmed",
-    });
+    } as never).select("id").maybeSingle();
+
+    // Economy v2: reinvesting converts balance into real mining power.
+    // Without this grant the user would simply lose the reinvested balance.
+    await supabaseAdmin.rpc("grant_hashrate" as never, {
+      _user_id: userId,
+      _points: data.amount * tonPrice * 100,
+      _source: "reinvest",
+      _source_ref_id: (reinvestDeposit as any)?.id ?? null,
+      _days: 180,
+    } as never);
     return { ok: true, balance: Number(newBalance), gramPerDay, usdPerDay };
   });
 
