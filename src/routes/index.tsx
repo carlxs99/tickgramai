@@ -12,6 +12,7 @@ import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWith
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { PrizeWheelCard, WheelTeaserCard } from "@/components/PrizeWheel";
 import { NetworkMiningCard } from "@/components/NetworkMiningCard";
+import { useEconomy, pointsForGram, formatPoints } from "@/lib/useEconomy";
 import { AdminEconomySection } from "@/components/AdminEconomy";
 import { getActivePromotion } from "@/lib/promotions.functions";
 
@@ -385,6 +386,7 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
   useEffect(() => { const i = setInterval(() => setTick((tk) => tk + 1), 100); return () => clearInterval(i); }, []);
 
   const price = useTonPrice();
+  const eco = useEconomy();
   const rateUsd = Number((data.profile as any).mining_rate_usd ?? 0);
   const rate = price > 0 ? rateUsd / price : 0; // GRAM/day at current TON price
 
@@ -438,15 +440,31 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
 
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-white/90 eyebrow">
-            <Sparkles className="w-3.5 h-3.5" /> {t("mine.uncollected")}
+            <Sparkles className="w-3.5 h-3.5" /> {eco.enabled ? "Mining power" : t("mine.uncollected")}
           </div>
           <div className="mt-1 font-display text-4xl sm:text-5xl font-bold tabular-nums text-white leading-none text-glow-white">
-            {formatGram(live, 6)}
+            {eco.enabled ? formatPoints(eco.myHashrate) : formatGram(live, 6)}
           </div>
           <div className="mt-1 text-[11px] text-emerald-200 tabular-nums font-semibold">
-            ≈ ${usdt(live, price)} USDT
+            {eco.enabled
+              ? `${(eco.share * 100).toFixed(eco.share < 0.001 ? 4 : 2)}% of the network pool`
+              : `≈ $${usdt(live, price)} USDT`}
           </div>
 
+          {eco.enabled ? (
+            <div className="mt-4 max-w-[72%] space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums">
+                <Coins className="w-3.5 h-3.5 text-amber-200" />
+                {eco.lastPayout
+                  ? `Last payout +${formatGram(Number(eco.lastPayout.amount_gram), 6)} GRAM`
+                  : "First daily payout pending"}
+              </div>
+              <p className="text-[11px] text-white/75 leading-snug">
+                Rewards are credited automatically once a day from the network revenue pool — no
+                need to collect.
+              </p>
+            </div>
+          ) : (
           <div className="mt-4 flex items-center gap-2 max-w-[70%]">
             <motion.button
               whileTap={{ scale: 0.96 }}
@@ -482,11 +500,16 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
               </div>
             )}
           </div>
+          )}
 
           <div className="mt-3 text-[11px] text-white/70 max-w-[65%]">
-            {rateUsd > 0
-              ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
-              : t("mine.deposit_to_start")}
+            {eco.enabled
+              ? eco.myHashrate > 0
+                ? <>Network {formatPoints(eco.netHashrate)} pts · variable daily rewards</>
+                : t("mine.deposit_to_start")
+              : rateUsd > 0
+                ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
+                : t("mine.deposit_to_start")}
           </div>
         </div>
       </motion.div>
@@ -870,6 +893,7 @@ function PromoBanner() {
 
 function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmount: number }; onClose: () => void }) {
   const { t } = useT();
+  const ecoGift = useEconomy();
   const isGram = prize.prizeType === "gram_mining";
   return (
     <motion.div
@@ -898,7 +922,9 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
         <div className="mt-4 text-xs font-bold tracking-widest text-amber-200 uppercase">{t("gift.prize_title")}</div>
         <div className="mt-1 text-3xl font-extrabold text-white tabular-nums">
           {isGram
-            ? `+${(prize.prizeAmount * 0.033).toFixed(10).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
+            ? ecoGift.enabled
+              ? `+${formatPoints(prize.prizeAmount * 2.5 * 100)} pts`
+              : `+${(prize.prizeAmount * 0.033).toFixed(10).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
             : `+${prize.prizeAmount.toFixed(2)}%`}
         </div>
         <div className="text-xs text-white/70 mt-1">
@@ -1073,6 +1099,8 @@ function LeaderboardTab() {
 
 function TasksTab() {
   const { t: tr } = useT();
+  const ecoTasks = useEconomy();
+  const taskPrice = useTonPrice();
   const listFn = useServerFn(listTasks);
   const doFn = useServerFn(completeTask);
   const meFn = useServerFn(getMe);
@@ -1111,7 +1139,11 @@ function TasksTab() {
             <div className="flex-1 min-w-0">
               <p className="font-semibold">{t.title}</p>
               {t.description && <p className="text-xs text-muted-foreground">{t.description}</p>}
-              <p className="text-xs mt-1 text-[color:var(--success)]">+{formatReward(Number(t.reward) * 0.033)} GRAM/día ⛏️</p>
+              <p className="text-xs mt-1 text-[color:var(--success)]">
+                {ecoTasks.enabled
+                  ? `+${formatPoints(pointsForGram(Number(t.reward), taskPrice))} pts mining power ⛏️`
+                  : `+${formatReward(Number(t.reward) * 0.033)} GRAM/día ⛏️`}
+              </p>
             </div>
             {t.completed ? (
               <div className="flex items-center gap-1 text-[color:var(--success)] text-sm"><CheckCircle2 className="w-4 h-4" />{tr("tasks.done")}</div>
@@ -1743,7 +1775,11 @@ function DepositTab() {
   const reinvest = useMutation({
     mutationFn: (amt: number) => reinvestFn({ data: { amount: amt } }),
     onSuccess: (r: any) => {
-      toast.success(`+$${(r.usdPerDay ?? 0).toFixed(4)} USDT/day`);
+      toast.success(
+        ecoDep.enabled
+          ? `+${formatPoints((r.usdPerDay ?? 0) / 0.033 * 100)} pts mining power`
+          : `+$${(r.usdPerDay ?? 0).toFixed(4)} USDT/day`,
+      );
       getTelegram()?.HapticFeedback?.impactOccurred("medium");
       setReinvestAmount("");
       qc.invalidateQueries();
@@ -1751,6 +1787,7 @@ function DepositTab() {
     onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
   });
 
+  const ecoDep = useEconomy();
   const amountNum = Math.max(0, Number(amount) || 0);
   const usdtValue = amountNum * price;
   const memoTag: string = (me.profile as any).memo_tag ?? "";
@@ -1801,8 +1838,12 @@ function DepositTab() {
           <span className="font-semibold tabular-nums">{formatGram(me.profile.balance, 6)} GRAM</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{t("deposit.current_rate")}</span>
-          <span className="font-semibold tabular-nums">{formatGram(Number((me.profile as any).mining_rate ?? 0), 6)} GRAM {t("mine.per_day_suffix")}</span>
+          <span className="text-muted-foreground">{ecoDep.enabled ? "Mining power" : t("deposit.current_rate")}</span>
+          <span className="font-semibold tabular-nums">
+            {ecoDep.enabled
+              ? `${formatPoints(ecoDep.myHashrate)} pts`
+              : `${formatGram(Number((me.profile as any).mining_rate ?? 0), 6)} GRAM ${t("mine.per_day_suffix")}`}
+          </span>
         </div>
         <div className="flex justify-between text-sm items-center">
           <span className="text-muted-foreground">{t("deposit.your_memo")}</span>
@@ -1858,7 +1899,9 @@ function DepositTab() {
         </div>
         {amountNum > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-            {t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: formatReward(amountNum * 0.033) })}
+            {ecoDep.enabled
+              ? `≈ $${usdtValue.toFixed(2)} · +${formatPoints(pointsForGram(amountNum, price))} pts mining power (180 days)`
+              : t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: formatReward(amountNum * 0.033) })}
           </p>
         )}
         {amountNum > 0 && bonusPct > 0 && (
@@ -1915,7 +1958,9 @@ function DepositTab() {
         </Field>
         <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
           <p className="text-sm font-semibold tabular-nums">
-            + {(reinvestNum * 0.033).toFixed(4)} GRAM {t("mine.per_day")}
+            {ecoDep.enabled
+              ? `+ ${formatPoints(pointsForGram(reinvestNum, price))} pts mining power`
+              : `+ ${(reinvestNum * 0.033).toFixed(4)} GRAM ${t("mine.per_day")}`}
           </p>
         </div>
         <motion.button
