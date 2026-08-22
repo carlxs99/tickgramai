@@ -22,15 +22,27 @@ export const getMe = createServerFn({ method: "GET" })
     if (error) throw error;
     if (!profile) throw new Error("Profile not found");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
+    let isAdmin = false;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data } = await supabaseAdmin.rpc("has_role", {
+        _user_id: userId,
+        _role: "admin",
+      });
+      isAdmin = !!data;
+    } catch {
+      isAdmin = false;
+    }
 
     const rateUsdPerDay = Number((profile as any).mining_rate_usd ?? 0);
-    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
-    const tonPrice = (await fetchTonPriceUsdt()) || 1;
+    let tonPrice = 1;
+    try {
+      const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
+      tonPrice = (await fetchTonPriceUsdt()) || 1;
+    } catch {
+      tonPrice = 1;
+    }
+
     const rateGramPerDay = rateUsdPerDay / tonPrice;
     const now = Date.now();
     const last = new Date(profile.last_collect_at as string).getTime();
