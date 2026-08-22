@@ -517,7 +517,7 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
           <div className="mt-3 text-[11px] text-white/70 max-w-[65%]">
             {eco.enabled
               ? eco.myHashrate > 0
-                ? t("mine.network_variable", { pts: formatPoints(eco.netHashrate) })
+                ? t("mine.variable_rewards")
                 : t("mine.deposit_to_start")
               : rateUsd > 0
                 ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
