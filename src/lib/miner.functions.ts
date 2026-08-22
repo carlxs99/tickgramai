@@ -2,6 +2,7 @@ import { assertNotBanned } from "@/lib/ban-guard";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { PARTNER_COST_PER_CLICK, PARTNER_MIN_CLICKS } from "@/lib/partner-config";
 
 
 // Economy v2: earnings come from the dynamic daily pool (hashrate share),
