@@ -517,7 +517,7 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
           <div className="mt-3 text-[11px] text-white/70 max-w-[65%]">
             {eco.enabled
               ? eco.myHashrate > 0
-                ? <>Network {formatPoints(eco.netHashrate)} pts · variable daily rewards</>
+                ? t("mine.network_variable", { pts: formatPoints(eco.netHashrate) })
                 : t("mine.deposit_to_start")
               : rateUsd > 0
                 ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
@@ -531,8 +531,6 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
         <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} valueClassName="text-black" />
         <StatCard label={t("mine.deposits")} value={formatReward(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} valueClassName="text-black" />
       </div>
-
-      <NetworkMiningCard />
 
       <GiftBoxesCard />
 
@@ -553,6 +551,22 @@ function WheelTab({ onBack }: { onBack: () => void }) {
         <ChevronLeft className="w-4 h-4 shrink-0" /> {t("wheel.back")}
       </button>
       <PrizeWheelCard price={price} />
+    </div>
+  );
+}
+
+function MiningTab({ onBack }: { onBack: () => void }) {
+  const { t } = useT();
+  return (
+    <div className="w-full max-w-full overflow-x-hidden space-y-4">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-sm font-semibold text-white/80"
+      >
+        <ChevronLeft className="w-4 h-4 shrink-0" /> {t("wheel.back")}
+      </button>
+      <h2 className="text-lg font-display font-bold">{t("mining.pill")}</h2>
+      <NetworkMiningCard />
     </div>
   );
 }
