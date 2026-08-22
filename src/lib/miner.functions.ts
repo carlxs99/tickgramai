@@ -4,10 +4,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 
-// Mining rate is stored in USDT/day on profiles.mining_rate_usd (source of truth).
-// 1 TON deposited at price P → P * 0.033 USDT/day (deterministic 3.3% daily in USD).
-// GRAM earned = usd_per_day * seconds / (86400 * current_ton_price), so the user's
-// GRAM yield floats with the TON price while the USD yield stays fixed.
+// Economy v2: earnings come from the dynamic daily pool (hashrate share),
+// paid automatically at 00:00 UTC. The legacy mining_rate_* columns are kept
+// at zero and only remain for historical/admin reporting.
 
 // GET current user profile with accumulated (uncollected) income
 export const getMe = createServerFn({ method: "GET" })
@@ -158,28 +157,13 @@ export const completeTask = createServerFn({ method: "POST" })
     if (iErr) throw new Error(iErr.message || "Already claimed");
 
 
-    // Task reward is denominated in GRAM (capital). Mining adds 3.3% of that
-    // reward per day in GRAM — matching what the UI displays to the user
-    // (`+{reward * 0.033} GRAM/día`). USD equivalent is derived from the live
-    // TON price so mining_rate_usd stays consistent with mining_rate.
-    // Partner tasks credit the balance directly (see completePartnerTask).
+    // Economy v2: the task reward (denominated in GRAM capital) is converted
+    // into hashrate points (100 pts per USD, 180 days). No legacy fixed ROI.
     const rewardCapitalGram = Number(task.reward);
-    const dailyAddGram = rewardCapitalGram * 0.033;
     const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
-    const dailyAddUsd = dailyAddGram * tonPrice;
+    const dailyAddGram = 0;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Atomic add — prevents lost-update races with concurrent reinvest/deposit crediting.
-    const { data: rpcRow, error: uErr } = await supabaseAdmin
-      .rpc("atomic_add_mining_rate" as never, {
-        _user_id: userId,
-        _add_rate_usd: dailyAddUsd,
-        _add_rate_gram: dailyAddGram,
-        _add_deposit_ton: 0,
-      } as never);
-    if (uErr) throw uErr;
-    // Economy v2: task rewards must also produce real hashrate, otherwise the
-    // reward shown in the UI would never translate into daily pool payouts.
     await supabaseAdmin.rpc("grant_hashrate" as never, {
       _user_id: userId,
       _points: rewardCapitalGram * tonPrice * 100,
@@ -187,7 +171,6 @@ export const completeTask = createServerFn({ method: "POST" })
       _source_ref_id: null,
       _days: 180,
     } as never);
-    const rpc: any = Array.isArray(rpcRow) ? rpcRow[0] : rpcRow;
     const { data: cur } = await supabaseAdmin
       .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
     return {
@@ -195,8 +178,7 @@ export const completeTask = createServerFn({ method: "POST" })
       rewardGram: dailyAddGram,
       rewardCapitalGram,
       balance: Number((cur as any)?.balance ?? 0),
-      miningRateGram: Number(rpc?.new_rate_gram ?? 0),
-      miningRateUsd: Number(rpc?.new_rate_usd ?? 0),
+      hashratePoints: rewardCapitalGram * tonPrice * 100,
     };
   });
 
@@ -254,8 +236,8 @@ export const submitDeposit = createServerFn({ method: "POST" })
   });
 
 
-// Reinvest GRAM from balance into mining_rate. Same ROI as an on-chain
-// deposit (3.3% daily), atomically debits balance and increases mining_rate.
+// Reinvest GRAM from balance into hashrate (Economy v2): atomically debits
+// balance and grants 100 points per USD for 180 days.
 // Minimum reinvest amount is 0.1 GRAM.
 export const reinvestBalance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -272,18 +254,16 @@ export const reinvestBalance = createServerFn({ method: "POST" })
     if (newBalance === null || newBalance === undefined) {
       throw new Error("Insufficient balance");
     }
-    // 3.3% daily denominated in USDT. Snapshot TON price to lock the USD value in.
     const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
-    const usdPerDay = data.amount * tonPrice * 0.033;
-    const gramPerDay = data.amount * 0.033; // snapshot for deposit history
-    // Atomic increment of mining_rate_usd / mining_rate / deposit_total
-    // — no lost-update race with concurrent deposit crediting.
+    const usdPerDay = 0;
+    const gramPerDay = 0;
+    // Atomic increment of deposit_total only (no legacy ROI in Economy v2).
     const { error: uErr } = await supabaseAdmin
       .rpc("atomic_add_mining_rate" as never, {
         _user_id: userId,
-        _add_rate_usd: usdPerDay,
-        _add_rate_gram: gramPerDay,
+        _add_rate_usd: 0,
+        _add_rate_gram: 0,
         _add_deposit_ton: data.amount,
       } as never);
     if (uErr) {
@@ -306,6 +286,14 @@ export const reinvestBalance = createServerFn({ method: "POST" })
       _points: data.amount * tonPrice * 100,
       _source: "reinvest",
       _source_ref_id: (reinvestDeposit as any)?.id ?? null,
+      _days: 180,
+    } as never);
+    // Reinvesting burns a balance liability, so it is real recognised value
+    // for the pool — amortised over the same 180-day window as the hashrate.
+    await supabaseAdmin.rpc("add_deferred_revenue" as never, {
+      _source: "reinvest",
+      _amount_usd: data.amount * tonPrice,
+      _ref: (reinvestDeposit as any)?.id ?? null,
       _days: 180,
     } as never);
     return { ok: true, balance: Number(newBalance), gramPerDay, usdPerDay };

@@ -3,7 +3,6 @@ import { formatReward } from "@/lib/format";
 
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
-const DAILY_ROI = 0.033;
 
 // Timing-safe comparison for shared-secret auth.
 function safeEqual(a: string, b: string) {
@@ -178,13 +177,11 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             const bonusAmountTon = effectiveAmountTon - amountTon;
 
 
-            // Deterministic ROI: 3.3% daily denominated in USDT.
+            // Economy v2: deposits no longer create a fixed daily ROI. They
+            // buy hashrate points that share the dynamic daily pool.
             const priceForCredit = tonPriceAtDeposit > 0 ? tonPriceAtDeposit : 1;
             const usdValue = effectiveAmountTon * priceForCredit;
-            const usdPerDay = usdValue * DAILY_ROI;
-            const gramPerDay = effectiveAmountTon * DAILY_ROI;
-            const newRateUsd = Number((profile as any).mining_rate_usd ?? 0) + usdPerDay;
-            void newRateUsd;
+            const gramPerDay = 0;
 
             const { error: iErr } = await supabaseAdmin.from("processed_tx").insert({
               tx_hash: txHash,
@@ -219,16 +216,13 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               console.error("grant_wheel_spins failed", e);
             }
 
-            // Atomic increment — prevents lost-updates with completeTask /
-            // reinvestBalance running concurrently for the same user.
+            // Atomic increment of deposit_total only (no legacy ROI in v2).
             await supabaseAdmin.rpc("atomic_add_mining_rate" as never, {
               _user_id: profile.user_id,
-              _add_rate_usd: usdPerDay,
-              _add_rate_gram: gramPerDay,
+              _add_rate_usd: 0,
+              _add_rate_gram: 0,
               _add_deposit_ton: effectiveAmountTon,
             } as never);
-            const newRateGram = Number((profile as any).mining_rate ?? 0) + gramPerDay;
-            void newRateGram;
 
             // ---- Economy v2 -------------------------------------------------
             // Mining power: 100 points per USD deposited, 180 days, linear decay.
