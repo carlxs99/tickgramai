@@ -2178,6 +2178,10 @@ function WithdrawTab() {
   });
 
   const requestWithdrawal = () => {
+    if (locked) {
+      toast.error(t("withdraw.limit_hint", { time: formatCountdown(nextAllowedAt! - Date.now()) }));
+      return;
+    }
     if (amountEmpty || amountInvalid) {
       toast.error(t("withdraw.amount_required"));
       return;
@@ -2197,15 +2201,15 @@ function WithdrawTab() {
   return (
     <div className="space-y-3">
       <h2 className="text-2xl font-bold text-white text-glow-white">{t("withdraw.title")}</h2>
-      <p className="text-sm text-white/80">{t("withdraw.subtitle", { amount: formatGram(minDisplay, 4) })}</p>
+      <p className="text-sm text-white/80">{t("withdraw.subtitle")}</p>
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.available")}</span>
           <span className="font-semibold tabular-nums">{formatGram(me.profile.balance, 6)} GRAM</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{t("withdraw.min_label")}</span>
-          <span className="font-semibold">{minGram > 0 ? `${formatGram(minDisplay, 4)} GRAM (~$3)` : "$3"}</span>
+          <span className="text-muted-foreground">{t("withdraw.limit_label")}</span>
+          <span className="font-semibold">{t("withdraw.limit_value")}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.fee_label")}</span>
@@ -2214,13 +2218,10 @@ function WithdrawTab() {
         <Field label={t("withdraw.amount")}>
           <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" />
           <div className="flex gap-2 mt-2">
-            <button type="button" onClick={() => setAmount(String(minDisplay))}
-              className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MIN</button>
             <button type="button" onClick={() => setAmount(String(balanceNum))}
               className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MAX</button>
           </div>
           {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.amount_required")}</p>}
-          {appearsBelowMinimum && <p className="text-[10px] text-muted-foreground mt-1">{t("withdraw.minimum_hint", { amount: formatGram(minDisplay, 4) })}</p>}
           {exceedsBalance && <p className="text-[10px] text-destructive mt-1">{t("withdraw.insufficient")}</p>}
         </Field>
 
@@ -2231,12 +2232,18 @@ function WithdrawTab() {
             <span className="font-semibold text-[color:var(--success)]">{formatGram(amountNum * 0.95)} GRAM</span>
           </div>
         )}
-        <button disabled={mut.isPending} onClick={requestWithdrawal}
+        {locked && (
+          <p className="text-[11px] text-amber-300 text-center">
+            {t("withdraw.limit_hint", { time: formatCountdown(nextAllowedAt! - Date.now()) })}
+          </p>
+        )}
+        <button disabled={mut.isPending || locked} onClick={requestWithdrawal}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
-          {mut.isPending ? t("withdraw.submitting") : t("withdraw.request")}
+          {mut.isPending ? t("withdraw.submitting") : locked ? t("withdraw.limit_value") : t("withdraw.request")}
 
         </button>
       </div>
+
       <div className="card-glass rounded-2xl p-4">
         <p className="font-semibold mb-2">{t("common.history")}</p>
         {!hist?.length && <p className="text-sm text-muted-foreground">{t("withdraw.none")}</p>}
