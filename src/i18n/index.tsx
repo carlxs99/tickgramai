@@ -76,7 +76,7 @@ const en: Dict = {
   "mine.first_payout_pending": "First daily payout pending",
   "mine.auto_credited": "Your daily share of the network revenue pool unlocks once a day — tap Collect to add it to your balance.",
   "mine.claim_ready": "Your daily reward is ready — collect it now!",
-  "mine.claim_countdown": "Next reward unlocks in — come back to collect it.",
+  "mine.claim_countdown": "Your next daily reward is loading… come back to claim it!",
   "mine.network_variable": "Network {pts} pts · variable daily rewards",
   "mine.variable_rewards": "Variable daily rewards",
   "mining.power_valid": "Active mining power",
