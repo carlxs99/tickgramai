@@ -207,6 +207,16 @@ export const authWithTelegram = createServerFn({ method: "POST" })
                 _add_deposit_ton: 0,
               } as never);
 
+              // Economy v2: same reward expressed as mining power (100 pts / USD).
+              await supabaseAdmin.rpc("grant_hashrate" as never, {
+                _user_id: referrer.user_id,
+                _points: SIGNUP_CAPITAL_USD * 100,
+                _source: "referral_signup",
+                _source_ref_id: null,
+                _days: 180,
+              } as never);
+
+
               const { data: refProfile } = await supabaseAdmin
                 .from("profiles")
                 .select("telegram_id, first_name")
