@@ -106,8 +106,33 @@ export const getNetworkMining = createServerFn({ method: "GET" })
       estDailyUsd,
       estDailyGram,
       estMonthlyGram: estDailyGram * 30,
+      pendingGram,
+      pendingDays: pendingRows.length,
+      nextPayoutAt: `${new Date(Date.now() + 86400000).toISOString().slice(0, 10)}T00:00:00.000Z`,
     };
   });
+
+/** Claim all unclaimed daily payouts into the user's balance. */
+export const claimPayouts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("claim_payouts" as never, {
+      _user_id: context.userId,
+    } as never);
+    if (error) throw new Error(error.message);
+    const row = (Array.isArray(data) ? data[0] : data) as
+      | { gained: number; days: number; new_balance: number }
+      | null;
+    const gained = Number(row?.gained ?? 0);
+    if (gained <= 0) throw new Error("Nothing to collect yet");
+    return {
+      gained,
+      days: Number(row?.days ?? 0),
+      newBalance: Number(row?.new_balance ?? 0),
+    };
+  });
+
 
 export const adminEconomyOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
