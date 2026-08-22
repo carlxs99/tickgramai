@@ -336,16 +336,9 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
       throw new Error("Invalid address format");
     }
-    // Minimum withdrawal is $3 worth of GRAM at current TON price.
-    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
-    const tonPrice = await fetchTonPriceUsdt();
-    if (!(tonPrice > 0)) throw new Error("Precio TON no disponible");
-    const minGram = 3 / tonPrice;
-    // Allow a small quote buffer because the UI and server cannot fetch the
-    // market at the exact same instant. The server remains authoritative.
-    if (data.amount < minGram * 0.99) {
-      throw new Error(`Minimum withdrawal is ${minGram.toFixed(4)} GRAM`);
-    }
+    // No minimum withdrawal amount. Rate limiting is one request per 24h and
+    // is enforced inside create_withdrawal_atomic (race-safe, server-side).
+
     // 5% network fee (must match UI copy in withdraw.subtitle / withdraw.fee_label).
     const fee = data.amount * 0.05;
     const net = data.amount - fee;
