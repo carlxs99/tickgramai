@@ -519,82 +519,90 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
           }}
         />
 
-
-
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-white/90 eyebrow">
-            <Sparkles className="w-3.5 h-3.5" /> {eco.enabled ? t("mine.mining_power") : t("mine.uncollected")}
-          </div>
-          <div className="mt-1 font-display text-4xl sm:text-5xl font-bold tabular-nums text-white leading-none text-glow-white">
-            {eco.enabled ? formatPoints(eco.myHashrate) : formatGram(live, 6)}
-          </div>
-          <div className="mt-1 text-[11px] text-emerald-200 tabular-nums font-semibold">
-            {eco.enabled
-              ? t("mine.of_pool", { pct: (eco.share * 100).toFixed(eco.share < 0.001 ? 4 : 2) })
-              : `≈ $${usdt(live, price)} USDT`}
-          </div>
+          {/* Header row: title/metric + income calculator */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-white/90 eyebrow">
+                <Sparkles className="w-3.5 h-3.5" /> {eco.enabled ? t("mine.mining_power") : t("mine.uncollected")}
+              </div>
+              <div className="mt-1 font-display text-4xl sm:text-5xl font-bold tabular-nums text-white leading-none text-glow-white">
+                {eco.enabled ? formatPoints(eco.myHashrate) : formatGram(live, 6)}
+              </div>
+              <div className="mt-1 text-[11px] text-emerald-200 tabular-nums font-semibold">
+                {eco.enabled
+                  ? t("mine.of_pool", { pct: (eco.share * 100).toFixed(eco.share < 0.001 ? 4 : 2) })
+                  : `≈ $${usdt(live, price)} USDT`}
+              </div>
+            </div>
 
-          {eco.enabled && (
-            <button
-              onClick={() => {
-                getTelegram()?.HapticFeedback?.impactOccurred?.("light");
-                setTab("mining");
-              }}
-              className="mt-2 inline-flex items-center gap-1.5 pl-3 pr-2.5 py-1.5 rounded-full bg-white/95 border border-white/60 text-emerald-700 text-[12px] font-semibold shadow-sm active:scale-[0.97] transition-transform"
-            >
-              <Activity className="w-3.5 h-3.5" />
-              {t("mining.pill")}
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          )}
+            {eco.enabled && (
+              <button
+                onClick={() => {
+                  getTelegram()?.HapticFeedback?.impactOccurred?.("light");
+                  setTab("mining");
+                }}
+                className="shrink-0 inline-flex items-center gap-1 pl-3 pr-2.5 py-2 rounded-full bg-white/95 border border-white/60 text-emerald-700 text-[12px] font-semibold shadow-sm active:scale-[0.97] transition-transform"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                {t("mining.pill")}
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
           {eco.enabled ? (
-            <div className="mt-4 max-w-[78%] space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums">
-                <Coins className="w-3.5 h-3.5 text-amber-200" />
-                {eco.lastPayout
-                  ? t("mine.last_payout", { amount: formatGram(Number(eco.lastPayout.amount_gram), 6) })
-                  : t("mine.first_payout_pending")}
+            <div className="mt-5 space-y-3 max-w-[78%]">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums">
+                  <Coins className="w-3.5 h-3.5 text-amber-200" />
+                  {eco.lastPayout
+                    ? t("mine.last_payout", { amount: formatGram(Number(eco.lastPayout.amount_gram), 6) })
+                    : t("mine.first_payout_pending")}
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums">
+                  <Activity className="w-3.5 h-3.5 text-cyan-200" />
+                  {t("mine.network_variable", { pts: formatPoints(eco.netHashrate) })}
+                </div>
               </div>
               <PayoutCollect />
             </div>
           ) : (
+            <div className="mt-4 flex items-center gap-2 max-w-[70%]">
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  try {
+                    const key = "collect_ad_counter";
+                    const n = (parseInt(localStorage.getItem(key) || "0", 10) || 0) + 1;
+                    localStorage.setItem(key, String(n));
+                    if (n % 2 === 0 && typeof (window as any).show_11237001 === "function") {
+                      (window as any).show_11237001().then(() => {
+                        collect.mutate();
+                      }).catch(() => {
+                        collect.mutate();
+                      });
+                      return;
+                    }
+                  } catch {}
+                  collect.mutate();
+                }}
+                disabled={collect.isPending}
+                className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 rounded-full bg-white text-purple-900 font-bold text-[13px] shadow-lg disabled:opacity-60 whitespace-nowrap"
+              >
+                <span className="w-5 h-5 rounded-full bg-purple-600 text-white grid place-items-center shrink-0">
+                  <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                </span>
+                {collect.isPending ? t("mine.collecting") : t("mine.collect")}
+              </motion.button>
 
-          <div className="mt-4 flex items-center gap-2 max-w-[70%]">
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={() => {
-                try {
-                  const key = "collect_ad_counter";
-                  const n = (parseInt(localStorage.getItem(key) || "0", 10) || 0) + 1;
-                  localStorage.setItem(key, String(n));
-                  if (n % 2 === 0 && typeof (window as any).show_11237001 === "function") {
-                    (window as any).show_11237001().then(() => {
-                      collect.mutate();
-                    }).catch(() => {
-                      collect.mutate();
-                    });
-                    return;
-                  }
-                } catch {}
-                collect.mutate();
-              }}
-              disabled={collect.isPending}
-              className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 rounded-full bg-white text-purple-900 font-bold text-[13px] shadow-lg disabled:opacity-60 whitespace-nowrap"
-            >
-              <span className="w-5 h-5 rounded-full bg-purple-600 text-white grid place-items-center shrink-0">
-                <Plus className="w-3.5 h-3.5" strokeWidth={3} />
-              </span>
-              {collect.isPending ? t("mine.collecting") : t("mine.collect")}
-            </motion.button>
-
-            {rate > 0 && (
-              <div className="flex items-center gap-1 px-2.5 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums whitespace-nowrap">
-                <Coins className="w-3.5 h-3.5 text-amber-200" />
-                +{formatGram(rate / 24, 6)} GRAM/h
-              </div>
-            )}
-          </div>
+              {rate > 0 && (
+                <div className="flex items-center gap-1 px-2.5 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums whitespace-nowrap">
+                  <Coins className="w-3.5 h-3.5 text-amber-200" />
+                  +{formatGram(rate / 24, 6)} GRAM/h
+                </div>
+              )}
+            </div>
           )}
 
           <div className="mt-3 text-[11px] text-white/70 max-w-[65%]">
@@ -608,7 +616,6 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
           </div>
         </div>
       </motion.div>
-
 
       <div className="grid grid-cols-2 gap-3">
         <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} valueClassName="text-black" />
