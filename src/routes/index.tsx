@@ -209,6 +209,7 @@ function MinerAppInner() {
             <Suspense fallback={<div className="min-h-[50vh]" aria-hidden />}>
               {tab === "mine" && <MineTab setTab={setTab} />}
               {tab === "wheel" && <WheelTab onBack={() => setTab("mine")} />}
+              {tab === "mining" && <MiningTab onBack={() => setTab("mine")} />}
               {tab === "tasks" && <TasksTab />}
               {tab === "top" && <LeaderboardTab />}
               {tab === "friends" && <FriendsTab />}
