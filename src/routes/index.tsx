@@ -57,7 +57,7 @@ export const Route = createFileRoute("/")({
   component: MinerApp,
 });
 
-type Tab = "mine" | "wheel" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "stats" | "admin";
+type Tab = "mine" | "wheel" | "mining" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "stats" | "admin";
 
 function MinerApp() {
   return (
