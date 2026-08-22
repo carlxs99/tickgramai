@@ -11,6 +11,8 @@ import { authWithTelegram } from "@/lib/telegram-auth.functions";
 import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getMyRank, getFriends, getReferralStats, listReferralMilestones, claimReferralMilestone, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { PrizeWheelCard, WheelTeaserCard } from "@/components/PrizeWheel";
+import { NetworkMiningCard } from "@/components/NetworkMiningCard";
+import { AdminEconomySection } from "@/components/AdminEconomy";
 import { getActivePromotion } from "@/lib/promotions.functions";
 
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan, adminCreateBroadcast, adminListBroadcasts, adminCancelBroadcast, adminTestBroadcast, adminResendBroadcast } from "@/lib/admin.functions";
@@ -494,6 +496,8 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
         <StatCard label={t("mine.balance")} value={formatGram(data.profile.balance, 6)} sub={`≈ $${usdt(Number(data.profile.balance), price)}`} icon={<Coins className="w-4 h-4 text-[color:var(--gold)]" />} valueClassName="text-black" />
         <StatCard label={t("mine.deposits")} value={formatReward(data.profile.deposit_total) + " GRAM"} sub={t("mine.gram_price", { price: price.toFixed(2) })} icon={<ArrowDownToLine className="w-4 h-4 text-[color:var(--info)]" />} valueClassName="text-black" />
       </div>
+
+      <NetworkMiningCard />
 
       <GiftBoxesCard />
 
@@ -2743,7 +2747,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 
 
 
-type AdminSection = "overview" | "tasks" | "users" | "broadcast" | "security";
+type AdminSection = "overview" | "economy" | "tasks" | "users" | "broadcast" | "security";
 
 function AdminBroadcastSection() {
   const createFn = useServerFn(adminCreateBroadcast);
@@ -2980,9 +2984,10 @@ function AdminTab() {
         </div>
 
         {/* Segmented sub-nav */}
-        <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
+        <div className="grid grid-cols-6 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
           {([
             { id: "overview", label: "Home", icon: LayoutDashboard },
+            { id: "economy", label: "Econ", icon: TrendingUp },
             { id: "tasks", label: "Tasks", icon: ListChecks },
             { id: "users", label: "Users", icon: Users },
             { id: "broadcast", label: "Send", icon: Megaphone },
@@ -3009,6 +3014,7 @@ function AdminTab() {
       </div>
 
       {section === "overview" && <AdminOverview stats={stats} tr={tr} />}
+      {section === "economy" && <AdminEconomySection />}
       {section === "tasks" && <AdminTasksSection tr={tr} />}
       {section === "users" && <AdminUsersSection />}
       {section === "broadcast" && <AdminBroadcastSection />}

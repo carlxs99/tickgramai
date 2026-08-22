@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       broadcast_runs: {
         Row: {
           failed: number
@@ -264,6 +285,42 @@ export type Database = {
         }
         Relationships: []
       }
+      hashrate_grants: {
+        Row: {
+          active: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          points: number
+          source: string
+          source_ref_id: string | null
+          starts_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          points: number
+          source?: string
+          source_ref_id?: string | null
+          starts_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          points?: number
+          source?: string
+          source_ref_id?: string | null
+          starts_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       partner_task_completions: {
         Row: {
           created_at: string
@@ -344,6 +401,87 @@ export type Database = {
           title?: string
           tx_hash?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      payout_entries: {
+        Row: {
+          amount_gram: number
+          amount_usd: number
+          created_at: string
+          day: string
+          hashrate: number
+          share: number
+          user_id: string
+        }
+        Insert: {
+          amount_gram: number
+          amount_usd: number
+          created_at?: string
+          day: string
+          hashrate: number
+          share: number
+          user_id: string
+        }
+        Update: {
+          amount_gram?: number
+          amount_usd?: number
+          created_at?: string
+          day?: string
+          hashrate?: number
+          share?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payout_pool_daily: {
+        Row: {
+          created_at: string
+          day: string
+          gram_price: number
+          paid_usd: number
+          payout_ratio: number
+          pool_usd: number
+          reserve_delta: number
+          revenue_usd: number
+          solvency_ratio: number | null
+          status: string
+          total_hashrate: number
+          treasury_ton: number
+          updated_at: string
+          users_paid: number
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          gram_price?: number
+          paid_usd?: number
+          payout_ratio?: number
+          pool_usd?: number
+          reserve_delta?: number
+          revenue_usd?: number
+          solvency_ratio?: number | null
+          status?: string
+          total_hashrate?: number
+          treasury_ton?: number
+          updated_at?: string
+          users_paid?: number
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          gram_price?: number
+          paid_usd?: number
+          payout_ratio?: number
+          pool_usd?: number
+          reserve_delta?: number
+          revenue_usd?: number
+          solvency_ratio?: number | null
+          status?: string
+          total_hashrate?: number
+          treasury_ton?: number
+          updated_at?: string
+          users_paid?: number
         }
         Relationships: []
       }
@@ -532,6 +670,39 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue_events: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          occurred_at: string
+          ref: string | null
+          source: string
+        }
+        Insert: {
+          amount_usd: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          ref?: string | null
+          source: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          ref?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           code: string
@@ -574,6 +745,33 @@ export type Database = {
           target_chat?: string | null
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      treasury_ledger: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          direction: string
+          id: string
+          reason: string
+          ref: string | null
+        }
+        Insert: {
+          amount_usd: number
+          created_at?: string
+          direction: string
+          id?: string
+          reason: string
+          ref?: string | null
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          direction?: string
+          id?: string
+          reason?: string
+          ref?: string | null
         }
         Relationships: []
       }
@@ -732,6 +930,16 @@ export type Database = {
     }
     Functions: {
       _set_cron_secret: { Args: { _value: string }; Returns: undefined }
+      add_revenue_event: {
+        Args: {
+          _amount_usd: number
+          _created_by?: string
+          _note?: string
+          _ref?: string
+          _source: string
+        }
+        Returns: string
+      }
       admin_detect_multi_accounts: {
         Args: { _limit?: number }
         Returns: {
@@ -872,6 +1080,16 @@ export type Database = {
           username: string
         }[]
       }
+      grant_hashrate: {
+        Args: {
+          _days?: number
+          _points: number
+          _source?: string
+          _source_ref_id?: string
+          _user_id: string
+        }
+        Returns: string
+      }
       grant_wheel_spins: {
         Args: { _deposit_id: string; _usd_value: number; _user_id: string }
         Returns: number
@@ -907,6 +1125,7 @@ export type Database = {
           tier: number
         }[]
       }
+      network_active_hashrate: { Args: never; Returns: number }
       open_gift_box: {
         Args: { _box_id: string; _user_id: string }
         Returns: {
@@ -914,6 +1133,22 @@ export type Database = {
           mining_rate_gram: number
           prize_amount: number
           prize_type: string
+        }[]
+      }
+      run_daily_payout: {
+        Args: {
+          _batch?: number
+          _day: string
+          _gram_price: number
+          _treasury_ton?: number
+        }
+        Returns: {
+          pool_usd: number
+          processed: number
+          remaining: number
+          solvency: number
+          status: string
+          total_hashrate: number
         }[]
       }
       spin_wheel: {
@@ -936,6 +1171,7 @@ export type Database = {
           starts_at: string
         }[]
       }
+      user_active_hashrate: { Args: { _user_id: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user"
