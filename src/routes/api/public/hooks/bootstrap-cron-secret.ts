@@ -28,8 +28,8 @@ async function bootstrap(request: Request): Promise<Response> {
 export const Route = createFileRoute("/api/public/hooks/bootstrap-cron-secret")({
   server: {
     handlers: {
-      GET: async () => bootstrap(),
-      POST: async () => bootstrap(),
+      GET: async ({ request }) => bootstrap(request),
+      POST: async ({ request }) => bootstrap(request),
     },
   },
 });
