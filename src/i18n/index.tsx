@@ -161,7 +161,7 @@ const en: Dict = {
   "partner.kind_link": "Link",
 
   "friends.title": "Friends",
-  "friends.subtitle": "Invite friends to earn GRAM.",
+  "friends.subtitle": "Invite friends to grow your hashrate and earn commissions.",
   "friends.invited_by": "Invited by",
   "friends.total_referrals": "Total referrals",
   "friends.total_earned": "Total earned",
@@ -183,8 +183,8 @@ const en: Dict = {
   "friends.milestone_claimed": "Claimed",
   "friends.milestone_locked": "Locked",
   "friends.milestone_reward_toast": "+{amount} GRAM added to your balance",
-  "friends.signup_bonus_title": "Earn $0.10 per friend",
-  "friends.signup_bonus_desc": "Invite friends and grow your earnings every day.",
+  "friends.signup_bonus_title": "+10 hashrate pts per friend",
+  "friends.signup_bonus_desc": "Every friend who joins gives you 10 free hashrate points ($0.10) — a bigger share of the daily pool.",
   "friends.invite_button": "Invite",
 
 
@@ -458,7 +458,7 @@ const es: Dict = {
   "partner.kind_link": "Enlace",
 
   "friends.title": "Amigos",
-  "friends.subtitle": "Invita amigos para ganar GRAM.",
+  "friends.subtitle": "Invita amigos para subir tu hashrate y ganar comisiones.",
   "friends.invited_by": "Invitado por",
   "friends.total_referrals": "Total de referidos",
   "friends.total_earned": "Total ganado",
@@ -480,8 +480,8 @@ const es: Dict = {
   "friends.milestone_claimed": "Reclamado",
   "friends.milestone_locked": "Bloqueado",
   "friends.milestone_reward_toast": "+{amount} GRAM añadidos a tu balance",
-  "friends.signup_bonus_title": "Gana $0.10 por cada amigo",
-  "friends.signup_bonus_desc": "Invita amigos y aumenta tus ganancias cada día.",
+  "friends.signup_bonus_title": "+10 pts de hashrate por amigo",
+  "friends.signup_bonus_desc": "Cada amigo que se une te da 10 puntos de hashrate gratis (0,10$) — más parte del pool diario.",
   "friends.invite_button": "Invitar",
 
 
@@ -754,7 +754,7 @@ const ru: Dict = {
   "partner.kind_link": "Ссылка",
 
   "friends.title": "Друзья",
-  "friends.subtitle": "Приглашайте друзей, чтобы зарабатывать GRAM.",
+  "friends.subtitle": "Приглашайте друзей: больше хешрейта и комиссии.",
   "friends.invited_by": "Пригласил",
   "friends.total_referrals": "Всего рефералов",
   "friends.total_earned": "Всего заработано",
@@ -776,8 +776,8 @@ const ru: Dict = {
   "friends.milestone_claimed": "Получено",
   "friends.milestone_locked": "Заблокировано",
   "friends.milestone_reward_toast": "+{amount} GRAM зачислено на баланс",
-  "friends.signup_bonus_title": "$0.10 за каждого друга",
-  "friends.signup_bonus_desc": "Приглашайте друзей и увеличивайте доход каждый день.",
+  "friends.signup_bonus_title": "+10 очков хешрейта за друга",
+  "friends.signup_bonus_desc": "Каждый друг даёт 10 бесплатных очков хешрейта ($0.10) — больше доля дневного пула.",
   "friends.invite_button": "Пригласить",
 
 
@@ -1050,7 +1050,7 @@ const hi: Dict = {
   "partner.kind_link": "लिंक",
 
   "friends.title": "मित्र",
-  "friends.subtitle": "GRAM कमाने के लिए दोस्तों को आमंत्रित करें।",
+  "friends.subtitle": "हैशरेट बढ़ाने और कमीशन कमाने के लिए दोस्तों को बुलाएँ।",
   "friends.invited_by": "आमंत्रित किया",
   "friends.total_referrals": "कुल रेफरल",
   "friends.total_earned": "कुल कमाई",
@@ -1072,8 +1072,8 @@ const hi: Dict = {
   "friends.milestone_claimed": "प्राप्त",
   "friends.milestone_locked": "लॉक",
   "friends.milestone_reward_toast": "आपके बैलेंस में +{amount} GRAM जोड़ा गया",
-  "friends.signup_bonus_title": "हर दोस्त पर $0.10",
-  "friends.signup_bonus_desc": "दोस्तों को बुलाएं और रोज़ कमाई बढ़ाएं।",
+  "friends.signup_bonus_title": "हर दोस्त पर +10 हैशरेट पॉइंट",
+  "friends.signup_bonus_desc": "हर नया दोस्त आपको 10 मुफ़्त हैशरेट पॉइंट ($0.10) देता है — दैनिक पूल में बड़ा हिस्सा।",
   "friends.invite_button": "आमंत्रित करें",
 
 
