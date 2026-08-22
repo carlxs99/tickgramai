@@ -80,7 +80,7 @@ export function NetworkMiningCard() {
           icon={<Gauge className="w-3 h-3" />}
           label={t("mining.hashrate")}
           value={`${Math.round(data.myHashrate).toLocaleString()} pts`}
-          sub={t("mining.network_pts", { pts: Math.round(data.netHashrate).toLocaleString() })}
+          sub={t("mining.power_valid")}
         />
         <Metric
           icon={<PieChart className="w-3 h-3" />}
