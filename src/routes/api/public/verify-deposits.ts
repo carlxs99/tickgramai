@@ -352,7 +352,6 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             try {
               if (profile.telegram_id) {
                 const name = profile.first_name || "friend";
-                const gramPerDayStr = formatReward(gramPerDay);
                 const bonusLine = bonusPercent > 0
                   ? `🎁 Deposit bonus: <b>+${bonusPercent.toFixed(2)}%</b> (+${formatReward(bonusAmountTon)} GRAM)\n` +
                     `💎 Effective deposit: <b>${formatReward(effectiveAmountTon)} GRAM</b>\n`
