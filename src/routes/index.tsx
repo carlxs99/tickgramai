@@ -12,6 +12,7 @@ import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWith
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { PrizeWheelCard, WheelTeaserCard } from "@/components/PrizeWheel";
 import { NetworkMiningCard } from "@/components/NetworkMiningCard";
+import { useEconomy, pointsForGram, formatPoints } from "@/lib/useEconomy";
 import { AdminEconomySection } from "@/components/AdminEconomy";
 import { getActivePromotion } from "@/lib/promotions.functions";
 
@@ -385,6 +386,7 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
   useEffect(() => { const i = setInterval(() => setTick((tk) => tk + 1), 100); return () => clearInterval(i); }, []);
 
   const price = useTonPrice();
+  const eco = useEconomy();
   const rateUsd = Number((data.profile as any).mining_rate_usd ?? 0);
   const rate = price > 0 ? rateUsd / price : 0; // GRAM/day at current TON price
 
@@ -438,15 +440,31 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
 
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-white/90 eyebrow">
-            <Sparkles className="w-3.5 h-3.5" /> {t("mine.uncollected")}
+            <Sparkles className="w-3.5 h-3.5" /> {eco.enabled ? "Mining power" : t("mine.uncollected")}
           </div>
           <div className="mt-1 font-display text-4xl sm:text-5xl font-bold tabular-nums text-white leading-none text-glow-white">
-            {formatGram(live, 6)}
+            {eco.enabled ? formatPoints(eco.myHashrate) : formatGram(live, 6)}
           </div>
           <div className="mt-1 text-[11px] text-emerald-200 tabular-nums font-semibold">
-            ≈ ${usdt(live, price)} USDT
+            {eco.enabled
+              ? `${(eco.share * 100).toFixed(eco.share < 0.001 ? 4 : 2)}% of the network pool`
+              : `≈ $${usdt(live, price)} USDT`}
           </div>
 
+          {eco.enabled ? (
+            <div className="mt-4 max-w-[72%] space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums">
+                <Coins className="w-3.5 h-3.5 text-amber-200" />
+                {eco.lastPayout
+                  ? `Last payout +${formatGram(Number(eco.lastPayout.amount_gram), 6)} GRAM`
+                  : "First daily payout pending"}
+              </div>
+              <p className="text-[11px] text-white/75 leading-snug">
+                Rewards are credited automatically once a day from the network revenue pool — no
+                need to collect.
+              </p>
+            </div>
+          ) : (
           <div className="mt-4 flex items-center gap-2 max-w-[70%]">
             <motion.button
               whileTap={{ scale: 0.96 }}
@@ -482,11 +500,16 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
               </div>
             )}
           </div>
+          )}
 
           <div className="mt-3 text-[11px] text-white/70 max-w-[65%]">
-            {rateUsd > 0
-              ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
-              : t("mine.deposit_to_start")}
+            {eco.enabled
+              ? eco.myHashrate > 0
+                ? <>Network {formatPoints(eco.netHashrate)} pts · variable daily rewards</>
+                : t("mine.deposit_to_start")
+              : rateUsd > 0
+                ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
+                : t("mine.deposit_to_start")}
           </div>
         </div>
       </motion.div>
