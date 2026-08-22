@@ -2112,17 +2112,21 @@ function Row({ k, v, strong, muted }: { k: string; v: string; strong?: boolean; 
 
 
 
+function formatCountdown(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
 function WithdrawTab() {
+
   const { t } = useT();
   const meFn = useServerFn(getMe);
   const wFn = useServerFn(submitWithdrawal);
   const lFn = useServerFn(listWithdrawals);
   const qc = useQueryClient();
   const { data: me } = useSuspenseQuery(meQO(() => meFn()));
-  const price = useTonPrice();
-  const minGram = price > 0 ? 3 / price : 0;
-  // Shown (and quick-filled) rounded UP so typing the displayed value always passes.
-  const minDisplay = minGram > 0 ? Math.ceil(minGram * 10000) / 10000 : 0;
   const balanceNum = Number(me.profile.balance ?? 0);
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
@@ -2135,15 +2139,23 @@ function WithdrawTab() {
       return rows.some((w) => w.status === "pending" || w.status === "processing") ? 8000 : false;
     },
   });
+  // One withdrawal per 24h. Failed/refunded attempts don't consume the slot.
+  const nextAllowedAt = useMemo(() => {
+    const rows = ((hist as any[]) ?? []).filter(
+      (w) => !["failed", "refunded", "rejected", "cancelled"].includes(String(w.status)),
+    );
+    if (!rows.length) return null;
+    const last = Math.max(...rows.map((w) => new Date(w.created_at).getTime()));
+    const next = last + 24 * 60 * 60 * 1000;
+    return next > Date.now() ? next : null;
+  }, [hist]);
+  const locked = nextAllowedAt !== null;
   const normalizedAmount = String(amount).trim().replace(",", ".");
   const amountNum = Number(normalizedAmount);
   const amountEmpty = normalizedAmount === "";
   const amountInvalid = !amountEmpty && (!Number.isFinite(amountNum) || amountNum <= 0);
-  // The live browser quote is informative only. The server performs the definitive
-  // $2 minimum check with its current trusted quote, avoiding client/server drift.
-  const appearsBelowMinimum =
-    !amountEmpty && !amountInvalid && minGram > 0 && amountNum < minGram * 0.995;
   const exceedsBalance = !amountEmpty && !amountInvalid && amountNum > balanceNum;
+
   const mut = useMutation({
     mutationFn: (request: { amount: number; address: string }) =>
       wFn({ data: request }),
@@ -2161,7 +2173,16 @@ function WithdrawTab() {
     },
     onError: (e: any, _v, ctx: any) => {
       if (ctx?.prev) qc.setQueryData(["me"], ctx.prev);
-      toast.error(e?.message ?? t("common.failed"));
+      const msg = String(e?.message ?? "");
+      const limit = /DAILY_LIMIT:(\S+)/.exec(msg);
+      if (limit) {
+        const until = new Date(limit[1]!).getTime();
+        toast.error(t("withdraw.limit_hint", { time: formatCountdown(until - Date.now()) }));
+        qc.invalidateQueries({ queryKey: ["withdrawals"] });
+        return;
+      }
+      toast.error(msg || t("common.failed"));
+
     },
     onSuccess: (_result, request) => {
       setAmount("");
@@ -2174,6 +2195,10 @@ function WithdrawTab() {
   });
 
   const requestWithdrawal = () => {
+    if (locked) {
+      toast.error(t("withdraw.limit_hint", { time: formatCountdown(nextAllowedAt! - Date.now()) }));
+      return;
+    }
     if (amountEmpty || amountInvalid) {
       toast.error(t("withdraw.amount_required"));
       return;
@@ -2193,15 +2218,15 @@ function WithdrawTab() {
   return (
     <div className="space-y-3">
       <h2 className="text-2xl font-bold text-white text-glow-white">{t("withdraw.title")}</h2>
-      <p className="text-sm text-white/80">{t("withdraw.subtitle", { amount: formatGram(minDisplay, 4) })}</p>
+      <p className="text-sm text-white/80">{t("withdraw.subtitle")}</p>
       <div className="card-glass rounded-2xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.available")}</span>
           <span className="font-semibold tabular-nums">{formatGram(me.profile.balance, 6)} GRAM</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{t("withdraw.min_label")}</span>
-          <span className="font-semibold">{minGram > 0 ? `${formatGram(minDisplay, 4)} GRAM (~$3)` : "$3"}</span>
+          <span className="text-muted-foreground">{t("withdraw.limit_label")}</span>
+          <span className="font-semibold">{t("withdraw.limit_value")}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t("withdraw.fee_label")}</span>
@@ -2210,13 +2235,10 @@ function WithdrawTab() {
         <Field label={t("withdraw.amount")}>
           <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" />
           <div className="flex gap-2 mt-2">
-            <button type="button" onClick={() => setAmount(String(minDisplay))}
-              className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MIN</button>
             <button type="button" onClick={() => setAmount(String(balanceNum))}
               className="px-3 py-1 rounded-lg text-[11px] font-semibold bg-white/10 border border-white/15 text-white/80">MAX</button>
           </div>
           {amountInvalid && <p className="text-[10px] text-destructive mt-1">{t("withdraw.amount_required")}</p>}
-          {appearsBelowMinimum && <p className="text-[10px] text-muted-foreground mt-1">{t("withdraw.minimum_hint", { amount: formatGram(minDisplay, 4) })}</p>}
           {exceedsBalance && <p className="text-[10px] text-destructive mt-1">{t("withdraw.insufficient")}</p>}
         </Field>
 
@@ -2227,12 +2249,18 @@ function WithdrawTab() {
             <span className="font-semibold text-[color:var(--success)]">{formatGram(amountNum * 0.95)} GRAM</span>
           </div>
         )}
-        <button disabled={mut.isPending} onClick={requestWithdrawal}
+        {locked && (
+          <p className="text-[11px] text-amber-300 text-center">
+            {t("withdraw.limit_hint", { time: formatCountdown(nextAllowedAt! - Date.now()) })}
+          </p>
+        )}
+        <button disabled={mut.isPending || locked} onClick={requestWithdrawal}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-[color:var(--success)] to-accent font-semibold text-primary-foreground disabled:opacity-50 glow-success">
-          {mut.isPending ? t("withdraw.submitting") : t("withdraw.request")}
+          {mut.isPending ? t("withdraw.submitting") : locked ? t("withdraw.limit_value") : t("withdraw.request")}
 
         </button>
       </div>
+
       <div className="card-glass rounded-2xl p-4">
         <p className="font-semibold mb-2">{t("common.history")}</p>
         {!hist?.length && <p className="text-sm text-muted-foreground">{t("withdraw.none")}</p>}
