@@ -189,33 +189,20 @@ export const authWithTelegram = createServerFn({ method: "POST" })
             .select()
             .maybeSingle();
 
-          // Signup reward: $0.10 of mining capital for the referrer.
-          // It is NOT paid as balance — it is added to their daily mining
-          // income at the standard 3.3% daily ROI ($0.0033/day).
+          // Signup reward for the referrer under Economy v2: hashrate points
+          // that increase their share of the daily network pool. We no longer
+          // promise a fixed USD/GRAM daily amount because the pool is dynamic.
           if (refRow) {
             try {
-              const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
-              const price = await fetchTonPriceUsdt();
               const SIGNUP_CAPITAL_USD = 0.1;
-              const DAILY_ROI = 0.033;
-              const addUsdPerDay = SIGNUP_CAPITAL_USD * DAILY_ROI;
-              const addGramPerDay = price > 0 ? addUsdPerDay / price : 0;
-              await supabaseAdmin.rpc("atomic_add_mining_rate" as never, {
-                _user_id: referrer.user_id,
-                _add_rate_usd: addUsdPerDay,
-                _add_rate_gram: addGramPerDay,
-                _add_deposit_ton: 0,
-              } as never);
-
-              // Economy v2: same reward expressed as mining power (100 pts / USD).
+              const signupPoints = Math.round(SIGNUP_CAPITAL_USD * 100);
               await supabaseAdmin.rpc("grant_hashrate" as never, {
                 _user_id: referrer.user_id,
-                _points: SIGNUP_CAPITAL_USD * 100,
+                _points: signupPoints,
                 _source: "referral_signup",
                 _source_ref_id: null,
                 _days: 180,
               } as never);
-
 
               const { data: refProfile } = await supabaseAdmin
                 .from("profiles")
@@ -224,15 +211,14 @@ export const authWithTelegram = createServerFn({ method: "POST" })
                 .maybeSingle();
               if (refProfile?.telegram_id) {
                 const { sendTelegramMessage } = await import("@/lib/telegram-notify.server");
-                const { formatReward } = await import("@/lib/format");
                 await sendTelegramMessage(
                   Number(refProfile.telegram_id),
                   `👥 <b>New referral joined!</b>\n\n` +
                     `Hi ${refProfile.first_name || "friend"}, a new friend just joined with your link.\n\n` +
-                    `🎁 Signup reward: <b>$0.10 mining capital</b>\n` +
-                    `⚡ Added to your daily income: <b>+$${addUsdPerDay.toFixed(4)}/day</b>` +
-                    (addGramPerDay > 0 ? `\n🪙 <b>+${formatReward(addGramPerDay)} GRAM/day</b>` : "") +
-                    `\n\nKeep inviting friends to grow your mining rate!`,
+                    `🎁 Signup reward: <b>+${signupPoints} hashrate points</b>\n` +
+                    `⚡ More hashrate = bigger share of the daily network pool\n` +
+                    `🪙 Payouts are automatic every day around 00:00 UTC\n\n` +
+                    `Keep inviting friends to grow your mining power!`,
                 );
               }
             } catch (e) {
