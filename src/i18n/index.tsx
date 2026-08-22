@@ -223,10 +223,11 @@ const en: Dict = {
   "deposit.max": "Max",
 
   "withdraw.title": "Withdraw",
-  "withdraw.subtitle": "No minimum amount. One withdrawal per 24h. 5% network fee.",
+  "withdraw.subtitle": "Minimum 1 GRAM. One withdrawal per 24h. 5% network fee.",
   "withdraw.available": "Available",
   "withdraw.amount": "Amount (GRAM)",
   "withdraw.amount_required": "Enter a valid withdrawal amount",
+  "withdraw.min_amount": "Minimum withdrawal is {min} GRAM",
   "withdraw.insufficient": "The amount exceeds your available balance",
   "withdraw.address": "GRAM address",
   "withdraw.request": "Request withdrawal",
