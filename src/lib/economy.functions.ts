@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertNotBanned } from "@/lib/ban-guard";
 
 /** User-facing network mining stats (hashrate, share, last payout, 7d APY). */
 export const getNetworkMining = createServerFn({ method: "GET" })
@@ -116,6 +117,7 @@ export const getNetworkMining = createServerFn({ method: "GET" })
 export const claimPayouts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertNotBanned(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin.rpc("claim_payouts" as never, {
       _user_id: context.userId,
