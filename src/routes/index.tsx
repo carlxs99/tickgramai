@@ -893,6 +893,7 @@ function PromoBanner() {
 
 function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmount: number }; onClose: () => void }) {
   const { t } = useT();
+  const ecoGift = useEconomy();
   const isGram = prize.prizeType === "gram_mining";
   return (
     <motion.div
@@ -1098,6 +1099,8 @@ function LeaderboardTab() {
 
 function TasksTab() {
   const { t: tr } = useT();
+  const ecoTasks = useEconomy();
+  const taskPrice = useTonPrice();
   const listFn = useServerFn(listTasks);
   const doFn = useServerFn(completeTask);
   const meFn = useServerFn(getMe);
@@ -1772,7 +1775,11 @@ function DepositTab() {
   const reinvest = useMutation({
     mutationFn: (amt: number) => reinvestFn({ data: { amount: amt } }),
     onSuccess: (r: any) => {
-      toast.success(`+$${(r.usdPerDay ?? 0).toFixed(4)} USDT/day`);
+      toast.success(
+        ecoDep.enabled
+          ? `+${formatPoints((r.usdPerDay ?? 0) / 0.033 * 100)} pts mining power`
+          : `+$${(r.usdPerDay ?? 0).toFixed(4)} USDT/day`,
+      );
       getTelegram()?.HapticFeedback?.impactOccurred("medium");
       setReinvestAmount("");
       qc.invalidateQueries();
@@ -1780,6 +1787,7 @@ function DepositTab() {
     onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
   });
 
+  const ecoDep = useEconomy();
   const amountNum = Math.max(0, Number(amount) || 0);
   const usdtValue = amountNum * price;
   const memoTag: string = (me.profile as any).memo_tag ?? "";
