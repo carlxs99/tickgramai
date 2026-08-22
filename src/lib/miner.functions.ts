@@ -577,8 +577,6 @@ export const claimReferralMilestone = createServerFn({ method: "POST" })
 // promote them. Cost: 0.001 TON per click, minimum 250 clicks (0.25 TON).
 // Reward per click: 0.001 GRAM. Auto-completes when target_clicks is reached.
 
-const PARTNER_COST_PER_CLICK = 0.001; // TON
-const PARTNER_MIN_CLICKS = 250;
 
 // Public list: active partner tasks the user has not completed and does not own.
 export const listPartnerTasks = createServerFn({ method: "GET" })
