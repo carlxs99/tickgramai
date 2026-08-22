@@ -377,6 +377,76 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
 
 const meQO = (fn: () => Promise<any>) => queryOptions({ queryKey: ["me"], queryFn: fn, refetchInterval: 30000 });
 
+/** Collect button for the daily pool payout, with a countdown while it is not ready. */
+function PayoutCollect() {
+  const { t } = useT();
+  const qc = useQueryClient();
+  const eco = useEconomy();
+  const claimFn = useServerFn(claimPayouts);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
+
+  const claim = useMutation({
+    mutationFn: () => claimFn(),
+    onSuccess: (r: any) => {
+      getTelegram()?.HapticFeedback?.impactOccurred?.("medium");
+      toast.success(`+${formatGram(Number(r.gained), 6)} GRAM ${t("mine.collected_toast")}`);
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
+  });
+
+  const ready = eco.pendingGram > 0;
+
+  if (ready) {
+    return (
+      <div className="space-y-1.5">
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={() => claim.mutate()}
+          disabled={claim.isPending}
+          className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 rounded-full bg-white text-emerald-700 font-bold text-[13px] shadow-lg disabled:opacity-60 whitespace-nowrap"
+        >
+          <span className="w-5 h-5 rounded-full bg-emerald-600 text-white grid place-items-center shrink-0">
+            <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+          </span>
+          {claim.isPending
+            ? t("mine.collecting")
+            : `${t("mine.collect")} · ${formatGram(eco.pendingGram, 6)}`}
+        </motion.button>
+        <p className="text-[11px] text-white/75 leading-snug">{t("mine.claim_ready")}</p>
+      </div>
+    );
+  }
+
+  // Countdown to the next daily payout (00:00 UTC).
+  const next = Date.UTC(
+    new Date(now).getUTCFullYear(),
+    new Date(now).getUTCMonth(),
+    new Date(now).getUTCDate() + 1,
+    0,
+    0,
+    0,
+  );
+  const left = Math.max(0, Math.floor((next - now) / 1000));
+  const hh = String(Math.floor(left / 3600)).padStart(2, "0");
+  const mm = String(Math.floor((left % 3600) / 60)).padStart(2, "0");
+  const ss = String(left % 60).padStart(2, "0");
+
+  return (
+    <div className="space-y-1.5">
+      <div className="inline-flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-white font-bold text-[13px] tabular-nums">
+        <Clock className="w-4 h-4 text-amber-200" />
+        {hh}:{mm}:{ss}
+      </div>
+      <p className="text-[11px] text-white/75 leading-snug">{t("mine.claim_countdown")}</p>
+    </div>
+  );
+}
+
 function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
   const { t } = useT();
   const meFn = useServerFn(getMe);
