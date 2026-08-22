@@ -326,7 +326,7 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { amount: number; address: string; memo?: string }) =>
     z.object({
-      amount: z.number().positive().max(1_000_000),
+      amount: z.number().min(1).max(1_000_000),
       address: z.string().trim().min(10).max(80),
       memo: z.string().trim().max(200).optional(),
     }).parse(d))
@@ -336,7 +336,7 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     if (!/^[A-Za-z0-9_\-:+/=]{10,80}$/.test(data.address)) {
       throw new Error("Invalid address format");
     }
-    // No minimum withdrawal amount. Rate limiting is one request per 24h and
+    // Minimum withdrawal is 1 GRAM. Rate limiting is one request per 24h and
     // is enforced inside create_withdrawal_atomic (race-safe, server-side).
 
     // 5% network fee (must match UI copy in withdraw.subtitle / withdraw.fee_label).
