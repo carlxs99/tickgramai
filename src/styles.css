@@ -57,7 +57,9 @@
   --secondary-foreground: oklch(0.24 0.05 250);
 
   --muted: oklch(0.95 0.015 240);
-  --muted-foreground: oklch(0.5 0.03 250);
+  /* Readability: secondary text kept well above WCAG AA on white cards */
+  --muted-foreground: oklch(0.39 0.045 250);
+
 
   /* Cyan accent — used sparingly */
   --accent: oklch(0.78 0.13 210);
