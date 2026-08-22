@@ -989,10 +989,22 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
   }[rank];
   const { t } = useT();
   const price = useTonPrice();
+  const eco = useEconomy();
   const name = miner ? (miner.first_name || miner.username || t("leaderboard.anon")) : "—";
-  const rateUsd = miner ? Number(miner.mining_rate_usd ?? 0) : 0;
-  const rateGram = price > 0 ? rateUsd / price : 0;
-  const rateLabel = miner ? `$${rateUsd.toFixed(5)}` : "—";
+  const v2 = eco.enabled;
+  const rateUsd = miner ? Number((v2 ? miner.est_daily_usd : miner.mining_rate_usd) ?? 0) : 0;
+  const rateGram = miner
+    ? v2
+      ? Number(miner.est_daily_gram ?? 0)
+      : price > 0
+        ? rateUsd / price
+        : 0
+    : 0;
+  const rateLabel = miner
+    ? v2
+      ? formatPoints(Number(miner.hashrate ?? 0))
+      : `$${rateUsd.toFixed(5)}`
+    : "—";
   return (
     <div className={`flex-1 basis-0 min-w-0 flex flex-col items-center ${styles.order}`}>
       <div className="relative shrink-0">
