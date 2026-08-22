@@ -236,6 +236,7 @@ const en: Dict = {
   "withdraw.limit_label": "Withdrawal limit",
   "withdraw.limit_value": "1 per 24h",
   "withdraw.limit_hint": "You already withdrew today. Next withdrawal available in {time}.",
+  "withdraw.deposit_required": "Your first withdrawal was free. To keep withdrawing, make a deposit of at least 1 GRAM.",
   "withdraw.fee_label": "Network fee",
   "withdraw.net_label": "You will receive",
 
@@ -531,6 +532,7 @@ const es: Dict = {
   "withdraw.limit_label": "Límite de retiro",
   "withdraw.limit_value": "1 cada 24 h",
   "withdraw.limit_hint": "Ya has retirado hoy. Próximo retiro disponible en {time}.",
+  "withdraw.deposit_required": "Tu primer retiro fue gratis. Para seguir retirando, haz un depósito mínimo de 1 GRAM.",
   "withdraw.fee_label": "Comisión de red",
   "withdraw.net_label": "Recibirás",
 
@@ -827,6 +829,7 @@ const ru: Dict = {
   "withdraw.limit_label": "Лимит вывода",
   "withdraw.limit_value": "1 раз в 24 ч",
   "withdraw.limit_hint": "Вы уже выводили сегодня. Следующий вывод через {time}.",
+  "withdraw.deposit_required": "Первый вывод был бесплатным. Чтобы выводить дальше, внесите депозит не менее 1 GRAM.",
   "withdraw.fee_label": "Комиссия сети",
   "withdraw.net_label": "Вы получите",
 
@@ -1123,6 +1126,7 @@ const hi: Dict = {
   "withdraw.limit_label": "निकासी सीमा",
   "withdraw.limit_value": "24 घंटे में 1",
   "withdraw.limit_hint": "आप आज पहले ही निकासी कर चुके हैं। अगली निकासी {time} में।",
+  "withdraw.deposit_required": "आपकी पहली निकासी मुफ़्त थी। आगे निकासी के लिए कम से कम 1 GRAM जमा करें।",
   "withdraw.fee_label": "नेटवर्क शुल्क",
   "withdraw.net_label": "आपको मिलेगा",
 
