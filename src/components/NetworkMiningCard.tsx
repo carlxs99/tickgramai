@@ -44,7 +44,7 @@ export function NetworkMiningCard() {
   const last = data.lastPayout;
 
   return (
-    <div className="glass-card rounded-2xl p-4 border border-white/10">
+    <div className="glass-card rounded-2xl p-4 border border-border text-card-foreground">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/30 to-accent/20 border border-primary/30 flex items-center justify-center">
