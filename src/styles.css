@@ -57,7 +57,9 @@
   --secondary-foreground: oklch(0.24 0.05 250);
 
   --muted: oklch(0.95 0.015 240);
-  --muted-foreground: oklch(0.5 0.03 250);
+  /* Readability: secondary text kept well above WCAG AA on white cards */
+  --muted-foreground: oklch(0.39 0.045 250);
+
 
   /* Cyan accent — used sparingly */
   --accent: oklch(0.78 0.13 210);
@@ -111,7 +113,16 @@
     letter-spacing: -0.022em;
   }
   .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* Legibility: faded white text on the navy hero/gradient was too soft.
+     Lift every low-opacity white utility to a readable level. */
+  .text-white\/40, .text-white\/45 { color: oklch(1 0 0 / 0.72) !important; }
+  .text-white\/50, .text-white\/55 { color: oklch(1 0 0 / 0.78) !important; }
+  .text-white\/60, .text-white\/65 { color: oklch(1 0 0 / 0.84) !important; }
+  .text-white\/70, .text-white\/75 { color: oklch(1 0 0 / 0.9) !important; }
+  .text-white\/80, .text-white\/85, .text-white\/90 { color: oklch(1 0 0 / 0.96) !important; }
 }
+
 
 @utility glow-primary { box-shadow: 0 24px 48px -22px oklch(0.5 0.18 235 / 0.55), 0 2px 6px -2px oklch(0.25 0.1 245 / 0.32); }
 @utility glow-success { box-shadow: 0 24px 48px -22px oklch(0.72 0.17 155 / 0.5), 0 2px 6px -2px oklch(0.3 0.12 165 / 0.24); }
