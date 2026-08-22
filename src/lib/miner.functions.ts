@@ -355,8 +355,11 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     } as never);
     if (error) {
       if (/insufficient balance/i.test(error.message)) throw new Error("Insufficient balance");
+      const limit = /daily withdrawal limit reached:(\S+)/i.exec(error.message);
+      if (limit) throw new Error(`DAILY_LIMIT:${limit[1]}`);
       throw error;
     }
+
     const createdRow: any = Array.isArray(created) ? created[0] : created;
     if (!createdRow?.withdrawal_id) throw new Error("Withdrawal could not be recorded");
     return { ok: true, fee, net, withdrawalId: createdRow.withdrawal_id };
