@@ -565,7 +565,7 @@ function MiningTab({ onBack }: { onBack: () => void }) {
       >
         <ChevronLeft className="w-4 h-4 shrink-0" /> {t("wheel.back")}
       </button>
-      <h2 className="text-lg font-display font-bold">{t("mining.pill")}</h2>
+      <h2 className="text-lg font-display font-bold text-white text-glow-white">{t("mining.pill")}</h2>
       <NetworkMiningCard />
     </div>
   );

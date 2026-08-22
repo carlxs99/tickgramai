@@ -17,12 +17,12 @@ function Metric({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl bg-background/50 border border-white/5 p-2.5">
+    <div className="rounded-xl bg-secondary/60 border border-border p-2.5">
       <div className="flex items-center gap-1.5 mb-1 text-muted-foreground">
         {icon}
         <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
       </div>
-      <p className="text-sm font-display font-bold leading-tight">{value}</p>
+      <p className="text-sm font-display font-bold leading-tight text-card-foreground">{value}</p>
       {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
@@ -44,7 +44,7 @@ export function NetworkMiningCard() {
   const last = data.lastPayout;
 
   return (
-    <div className="glass-card rounded-2xl p-4 border border-white/10">
+    <div className="glass-card rounded-2xl p-4 border border-border text-card-foreground">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/30 to-accent/20 border border-primary/30 flex items-center justify-center">
@@ -64,7 +64,7 @@ export function NetworkMiningCard() {
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">
           {t("mining.est_today")}
         </p>
-        <p className="text-xl font-display font-bold text-gradient-gold leading-tight">
+        <p className="text-xl font-display font-bold text-gradient leading-tight">
           ≈ {formatReward(data.estDailyGram)} GRAM
         </p>
         <p className="text-[10px] text-muted-foreground mt-0.5">
