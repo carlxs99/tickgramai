@@ -2166,7 +2166,8 @@ function WithdrawTab() {
   const amountNum = Number(normalizedAmount);
   const amountEmpty = normalizedAmount === "";
   const amountInvalid = !amountEmpty && (!Number.isFinite(amountNum) || amountNum <= 0);
-  const exceedsBalance = !amountEmpty && !amountInvalid && amountNum > balanceNum;
+  const belowMinimum = !amountEmpty && !amountInvalid && amountNum < 1;
+  const exceedsBalance = !amountEmpty && !amountInvalid && !belowMinimum && amountNum > balanceNum;
 
   const mut = useMutation({
     mutationFn: (request: { amount: number; address: string }) =>
