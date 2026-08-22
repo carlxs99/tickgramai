@@ -2173,7 +2173,16 @@ function WithdrawTab() {
     },
     onError: (e: any, _v, ctx: any) => {
       if (ctx?.prev) qc.setQueryData(["me"], ctx.prev);
-      toast.error(e?.message ?? t("common.failed"));
+      const msg = String(e?.message ?? "");
+      const limit = /DAILY_LIMIT:(\S+)/.exec(msg);
+      if (limit) {
+        const until = new Date(limit[1]!).getTime();
+        toast.error(t("withdraw.limit_hint", { time: formatCountdown(until - Date.now()) }));
+        qc.invalidateQueries({ queryKey: ["withdrawals"] });
+        return;
+      }
+      toast.error(msg || t("common.failed"));
+
     },
     onSuccess: (_result, request) => {
       setAmount("");
