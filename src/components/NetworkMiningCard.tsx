@@ -64,7 +64,7 @@ export function NetworkMiningCard() {
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">
           {t("mining.est_today")}
         </p>
-        <p className="text-xl font-display font-bold text-gradient-gold leading-tight">
+        <p className="text-xl font-display font-bold text-gradient leading-tight">
           ≈ {formatReward(data.estDailyGram)} GRAM
         </p>
         <p className="text-[10px] text-muted-foreground mt-0.5">
