@@ -1039,6 +1039,7 @@ function LeaderboardTab() {
   const fn = useServerFn(getTopMiners);
   const rankFn = useServerFn(getMyRank);
   const price = useTonPrice();
+  const ecoLb = useEconomy();
   const { data } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
   const { data: myRank, isLoading: isMyRankLoading, isError: isMyRankError } = useQuery({ queryKey: ["myRank"], queryFn: () => rankFn(), refetchInterval: 60_000 });
   const list = (data ?? []) as any[];
