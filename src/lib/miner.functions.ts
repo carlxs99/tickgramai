@@ -364,6 +364,30 @@ export const getTopMiners = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isEconomyV2, topMinersByHashrate, estimatedPoolToday } = await import(
+      "@/lib/leaderboard.server"
+    );
+
+    if (await isEconomyV2()) {
+      const [miners, pool] = await Promise.all([topMinersByHashrate(100), estimatedPoolToday()]);
+      const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
+      const price = await fetchTonPriceUsdt().catch(() => 0);
+      return miners.map((m) => {
+        const share = pool.netHashrate > 0 ? m.hashrate / pool.netHashrate : 0;
+        const estUsd = share * pool.poolUsd;
+        return {
+          username: m.username,
+          first_name: m.first_name,
+          avatar_url: m.avatar_url,
+          hashrate: m.hashrate,
+          est_daily_usd: estUsd,
+          est_daily_gram: price > 0 ? estUsd / price : 0,
+          mining_rate: m.mining_rate,
+          mining_rate_usd: m.mining_rate_usd,
+        };
+      });
+    }
+
     const { data: adminRoles } = await supabaseAdmin
       .from("user_roles")
       .select("user_id")
@@ -388,17 +412,27 @@ export const getTopMiners = createServerFn({ method: "GET" })
       username: p.username ?? null,
       first_name: p.first_name ?? null,
       avatar_url: p.avatar_url ?? null,
+      hashrate: 0,
+      est_daily_usd: 0,
+      est_daily_gram: 0,
       mining_rate: Number(p.mining_rate ?? 0),
       mining_rate_usd: Number(p.mining_rate_usd ?? 0),
     }));
   });
 
-// Returns the current user's global rank based on mining_rate_usd.
+// Returns the current user's global rank (hashrate under Dynamic Mining v2).
 // Admins are excluded from the ranking to keep the leaderboard focused on users.
 export const getMyRank = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { isEconomyV2, myRankByHashrate } = await import("@/lib/leaderboard.server");
+
+    if (await isEconomyV2()) {
+      const r = await myRankByHashrate(context.userId);
+      return { rank: r.rank, hashrate: r.hashrate, rate_usd: r.hashrate / 100 };
+    }
+
     const { data: me, error: meErr } = await supabaseAdmin
       .from("profiles")
       .select("mining_rate_usd")
@@ -423,7 +457,7 @@ export const getMyRank = createServerFn({ method: "GET" })
     }
     const { count, error } = await query;
     if (error) throw error;
-    return { rank: (count ?? 0) + 1, rate_usd: myRate };
+    return { rank: (count ?? 0) + 1, hashrate: 0, rate_usd: myRate };
   });
 
 export const getFriends = createServerFn({ method: "GET" })
