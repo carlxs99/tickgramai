@@ -131,11 +131,13 @@ export function PrizeWheelCard({ price = 0 }: { price?: number }) {
 
   const prizeText = (() => {
     if (!prize) return null;
-    if (prize.prizeType === "gram_mining")
+    if (prize.prizeType === "gram_mining") {
+      const points = price > 0 ? Math.round(prize.prizeAmount * price * 100) : 0;
       return {
         title: t("wheel.prize_gram", { amount: prize.prizeAmount }),
-        sub: t("wheel.prize_gram_sub", { rate: (prize.prizeAmount * 0.033).toFixed(4) }),
+        sub: t("wheel.prize_gram_sub", { points }),
       };
+    }
     if (prize.prizeType === "deposit_bonus_pct")
       return {
         title: t("wheel.prize_bonus", { amount: prize.prizeAmount }),
