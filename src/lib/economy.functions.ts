@@ -67,7 +67,7 @@ export const adminEconomyOverview = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Forbidden: admin only");
 
     const today = new Date().toISOString().slice(0, 10);
-    const [flag, ratio, revToday, revAll, pools, net, balances, treasury] = await Promise.all([
+    const [flag, ratio, revToday, revAll, pools, net, balances, treasury, deferred] = await Promise.all([
       supabaseAdmin.from("app_settings").select("value").eq("key", "economy_v2").maybeSingle(),
       supabaseAdmin.from("app_settings").select("value").eq("key", "payout_ratio").maybeSingle(),
       supabaseAdmin
@@ -90,6 +90,12 @@ export const adminEconomyOverview = createServerFn({ method: "GET" })
         .from("treasury_ledger")
         .select("direction, amount_usd")
         .limit(2000),
+      supabaseAdmin
+        .from("deferred_revenue")
+        .select("daily_usd")
+        .lte("starts_on", today)
+        .gte("ends_on", today)
+        .limit(5000),
     ]);
 
     const todayRows = (revToday.data ?? []) as Array<{ source: string; amount_usd: number }>;
@@ -107,12 +113,19 @@ export const adminEconomyOverview = createServerFn({ method: "GET" })
       0,
     );
 
+    const deferredDaily = ((deferred.data ?? []) as Array<{ daily_usd: number }>).reduce(
+      (s, r) => s + Number(r.daily_usd || 0),
+      0,
+    );
+
     return {
       enabled: Boolean((flag.data as { value?: { enabled?: boolean } } | null)?.value?.enabled),
+      deferredDaily,
       payoutRatio: Number(
         (ratio.data as { value?: { value?: number } } | null)?.value?.value ?? 0.65,
       ),
-      revenueToday: todayRows.reduce((s, r) => s + Number(r.amount_usd || 0), 0),
+      revenueToday:
+        todayRows.reduce((s, r) => s + Number(r.amount_usd || 0), 0) + deferredDaily,
       revenueBySource: bySource,
       recentRevenue: revAll.data ?? [],
       pools: pools.data ?? [],
