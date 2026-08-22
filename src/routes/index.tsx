@@ -378,7 +378,7 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
 
 const meQO = (fn: () => Promise<any>) => queryOptions({ queryKey: ["me"], queryFn: fn, refetchInterval: 30000 });
 
-/** Collect button for the daily pool payout, with a countdown while it is not ready. */
+/** Collect card for the daily pool payout, with a countdown while it is not ready. */
 function PayoutCollect() {
   const { t } = useT();
   const qc = useQueryClient();
@@ -404,21 +404,26 @@ function PayoutCollect() {
 
   if (ready) {
     return (
-      <div className="space-y-1.5">
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={() => claim.mutate()}
-          disabled={claim.isPending}
-          className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 rounded-full bg-white text-emerald-700 font-bold text-[13px] shadow-lg disabled:opacity-60 whitespace-nowrap"
-        >
-          <span className="w-5 h-5 rounded-full bg-emerald-600 text-white grid place-items-center shrink-0">
-            <Plus className="w-3.5 h-3.5" strokeWidth={3} />
-          </span>
-          {claim.isPending
-            ? t("mine.collecting")
-            : `${t("mine.collect")} · ${formatGram(eco.pendingGram, 6)}`}
-        </motion.button>
-        <p className="text-[11px] text-white/75 leading-snug">{t("mine.claim_ready")}</p>
+      <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-3.5 space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold text-emerald-200 uppercase tracking-wide">{t("mine.claim_ready")}</p>
+            <p className="text-xl font-display font-bold text-white tabular-nums leading-tight">
+              {formatGram(eco.pendingGram, 6)} GRAM
+            </p>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => claim.mutate()}
+            disabled={claim.isPending}
+            className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 rounded-full bg-white text-emerald-700 font-bold text-[13px] shadow-lg disabled:opacity-60 whitespace-nowrap shrink-0"
+          >
+            <span className="w-5 h-5 rounded-full bg-emerald-600 text-white grid place-items-center shrink-0">
+              <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+            </span>
+            {claim.isPending ? t("mine.collecting") : t("mine.collect")}
+          </motion.button>
+        </div>
       </div>
     );
   }
@@ -438,12 +443,18 @@ function PayoutCollect() {
   const ss = String(left % 60).padStart(2, "0");
 
   return (
-    <div className="space-y-1.5">
-      <div className="inline-flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-white font-bold text-[13px] tabular-nums">
-        <Clock className="w-4 h-4 text-amber-200" />
-        {hh}:{mm}:{ss}
+    <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-3.5 space-y-2">
+      <div className="flex items-center gap-2 text-white/80 text-[10px] font-semibold uppercase tracking-wide">
+        <Clock className="w-3.5 h-3.5 text-amber-200" />
+        {t("mine.first_payout_pending")}
       </div>
-      <p className="text-[11px] text-white/75 leading-snug">{t("mine.claim_countdown")}</p>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-black/25 border border-white/10 text-white font-display font-bold text-2xl tabular-nums tracking-tight shadow-inner">
+          <Clock className="w-5 h-5 text-amber-300" />
+          {hh}:{mm}:{ss}
+        </div>
+        <p className="text-[11px] text-white/80 leading-snug flex-1">{t("mine.claim_countdown")}</p>
+      </div>
     </div>
   );
 }
