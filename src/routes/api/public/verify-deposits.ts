@@ -218,6 +218,28 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             const newRateGram = Number((profile as any).mining_rate ?? 0) + gramPerDay;
             void newRateGram;
 
+            // ---- Economy v2 -------------------------------------------------
+            // Mining power: 100 points per USD deposited, 180 days, linear decay.
+            try {
+              await supabaseAdmin.rpc("grant_hashrate" as never, {
+                _user_id: profile.user_id,
+                _points: usdValue * 100,
+                _source: "deposit",
+                _source_ref_id: (depositRow as any)?.id ?? null,
+                _days: 180,
+              } as never);
+              await supabaseAdmin.rpc("add_revenue_event" as never, {
+                _source: "deposit",
+                _amount_usd: amountTon * priceForCredit,
+                _note: `deposit ${txHash}`,
+                _ref: txHash,
+                _created_by: null,
+              } as never);
+            } catch (e) {
+              console.error("economy v2 deposit hooks failed", e);
+            }
+
+
 
 
 
