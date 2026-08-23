@@ -395,6 +395,7 @@ export const getTopMiners = createServerFn({ method: "GET" })
           username: m.username,
           first_name: m.first_name,
           avatar_url: m.avatar_url,
+          telegram_id: m.telegram_id,
           hashrate: m.hashrate,
           est_daily_usd: estUsd,
           est_daily_gram: price > 0 ? estUsd / price : 0,
