@@ -102,7 +102,7 @@ function MinerAppInner() {
     // tabs from briefly rendering empty values or placeholders on first open.
     const finishBoot = async () => {
       statsStore.start();
-      const essential = await Promise.allSettled([
+      await Promise.all([
         qc.prefetchQuery({ queryKey: ["me"], queryFn: () => meFn() }),
         qc.prefetchQuery({ queryKey: ["me-header"], queryFn: () => meFn() }),
         qc.prefetchQuery({ queryKey: ["tasks"], queryFn: () => tasksFn() }),
@@ -122,8 +122,6 @@ function MinerAppInner() {
         qc.prefetchQuery({ queryKey: ["ton-price"], queryFn: () => priceFn() }),
         statsStore.whenReady(),
       ]);
-      const meResult = essential[0];
-      if (meResult.status === "rejected") throw meResult.reason;
       setReady(true);
       markAppReady();
     };
