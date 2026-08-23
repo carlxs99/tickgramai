@@ -3396,7 +3396,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
     }),
     onSuccess: () => {
       toast.success(editing ? tr("admin.task_updated") : tr("admin.task_created"));
-      setForm(empty);
+      setForm(empty); setRewardPoints("");
       qc.invalidateQueries({ queryKey: ["admin-tasks"] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
@@ -3429,7 +3429,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
             {editing ? tr("admin.edit_task") : tr("admin.new_task")}
           </p>
           {editing && (
-            <button onClick={() => setForm(empty)} className="text-[10px] text-muted-foreground hover:text-foreground">
+            <button onClick={() => { setForm(empty); setRewardPoints(""); }} className="text-[10px] text-muted-foreground hover:text-foreground">
               {tr("common.cancel")}
             </button>
           )}
