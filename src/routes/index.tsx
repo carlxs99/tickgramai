@@ -10,12 +10,13 @@ import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect
 import { authWithTelegram } from "@/lib/telegram-auth.functions";
 import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWithdrawal, listWithdrawals, getTopMiners, getMyRank, getFriends, getReferralStats, listReferralMilestones, claimReferralMilestone, saveWallet, reinvestBalance, listPartnerTasks, listMyPartnerTasks, createPartnerTask, completePartnerTask, cancelPartnerTask } from "@/lib/miner.functions";
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
+import { listWheelSpins } from "@/lib/wheel.functions";
 import { PrizeWheelCard, WheelTeaserCard } from "@/components/PrizeWheel";
 import { NetworkMiningCard } from "@/components/NetworkMiningCard";
 import { useEconomy, pointsForGram, formatPoints, POINTS_PER_USD } from "@/lib/useEconomy";
 import { AdminEconomySection } from "@/components/AdminEconomy";
 import { getActivePromotion } from "@/lib/promotions.functions";
-import { claimPayouts } from "@/lib/economy.functions";
+import { claimPayouts, getNetworkMining } from "@/lib/economy.functions";
 
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan, adminCreateBroadcast, adminListBroadcasts, adminCancelBroadcast, adminTestBroadcast, adminResendBroadcast } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
@@ -79,6 +80,17 @@ function MinerAppInner() {
   const partnersFn = useServerFn(listPartnerTasks);
   const giftFn = useServerFn(listGiftBoxes);
   const priceFn = useServerFn(getTonPrice);
+  const networkFn = useServerFn(getNetworkMining);
+  const wheelFn = useServerFn(listWheelSpins);
+  const topFn = useServerFn(getTopMiners);
+  const rankFn = useServerFn(getMyRank);
+  const friendsFn = useServerFn(getFriends);
+  const referralStatsFn = useServerFn(getReferralStats);
+  const milestonesFn = useServerFn(listReferralMilestones);
+  const depositsFn = useServerFn(listDeposits);
+  const withdrawalsFn = useServerFn(listWithdrawals);
+  const myPartnersFn = useServerFn(listMyPartnerTasks);
+  const promotionFn = useServerFn(getActivePromotion);
   const qc = useQueryClient();
   const attempted = useRef(false);
 
@@ -86,22 +98,32 @@ function MinerAppInner() {
     if (attempted.current) return;
     attempted.current = true;
 
-    // Start the stats stream on app boot so it's already populated
-    // whenever the user opens the Stats tab — no loading spinner.
-    statsStore.start();
-
-
-    // Preload all the data the app needs so that when the splash screen
-    // disappears the user sees a fully rendered app (no extra loading).
+    // Preload every user-facing section before removing the splash. This keeps
+    // tabs from briefly rendering empty values or placeholders on first open.
     const finishBoot = async () => {
-      await Promise.allSettled([
+      statsStore.start();
+      const essential = await Promise.allSettled([
         qc.prefetchQuery({ queryKey: ["me"], queryFn: () => meFn() }),
         qc.prefetchQuery({ queryKey: ["me-header"], queryFn: () => meFn() }),
         qc.prefetchQuery({ queryKey: ["tasks"], queryFn: () => tasksFn() }),
         qc.prefetchQuery({ queryKey: ["partner-tasks"], queryFn: () => partnersFn() }),
+        qc.prefetchQuery({ queryKey: ["my-partner-tasks"], queryFn: () => myPartnersFn() }),
         qc.prefetchQuery({ queryKey: ["gift-boxes"], queryFn: () => giftFn() }),
+        qc.prefetchQuery({ queryKey: ["wheel-spins"], queryFn: () => wheelFn() }),
+        qc.prefetchQuery({ queryKey: ["network-mining"], queryFn: () => networkFn() }),
+        qc.prefetchQuery({ queryKey: ["top"], queryFn: () => topFn() }),
+        qc.prefetchQuery({ queryKey: ["myRank"], queryFn: () => rankFn() }),
+        qc.prefetchQuery({ queryKey: ["friends"], queryFn: () => friendsFn() }),
+        qc.prefetchQuery({ queryKey: ["referral-stats"], queryFn: () => referralStatsFn() }),
+        qc.prefetchQuery({ queryKey: ["referral-milestones"], queryFn: () => milestonesFn() }),
+        qc.prefetchQuery({ queryKey: ["deposits"], queryFn: () => depositsFn() }),
+        qc.prefetchQuery({ queryKey: ["withdrawals"], queryFn: () => withdrawalsFn() }),
+        qc.prefetchQuery({ queryKey: ["promotion"], queryFn: () => promotionFn() }),
         qc.prefetchQuery({ queryKey: ["ton-price"], queryFn: () => priceFn() }),
+        statsStore.whenReady(),
       ]);
+      const meResult = essential[0];
+      if (meResult.status === "rejected") throw meResult.reason;
       setReady(true);
       markAppReady();
     };
@@ -154,7 +176,7 @@ function MinerAppInner() {
         markAppReady();
       }
     })();
-  }, [authFn, t, qc, meFn, tasksFn, partnersFn, giftFn, priceFn]);
+  }, [authFn, t, qc, meFn, tasksFn, partnersFn, myPartnersFn, giftFn, wheelFn, networkFn, topFn, rankFn, friendsFn, referralStatsFn, milestonesFn, depositsFn, withdrawalsFn, promotionFn, priceFn]);
 
   if (error) {
     return (
@@ -1139,11 +1161,25 @@ function LeaderboardTab() {
   const rankFn = useServerFn(getMyRank);
   const price = useTonPrice();
   const ecoLb = useEconomy();
-  const { data } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
+  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
   const { data: myRank, isLoading: isMyRankLoading, isError: isMyRankError } = useQuery({ queryKey: ["myRank"], queryFn: () => rankFn(), refetchInterval: 60_000 });
   const list = (data ?? []) as any[];
   const top3 = [list[0], list[1], list[2]];
   const rest = list.slice(3);
+  if (isLoading) return <div className="min-h-[60vh]" aria-hidden />;
+  if (isError) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="card-glass rounded-2xl p-5 text-center max-w-xs">
+          <AlertTriangle className="w-7 h-7 mx-auto text-destructive" />
+          <p className="mt-3 text-sm font-semibold">The ranking could not be loaded.</p>
+          <button onClick={() => refetch()} className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       <div>
@@ -2651,6 +2687,8 @@ const statsStore = (() => {
   let feedId: ReturnType<typeof setInterval> | null = null;
   let splitId: ReturnType<typeof setInterval> | null = null;
   let nextCoinCursor = MAX_STATS_ROWS % STATS_COINS.length;
+  let resolveReady: (() => void) | null = null;
+  const readyPromise = new Promise<void>((resolve) => { resolveReady = resolve; });
 
   function buildRow(
     coin: TradeCoin,
@@ -2681,6 +2719,10 @@ const statsStore = (() => {
   }
   function setState(next: StatsStoreState) {
     state = next;
+    if (next.rows.length > 0 && resolveReady) {
+      resolveReady();
+      resolveReady = null;
+    }
     emit();
   }
 
@@ -2791,6 +2833,13 @@ const statsStore = (() => {
 
   return {
     start,
+    whenReady() {
+      if (state.rows.length > 0) return Promise.resolve();
+      return Promise.race([
+        readyPromise,
+        new Promise<void>((resolve) => setTimeout(resolve, 5000)),
+      ]);
+    },
     subscribe(l: () => void) { listeners.add(l); return () => listeners.delete(l); },
     getSnapshot() { return state; },
   };
