@@ -109,7 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script src="https://telegram.org/js/telegram-web-app.js" />
         <script src="//libtl.com/sdk.js" data-zone="11237001" data-sdk="show_11237001" />
@@ -127,6 +127,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
+    const ignoreAdTimeout = (event: PromiseRejectionEvent) => {
+      const message = event.reason instanceof Error ? event.reason.message : String(event.reason ?? "");
+      if (message.toLowerCase().includes("adex timeout")) event.preventDefault();
+    };
+    window.addEventListener("unhandledrejection", ignoreAdTimeout);
+
     let cancelled = false;
     let attempts = 0;
     let timerId: ReturnType<typeof setTimeout> | null = null;
@@ -162,6 +168,7 @@ function RootComponent() {
     return () => {
       cancelled = true;
       if (timerId) clearTimeout(timerId);
+      window.removeEventListener("unhandledrejection", ignoreAdTimeout);
     };
   }, []);
 
