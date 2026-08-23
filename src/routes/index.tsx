@@ -3598,11 +3598,15 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
               <div className="flex gap-1 shrink-0">
                 <button
                   className="p-1.5 rounded-lg bg-background/60 border border-white/5 hover:border-primary/40 transition"
-                  onClick={() => setForm({
-                    id: t.id, code: t.code, title: t.title, description: t.description ?? "",
-                    reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),
-                    link: t.link ?? "", target_chat: t.target_chat ?? "", is_active: !!t.is_active,
-                  })}
+                  onClick={() => {
+                    setRewardPoints(String(Math.round(pointsForGram(Number(t.reward), adminPrice))));
+                    setForm({
+                      id: t.id, code: t.code, title: t.title, description: t.description ?? "",
+                      reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),
+                      link: t.link ?? "", target_chat: t.target_chat ?? "", is_active: !!t.is_active,
+                    });
+                  }}
+
                   aria-label="Edit"
                 >
                   <Pencil className="w-3 h-3" />
