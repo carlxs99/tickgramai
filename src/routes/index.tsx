@@ -3605,7 +3605,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                 <button
                   className="p-1.5 rounded-lg bg-background/60 border border-white/5 hover:border-primary/40 transition"
                   onClick={() => {
-                    setRewardPoints(String(Math.round(pointsForGram(Number(t.reward), adminPrice))));
+                    setRewardPoints(adminPrice > 0 ? formatPoints(pointsForGram(Number(t.reward), adminPrice)).replace(/,/g, "") : "");
                     setForm({
                       id: t.id, code: t.code, title: t.title, description: t.description ?? "",
                       reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),
