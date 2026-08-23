@@ -1070,9 +1070,15 @@ export type Database = {
         }[]
       }
       complete_task: {
-        Args: { _task_id: string; _user_id: string }
+        Args: {
+          _days?: number
+          _points?: number
+          _task_id: string
+          _user_id: string
+        }
         Returns: {
           completed_on: string
+          points_granted: number
           reward: number
         }[]
       }

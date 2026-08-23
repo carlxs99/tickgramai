@@ -162,28 +162,25 @@ export const completeTask = createServerFn({ method: "POST" })
       if (!isMember) throw new Error("Aún no estás suscrito al canal/grupo");
     }
 
-    // Completions go through a SECURITY DEFINER RPC that atomically validates
-    // task state, deposit gating, and (for non-daily kinds) rejects duplicates.
-    const { supabaseAdmin: adminForTask } = await import("@/integrations/supabase/client.server");
-    const { error: iErr } = await adminForTask
-      .rpc("complete_task" as never, { _user_id: userId, _task_id: task.id } as never);
-    if (iErr) throw new Error(iErr.message || "Already claimed");
-
-
     // Economy v2: the task reward (denominated in GRAM capital) is converted
     // into hashrate points (100 pts per USD, 180 days). No legacy fixed ROI.
+    // The completion row AND the hashrate grant are written by a single
+    // SECURITY DEFINER RPC, so points can never be lost or double-credited.
     const rewardCapitalGram = Number(task.reward);
     const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     const tonPrice = (await fetchTonPriceUsdt()) || 1;
-    const dailyAddGram = 0;
+    const points = rewardCapitalGram * tonPrice * 100;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.rpc("grant_hashrate" as never, {
-      _user_id: userId,
-      _points: rewardCapitalGram * tonPrice * 100,
-      _source: "task",
-      _source_ref_id: null,
-      _days: 180,
-    } as never);
+    const { error: iErr } = await supabaseAdmin
+      .rpc("complete_task" as never, {
+        _user_id: userId,
+        _task_id: task.id,
+        _points: points,
+        _days: 180,
+      } as never);
+    if (iErr) throw new Error(iErr.message || "Already claimed");
+
+    const dailyAddGram = 0;
     const { data: cur } = await supabaseAdmin
       .from("profiles").select("balance").eq("user_id", userId).maybeSingle();
     return {
@@ -191,9 +188,10 @@ export const completeTask = createServerFn({ method: "POST" })
       rewardGram: dailyAddGram,
       rewardCapitalGram,
       balance: Number((cur as any)?.balance ?? 0),
-      hashratePoints: rewardCapitalGram * tonPrice * 100,
+      hashratePoints: points,
     };
   });
+
 
 
 
