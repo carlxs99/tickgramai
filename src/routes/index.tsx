@@ -3463,15 +3463,38 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                 <option value="group">{tr("admin.kind.group")}</option>
               </select>
             </AdminField>
+            <AdminField label="Mining points (pts)">
+              <input
+                className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
+                type="number" step="1" min="0"
+                placeholder="pts"
+                value={rewardPoints}
+                onChange={(e) => {
+                  const pts = Number(e.target.value) || 0;
+                  setRewardPoints(e.target.value);
+                  const p = adminPrice > 0 ? adminPrice : 0;
+                  setForm((f) => ({ ...f, reward: p > 0 ? pts / (p * POINTS_PER_USD) : f.reward }));
+                }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                ≈ {formatReward(Number(form.reward) || 0)} GRAM
+                {adminPrice > 0 ? ` · $${((Number(form.reward) || 0) * adminPrice).toFixed(4)}` : " · precio no disponible"}
+              </p>
+            </AdminField>
             <AdminField label={tr("admin.reward_ph")}>
               <input
                 className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
                 type="number" step="0.0001"
                 placeholder={tr("admin.reward_ph")}
                 value={form.reward}
-                onChange={(e) => setForm({ ...form, reward: Number(e.target.value) })}
+                onChange={(e) => {
+                  const gram = Number(e.target.value) || 0;
+                  setForm({ ...form, reward: gram });
+                  setRewardPoints(String(Math.round(pointsForGram(gram, adminPrice))));
+                }}
               />
             </AdminField>
+
             <AdminField label={tr("admin.min_deposit_ph")}>
               <input
                 className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
