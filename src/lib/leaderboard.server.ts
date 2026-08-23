@@ -10,11 +10,6 @@ export type TopMiner = {
   mining_rate_usd: number;
 };
 
-async function getAdminIds() {
-  const { data } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin");
-  return (data ?? []).map((r) => r.user_id).filter(Boolean) as string[];
-}
-
 export async function isEconomyV2() {
   const { data } = await supabaseAdmin
     .from("app_settings")
@@ -24,75 +19,36 @@ export async function isEconomyV2() {
   return Boolean((data as { value?: { enabled?: boolean } } | null)?.value?.enabled);
 }
 
-/** Sum of active (non-expired) hashrate points per user. */
-export async function activeHashrateByUser() {
-  const nowIso = new Date().toISOString();
-  const map = new Map<string, number>();
-  const pageSize = 1000;
-  for (let from = 0; from < 50_000; from += pageSize) {
-    const { data, error } = await supabaseAdmin
-      .from("hashrate_grants")
-      .select("user_id, points")
-      .eq("active", true)
-      .gt("expires_at", nowIso)
-      .range(from, from + pageSize - 1);
-    if (error) throw error;
-    const rows = (data ?? []) as Array<{ user_id: string; points: number }>;
-    for (const r of rows) {
-      map.set(r.user_id, (map.get(r.user_id) ?? 0) + Number(r.points || 0));
-    }
-    if (rows.length < pageSize) break;
-  }
-  return map;
-}
-
-/** Leaderboard ranked by active hashrate (Dynamic Mining v2). */
+/** Leaderboard ranked by active hashrate (aggregated in the database). */
 export async function topMinersByHashrate(limit = 100): Promise<TopMiner[]> {
-  const [adminIds, hashMap] = await Promise.all([getAdminIds(), activeHashrateByUser()]);
-  const adminSet = new Set(adminIds);
-  const ranked = [...hashMap.entries()]
-    .filter(([userId]) => !adminSet.has(userId))
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit);
-  if (ranked.length === 0) return [];
-
-  const ids = ranked.map(([id]) => id);
-  const { data, error } = await supabaseAdmin
-    .from("profiles")
-    .select("user_id, username, first_name, avatar_url, telegram_id, mining_rate, mining_rate_usd, banned")
-    .in("user_id", ids);
-  if (error) throw error;
-  const byId = new Map(
-    ((data ?? []) as Array<Record<string, unknown>>).map((p) => [p["user_id"] as string, p]),
-  );
-
-  return ranked
-    .filter(([userId]) => !(byId.get(userId)?.["banned"] as boolean))
-    .map(([userId, points]) => {
-    const p = byId.get(userId) ?? {};
-    return {
-      username: (p["username"] as string) ?? null,
-      first_name: (p["first_name"] as string) ?? null,
-      avatar_url: (p["avatar_url"] as string) ?? null,
-      telegram_id: (p["telegram_id"] as number) ?? null,
-      hashrate: points,
-      mining_rate: Number(p["mining_rate"] ?? 0),
-      mining_rate_usd: Number(p["mining_rate_usd"] ?? 0),
-    };
-  });
+  const { data, error } = await supabaseAdmin.rpc("leaderboard_top" as never, {
+    _limit: limit,
+  } as never);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  return rows.map((p) => ({
+    username: (p["username"] as string) ?? null,
+    first_name: (p["first_name"] as string) ?? null,
+    avatar_url: (p["avatar_url"] as string) ?? null,
+    telegram_id: (p["telegram_id"] as number) ?? null,
+    hashrate: Number(p["hashrate"] ?? 0),
+    mining_rate: Number(p["mining_rate"] ?? 0),
+    mining_rate_usd: Number(p["mining_rate_usd"] ?? 0),
+  }));
 }
 
-/** Rank of a user by active hashrate, excluding admins. */
+/** Rank of a user by active hashrate, excluding admins and banned accounts. */
 export async function myRankByHashrate(userId: string) {
-  const [adminIds, hashMap] = await Promise.all([getAdminIds(), activeHashrateByUser()]);
-  const adminSet = new Set(adminIds);
-  const mine = hashMap.get(userId) ?? 0;
-  let ahead = 0;
-  for (const [id, pts] of hashMap) {
-    if (id !== userId && !adminSet.has(id) && pts > mine) ahead++;
-  }
-  return { rank: ahead + 1, hashrate: mine };
+  const { data, error } = await supabaseAdmin.rpc("leaderboard_rank" as never, {
+    _user_id: userId,
+  } as never);
+  if (error) throw new Error(error.message);
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { rank: number; hashrate: number }
+    | null;
+  return { rank: Number(row?.rank ?? 0) || 1, hashrate: Number(row?.hashrate ?? 0) };
 }
+
 
 /** Estimated payout pool for today (USD) and current network hashrate.
  *  Mirrors run_daily_payout(): pool = full wallet balance x payout_ratio. */
