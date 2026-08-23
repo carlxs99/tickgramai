@@ -3499,7 +3499,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                 onChange={(e) => {
                   const gram = Number(e.target.value) || 0;
                   setForm({ ...form, reward: gram });
-                  setRewardPoints(String(Math.round(pointsForGram(gram, adminPrice))));
+                  setRewardPoints(adminPrice > 0 ? formatPoints(pointsForGram(gram, adminPrice)).replace(/,/g, "") : "");
                 }}
               />
             </AdminField>
