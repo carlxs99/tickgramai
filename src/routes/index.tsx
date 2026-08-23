@@ -396,7 +396,15 @@ function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t
 }
 
 
-const meQO = (fn: () => Promise<any>) => queryOptions({ queryKey: ["me"], queryFn: fn, refetchInterval: 30000 });
+const meQO = (fn: () => Promise<any>) => queryOptions({
+  queryKey: ["me"],
+  queryFn: fn,
+  refetchInterval: 30_000,
+  staleTime: 30_000,
+  gcTime: 30 * 60_000,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+});
 
 /** Collect button for the daily pool payout, with a countdown while it is not ready. */
 function PayoutCollect() {
@@ -1159,8 +1167,28 @@ function LeaderboardTab() {
   const rankFn = useServerFn(getMyRank);
   const price = useTonPrice();
   const ecoLb = useEconomy();
-  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["top"], queryFn: () => fn(), refetchInterval: 30_000 });
-  const { data: myRank, isLoading: isMyRankLoading, isError: isMyRankError } = useQuery({ queryKey: ["myRank"], queryFn: () => rankFn(), refetchInterval: 60_000 });
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["top"],
+    queryFn: () => fn(),
+    refetchInterval: 60_000,
+    staleTime: 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
+    retry: 2,
+  });
+  const { data: myRank, isLoading: isMyRankLoading, isError: isMyRankError } = useQuery({
+    queryKey: ["myRank"],
+    queryFn: () => rankFn(),
+    refetchInterval: 60_000,
+    staleTime: 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
+    retry: 2,
+  });
   const list = (data ?? []) as any[];
   const top3 = [list[0], list[1], list[2]];
   const rest = list.slice(3);

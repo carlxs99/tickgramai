@@ -36,6 +36,12 @@ export function NetworkMiningCard() {
     queryKey: ["network-mining"],
     queryFn: () => fn(),
     refetchInterval: 60_000,
+    staleTime: 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
+    retry: 2,
   });
 
   if (!data || !data.enabled) return null;

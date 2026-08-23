@@ -91,10 +91,13 @@ export const getNetworkMining = createServerFn({ method: "GET" })
     // Live wallet balance (falls back to the last recorded treasury snapshot).
     let treasuryTon = Number(poolRows[0]?.treasury_ton ?? 0);
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
       const res = await fetch(
         "https://tonapi.io/v2/accounts/UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn",
-        { headers: { accept: "application/json" } },
+        { headers: { accept: "application/json" }, signal: controller.signal },
       );
+      clearTimeout(timeout);
       if (res.ok) {
         const j = (await res.json()) as { balance?: string | number };
         const live = Number(j?.balance ?? 0) / 1e9;
