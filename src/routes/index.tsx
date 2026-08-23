@@ -3475,7 +3475,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
             <AdminField label="Mining points (pts)">
               <input
                 className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
-                type="number" step="1" min="0"
+                type="number" step="any" min="0"
                 placeholder="pts"
                 value={rewardPoints}
                 onChange={(e) => {
