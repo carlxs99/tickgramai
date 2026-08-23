@@ -1228,7 +1228,13 @@ function TasksTab() {
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   const mut = useMutation({
     mutationFn: (taskId: string) => doFn({ data: { taskId } }),
-    onSuccess: (r: any) => { toast.success(`+${formatReward(Number(r.rewardGram ?? r.reward ?? 0))} GRAM/día en minería`); getTelegram()?.HapticFeedback?.impactOccurred("light"); qc.invalidateQueries(); },
+    onSuccess: (r: any) => {
+      const gram = Number(r.rewardGram ?? r.reward ?? 0);
+      const pts = pointsForGram(gram, taskPrice);
+      toast.success(pts > 0 ? `+${formatPoints(pts)} pts mining power ⛏️` : `+${formatReward(gram)} GRAM ⛏️`);
+      getTelegram()?.HapticFeedback?.impactOccurred("light");
+      qc.invalidateQueries();
+    },
     onError: (e: any) => toast.error(e?.message ?? tr("common.failed")),
   });
   const isShareTask = (t: any) => {
@@ -1256,9 +1262,9 @@ function TasksTab() {
               <p className="font-semibold">{t.title}</p>
               {t.description && <p className="text-xs text-muted-foreground">{t.description}</p>}
               <p className="text-xs mt-1 text-[color:var(--success)]">
-                {ecoTasks.enabled
+                {ecoTasks.enabled && pointsForGram(Number(t.reward), taskPrice) > 0
                   ? `+${formatPoints(pointsForGram(Number(t.reward), taskPrice))} pts mining power ⛏️`
-                  : `+${formatReward(Number(t.reward) * 0.033)} GRAM/día ⛏️`}
+                  : `+${formatReward(Number(t.reward))} GRAM ⛏️`}
               </p>
             </div>
             {t.completed ? (
@@ -3469,7 +3475,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
             <AdminField label="Mining points (pts)">
               <input
                 className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
-                type="number" step="1" min="0"
+                type="number" step="any" min="0"
                 placeholder="pts"
                 value={rewardPoints}
                 onChange={(e) => {
@@ -3487,13 +3493,13 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
             <AdminField label={tr("admin.reward_ph")}>
               <input
                 className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
-                type="number" step="0.0001"
+                type="number" step="any" min="0"
                 placeholder={tr("admin.reward_ph")}
                 value={form.reward}
                 onChange={(e) => {
                   const gram = Number(e.target.value) || 0;
                   setForm({ ...form, reward: gram });
-                  setRewardPoints(String(Math.round(pointsForGram(gram, adminPrice))));
+                  setRewardPoints(adminPrice > 0 ? formatPoints(pointsForGram(gram, adminPrice)).replace(/,/g, "") : "");
                 }}
               />
             </AdminField>
@@ -3599,7 +3605,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                 <button
                   className="p-1.5 rounded-lg bg-background/60 border border-white/5 hover:border-primary/40 transition"
                   onClick={() => {
-                    setRewardPoints(String(Math.round(pointsForGram(Number(t.reward), adminPrice))));
+                    setRewardPoints(adminPrice > 0 ? formatPoints(pointsForGram(Number(t.reward), adminPrice)).replace(/,/g, "") : "");
                     setForm({
                       id: t.id, code: t.code, title: t.title, description: t.description ?? "",
                       reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),

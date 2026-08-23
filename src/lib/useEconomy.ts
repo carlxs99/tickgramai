@@ -11,9 +11,13 @@ export function pointsForGram(gram: number, price: number) {
 }
 
 export function formatPoints(pts: number) {
+  if (!isFinite(pts) || pts <= 0) return "0";
   if (pts >= 1000) return Math.round(pts).toLocaleString();
   if (pts >= 10) return pts.toFixed(0);
-  return pts.toFixed(2);
+  if (pts >= 0.01) return pts.toFixed(2).replace(/\.?0+$/, "");
+  // Never render "0.00" for a positive reward: keep enough decimals to show it.
+  const decimals = Math.min(8, -Math.floor(Math.log10(pts)) + 1);
+  return pts.toFixed(decimals).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 }
 
 /** Shared Dynamic Mining (economy v2) state for the whole app. */
