@@ -17,7 +17,7 @@ export const getNetworkMining = createServerFn({ method: "GET" })
       supabaseAdmin.from("app_settings").select("value").eq("key", "economy_v2").maybeSingle(),
       supabaseAdmin
         .from("payout_pool_daily")
-        .select("day, pool_usd, total_hashrate, paid_usd, users_paid, solvency_ratio, status")
+        .select("day, pool_usd, total_hashrate, paid_usd, users_paid, solvency_ratio, status, payout_ratio")
         .order("day", { ascending: false })
         .limit(7),
       supabaseAdmin
