@@ -415,7 +415,8 @@ export const getTopMiners = createServerFn({ method: "GET" })
     // Telegram IDs. Only the display fields the leaderboard UI renders.
     const query = supabaseAdmin
       .from("profiles")
-      .select("username, first_name, avatar_url, mining_rate, mining_rate_usd, balance")
+      .select("username, first_name, avatar_url, telegram_id, mining_rate, mining_rate_usd, balance")
+      .eq("banned", false)
       .order("mining_rate_usd", { ascending: false })
       .order("balance", { ascending: false })
       .limit(100);
