@@ -79,8 +79,8 @@ export const getNetworkMining = createServerFn({ method: "GET" })
         (s, r) => s + Number(r.daily_usd || 0),
         0,
       );
-    // Mirror run_daily_payout() exactly so the estimate matches what the user
-    // will actually be able to claim (no optimistic Math.max).
+    // Mirror run_daily_payout() exactly: the pool is the full wallet balance
+    // minus the house cut (1 - payout_ratio).
     const poolRows = (pools.data ?? []) as Array<{
       day: string;
       pool_usd: number;
@@ -88,24 +88,30 @@ export const getNetworkMining = createServerFn({ method: "GET" })
       status?: string;
       payout_ratio?: number;
       solvency_ratio?: number | null;
+      treasury_ton?: number | null;
     }>;
-    const donePools = poolRows.filter((p) => p.status === "done" && p.day < today);
-    const avgPoolUsd =
-      donePools.length > 0
-        ? donePools.reduce((s, p) => s + Number(p.pool_usd || 0), 0) / donePools.length
-        : 0;
-    // run_daily_payout() caps the ratio when the treasury is under-collateralised
-    // (solvency < 1.0 -> 0.20, < 1.2 -> 0.40). Reuse the last effective ratio so the
-    // estimate isn't inflated by the configured (uncapped) value.
-    const lastEffective = donePools.find((p) => Number(p.pool_usd || 0) > 0);
-    const effectiveRatio = lastEffective?.payout_ratio != null
-      ? Math.min(configuredRatio, Number(lastEffective.payout_ratio))
-      : configuredRatio;
-    let estPoolUsd = Math.max(revenueToday * effectiveRatio, 0);
-    if (avgPoolUsd > 0) {
-      // Same smoothing band the payout function applies.
-      estPoolUsd = Math.min(Math.max(estPoolUsd, avgPoolUsd * 0.7), avgPoolUsd * 1.3);
+
+    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
+    const gramPrice = await fetchTonPriceUsdt().catch(() => 0);
+
+    // Live wallet balance (falls back to the last recorded treasury snapshot).
+    let treasuryTon = Number(poolRows[0]?.treasury_ton ?? 0);
+    try {
+      const res = await fetch(
+        "https://tonapi.io/v2/accounts/UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn",
+        { headers: { accept: "application/json" } },
+      );
+      if (res.ok) {
+        const j = (await res.json()) as { balance?: string | number };
+        const live = Number(j?.balance ?? 0) / 1e9;
+        if (live > 0) treasuryTon = live;
+      }
+    } catch {
+      /* keep snapshot fallback */
     }
+
+    const treasuryUsd = Math.max(treasuryTon, 0) * (gramPrice > 0 ? gramPrice : 0);
+    let estPoolUsd = Math.max(treasuryUsd * configuredRatio, 0);
 
     // Today's pool row (if the payout already ran) is the source of truth.
     const todayPool = poolRows.find((p) => p.day === today);
@@ -121,9 +127,6 @@ export const getNetworkMining = createServerFn({ method: "GET" })
 
     // If a payout entry already exists for today, that IS the real amount.
     const todayEntry = myEntries.find((e) => e.day === today);
-
-    const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
-    const gramPrice = await fetchTonPriceUsdt().catch(() => 0);
     if (todayEntry) {
       estDailyUsd = Number(todayEntry.amount_usd || 0);
     }
@@ -132,6 +135,7 @@ export const getNetworkMining = createServerFn({ method: "GET" })
       : gramPrice > 0
         ? estDailyUsd / gramPrice
         : 0;
+
 
 
     return {
