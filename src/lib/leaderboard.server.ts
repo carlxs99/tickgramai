@@ -4,6 +4,7 @@ export type TopMiner = {
   username: string | null;
   first_name: string | null;
   avatar_url: string | null;
+  telegram_id: number | null;
   hashrate: number;
   mining_rate: number;
   mining_rate_usd: number;
@@ -58,19 +59,22 @@ export async function topMinersByHashrate(limit = 100): Promise<TopMiner[]> {
   const ids = ranked.map(([id]) => id);
   const { data, error } = await supabaseAdmin
     .from("profiles")
-    .select("user_id, username, first_name, avatar_url, mining_rate, mining_rate_usd")
+    .select("user_id, username, first_name, avatar_url, telegram_id, mining_rate, mining_rate_usd, banned")
     .in("user_id", ids);
   if (error) throw error;
   const byId = new Map(
     ((data ?? []) as Array<Record<string, unknown>>).map((p) => [p["user_id"] as string, p]),
   );
 
-  return ranked.map(([userId, points]) => {
+  return ranked
+    .filter(([userId]) => !(byId.get(userId)?.["banned"] as boolean))
+    .map(([userId, points]) => {
     const p = byId.get(userId) ?? {};
     return {
       username: (p["username"] as string) ?? null,
       first_name: (p["first_name"] as string) ?? null,
       avatar_url: (p["avatar_url"] as string) ?? null,
+      telegram_id: (p["telegram_id"] as number) ?? null,
       hashrate: points,
       mining_rate: Number(p["mining_rate"] ?? 0),
       mining_rate_usd: Number(p["mining_rate_usd"] ?? 0),
@@ -107,7 +111,7 @@ export async function estimatedPoolToday() {
       .limit(5000),
     supabaseAdmin
       .from("payout_pool_daily")
-      .select("pool_usd")
+      .select("day, pool_usd, status, payout_ratio")
       .order("day", { ascending: false })
       .limit(7),
     supabaseAdmin.rpc("network_active_hashrate"),
@@ -125,14 +129,32 @@ export async function estimatedPoolToday() {
       (s, r) => s + Number(r.daily_usd || 0),
       0,
     );
-  const poolRows = (pools.data ?? []) as Array<{ pool_usd: number }>;
+  const poolRows = (pools.data ?? []) as Array<{
+    day: string;
+    pool_usd: number;
+    status?: string;
+    payout_ratio?: number;
+  }>;
+  const todayPool = poolRows.find((p) => p.day === today);
+  if (todayPool) {
+    return { poolUsd: Number(todayPool.pool_usd || 0), netHashrate: Number(net.data ?? 0) };
+  }
+  const donePools = poolRows.filter((p) => p.status === "done" && p.day < today);
   const avgPool =
-    poolRows.length > 0
-      ? poolRows.reduce((s, p) => s + Number(p.pool_usd || 0), 0) / poolRows.length
+    donePools.length > 0
+      ? donePools.reduce((s, p) => s + Number(p.pool_usd || 0), 0) / donePools.length
       : 0;
+  // Mirror run_daily_payout(): solvency-capped ratio + 0.7x-1.3x smoothing band.
+  const lastEffective = donePools.find((p) => Number(p.pool_usd || 0) > 0);
+  const effectiveRatio =
+    lastEffective?.payout_ratio != null
+      ? Math.min(ratio, Number(lastEffective.payout_ratio))
+      : ratio;
+  let poolUsd = Math.max(revenue * effectiveRatio, 0);
+  if (avgPool > 0) poolUsd = Math.min(Math.max(poolUsd, avgPool * 0.7), avgPool * 1.3);
 
   return {
-    poolUsd: Math.max(revenue * ratio, avgPool),
+    poolUsd,
     netHashrate: Number(net.data ?? 0),
   };
 }
