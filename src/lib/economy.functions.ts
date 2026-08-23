@@ -66,19 +66,13 @@ export const getNetworkMining = createServerFn({ method: "GET" })
     const investedUsd = myHashrate / 100;
     const apy = investedUsd > 0 ? (avgDailyUsd / investedUsd) * 365 * 100 : 0;
 
-    // Projected payout for today: revenue accrued so far x payout ratio, split by hashrate.
+    // Projected payout for today: wallet balance x payout ratio, split by hashrate.
     const configuredRatio = Number(
       (ratioRow.data as { value?: { value?: number } } | null)?.value?.value ?? 0.65,
     );
-    const revenueToday =
-      ((revToday.data ?? []) as Array<{ amount_usd: number }>).reduce(
-        (s, r) => s + Number(r.amount_usd || 0),
-        0,
-      ) +
-      ((deferred.data ?? []) as Array<{ daily_usd: number }>).reduce(
-        (s, r) => s + Number(r.daily_usd || 0),
-        0,
-      );
+    void revToday;
+    void deferred;
+
     // Mirror run_daily_payout() exactly: the pool is the full wallet balance
     // minus the house cut (1 - payout_ratio).
     const poolRows = (pools.data ?? []) as Array<{
