@@ -3590,9 +3590,10 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                   )}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                  <span className="font-mono">{t.code}</span> · ${Number(t.reward).toFixed(4)} → +${(Number(t.reward) * 0.033).toFixed(6)} USDT/d
+                  <span className="font-mono">{t.code}</span> · {formatPoints(pointsForGram(Number(t.reward), adminPrice))} pts · {formatReward(Number(t.reward))} GRAM
                   {t.target_chat ? ` · ${t.target_chat}` : ""}
                 </p>
+
               </div>
               <div className="flex gap-1 shrink-0">
                 <button
