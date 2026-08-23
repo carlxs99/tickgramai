@@ -1154,6 +1154,26 @@ export type Database = {
         }
         Returns: boolean
       }
+      leaderboard_rank: {
+        Args: { _user_id: string }
+        Returns: {
+          hashrate: number
+          rank: number
+        }[]
+      }
+      leaderboard_top: {
+        Args: { _limit?: number }
+        Returns: {
+          avatar_url: string
+          first_name: string
+          hashrate: number
+          mining_rate: number
+          mining_rate_usd: number
+          telegram_id: number
+          user_id: string
+          username: string
+        }[]
+      }
       list_active_partner_tasks: {
         Args: { _user_id: string }
         Returns: {
