@@ -12,7 +12,7 @@ import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWith
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { PrizeWheelCard, WheelTeaserCard } from "@/components/PrizeWheel";
 import { NetworkMiningCard } from "@/components/NetworkMiningCard";
-import { useEconomy, pointsForGram, formatPoints } from "@/lib/useEconomy";
+import { useEconomy, pointsForGram, formatPoints, POINTS_PER_USD } from "@/lib/useEconomy";
 import { AdminEconomySection } from "@/components/AdminEconomy";
 import { getActivePromotion } from "@/lib/promotions.functions";
 import { claimPayouts } from "@/lib/economy.functions";
