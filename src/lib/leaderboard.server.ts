@@ -94,24 +94,15 @@ export async function myRankByHashrate(userId: string) {
   return { rank: ahead + 1, hashrate: mine };
 }
 
-/** Estimated payout pool for today (USD) and current network hashrate. */
+/** Estimated payout pool for today (USD) and current network hashrate.
+ *  Mirrors run_daily_payout(): pool = full wallet balance x payout_ratio. */
 export async function estimatedPoolToday() {
   const today = new Date().toISOString().slice(0, 10);
-  const [ratioRow, revToday, deferred, pools, net] = await Promise.all([
+  const [ratioRow, pools, net] = await Promise.all([
     supabaseAdmin.from("app_settings").select("value").eq("key", "payout_ratio").maybeSingle(),
     supabaseAdmin
-      .from("revenue_events")
-      .select("amount_usd")
-      .gte("occurred_at", `${today}T00:00:00Z`),
-    supabaseAdmin
-      .from("deferred_revenue")
-      .select("daily_usd")
-      .lte("starts_on", today)
-      .gte("ends_on", today)
-      .limit(5000),
-    supabaseAdmin
       .from("payout_pool_daily")
-      .select("day, pool_usd, status, payout_ratio")
+      .select("day, pool_usd, status, payout_ratio, treasury_ton")
       .order("day", { ascending: false })
       .limit(7),
     supabaseAdmin.rpc("network_active_hashrate"),
@@ -120,41 +111,39 @@ export async function estimatedPoolToday() {
   const ratio = Number(
     (ratioRow.data as { value?: { value?: number } } | null)?.value?.value ?? 0.65,
   );
-  const revenue =
-    ((revToday.data ?? []) as Array<{ amount_usd: number }>).reduce(
-      (s, r) => s + Number(r.amount_usd || 0),
-      0,
-    ) +
-    ((deferred.data ?? []) as Array<{ daily_usd: number }>).reduce(
-      (s, r) => s + Number(r.daily_usd || 0),
-      0,
-    );
   const poolRows = (pools.data ?? []) as Array<{
     day: string;
     pool_usd: number;
     status?: string;
-    payout_ratio?: number;
+    treasury_ton?: number | null;
   }>;
+  const netHashrate = Number(net.data ?? 0);
+
+  // If today's payout already ran, that row is the source of truth.
   const todayPool = poolRows.find((p) => p.day === today);
   if (todayPool) {
-    return { poolUsd: Number(todayPool.pool_usd || 0), netHashrate: Number(net.data ?? 0) };
+    return { poolUsd: Number(todayPool.pool_usd || 0), netHashrate };
   }
-  const donePools = poolRows.filter((p) => p.status === "done" && p.day < today);
-  const avgPool =
-    donePools.length > 0
-      ? donePools.reduce((s, p) => s + Number(p.pool_usd || 0), 0) / donePools.length
-      : 0;
-  // Mirror run_daily_payout(): solvency-capped ratio + 0.7x-1.3x smoothing band.
-  const lastEffective = donePools.find((p) => Number(p.pool_usd || 0) > 0);
-  const effectiveRatio =
-    lastEffective?.payout_ratio != null
-      ? Math.min(ratio, Number(lastEffective.payout_ratio))
-      : ratio;
-  let poolUsd = Math.max(revenue * effectiveRatio, 0);
-  if (avgPool > 0) poolUsd = Math.min(Math.max(poolUsd, avgPool * 0.7), avgPool * 1.3);
 
-  return {
-    poolUsd,
-    netHashrate: Number(net.data ?? 0),
-  };
+  const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
+  const gramPrice = await fetchTonPriceUsdt().catch(() => 0);
+
+  let treasuryTon = Number(poolRows[0]?.treasury_ton ?? 0);
+  try {
+    const res = await fetch(
+      "https://tonapi.io/v2/accounts/UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn",
+      { headers: { accept: "application/json" } },
+    );
+    if (res.ok) {
+      const j = (await res.json()) as { balance?: string | number };
+      const live = Number(j?.balance ?? 0) / 1e9;
+      if (live > 0) treasuryTon = live;
+    }
+  } catch {
+    /* keep snapshot fallback */
+  }
+
+  const treasuryUsd = Math.max(treasuryTon, 0) * (gramPrice > 0 ? gramPrice : 0);
+  return { poolUsd: Math.max(treasuryUsd * ratio, 0), netHashrate };
 }
+
