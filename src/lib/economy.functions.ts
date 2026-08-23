@@ -17,7 +17,7 @@ export const getNetworkMining = createServerFn({ method: "GET" })
       supabaseAdmin.from("app_settings").select("value").eq("key", "economy_v2").maybeSingle(),
       supabaseAdmin
         .from("payout_pool_daily")
-        .select("day, pool_usd, total_hashrate, paid_usd, users_paid, solvency_ratio, status")
+        .select("day, pool_usd, total_hashrate, paid_usd, users_paid, solvency_ratio, status, payout_ratio")
         .order("day", { ascending: false })
         .limit(7),
       supabaseAdmin
@@ -67,7 +67,7 @@ export const getNetworkMining = createServerFn({ method: "GET" })
     const apy = investedUsd > 0 ? (avgDailyUsd / investedUsd) * 365 * 100 : 0;
 
     // Projected payout for today: revenue accrued so far x payout ratio, split by hashrate.
-    const payoutRatio = Number(
+    const configuredRatio = Number(
       (ratioRow.data as { value?: { value?: number } } | null)?.value?.value ?? 0.65,
     );
     const revenueToday =
@@ -86,13 +86,22 @@ export const getNetworkMining = createServerFn({ method: "GET" })
       pool_usd: number;
       total_hashrate: number;
       status?: string;
+      payout_ratio?: number;
+      solvency_ratio?: number | null;
     }>;
     const donePools = poolRows.filter((p) => p.status === "done" && p.day < today);
     const avgPoolUsd =
       donePools.length > 0
         ? donePools.reduce((s, p) => s + Number(p.pool_usd || 0), 0) / donePools.length
         : 0;
-    let estPoolUsd = Math.max(revenueToday * payoutRatio, 0);
+    // run_daily_payout() caps the ratio when the treasury is under-collateralised
+    // (solvency < 1.0 -> 0.20, < 1.2 -> 0.40). Reuse the last effective ratio so the
+    // estimate isn't inflated by the configured (uncapped) value.
+    const lastEffective = donePools.find((p) => Number(p.pool_usd || 0) > 0);
+    const effectiveRatio = lastEffective?.payout_ratio != null
+      ? Math.min(configuredRatio, Number(lastEffective.payout_ratio))
+      : configuredRatio;
+    let estPoolUsd = Math.max(revenueToday * effectiveRatio, 0);
     if (avgPoolUsd > 0) {
       // Same smoothing band the payout function applies.
       estPoolUsd = Math.min(Math.max(estPoolUsd, avgPoolUsd * 0.7), avgPoolUsd * 1.3);
