@@ -3357,7 +3357,10 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
   const listFn = useServerFn(adminListTasks);
   const saveFn = useServerFn(adminSaveTask);
   const delFn = useServerFn(adminDeleteTask);
+  const adminPrice = useTonPrice();
+  const [rewardPoints, setRewardPoints] = useState("");
   const qc = useQueryClient();
+
 
   const { data: tasks } = useQuery({ queryKey: ["admin-tasks"], queryFn: () => listFn() });
 
