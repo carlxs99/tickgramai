@@ -17,7 +17,7 @@ export const getNetworkMining = createServerFn({ method: "GET" })
       supabaseAdmin.from("app_settings").select("value").eq("key", "economy_v2").maybeSingle(),
       supabaseAdmin
         .from("payout_pool_daily")
-        .select("day, pool_usd, total_hashrate, paid_usd, users_paid, solvency_ratio")
+        .select("day, pool_usd, total_hashrate, paid_usd, users_paid, solvency_ratio, status")
         .order("day", { ascending: false })
         .limit(7),
       supabaseAdmin
@@ -79,17 +79,51 @@ export const getNetworkMining = createServerFn({ method: "GET" })
         (s, r) => s + Number(r.daily_usd || 0),
         0,
       );
-    const poolRows = (pools.data ?? []) as Array<{ pool_usd: number }>;
+    // Mirror run_daily_payout() exactly so the estimate matches what the user
+    // will actually be able to claim (no optimistic Math.max).
+    const poolRows = (pools.data ?? []) as Array<{
+      day: string;
+      pool_usd: number;
+      total_hashrate: number;
+      status?: string;
+    }>;
+    const donePools = poolRows.filter((p) => p.status === "done" && p.day < today);
     const avgPoolUsd =
-      poolRows.length > 0
-        ? poolRows.reduce((s, p) => s + Number(p.pool_usd || 0), 0) / poolRows.length
+      donePools.length > 0
+        ? donePools.reduce((s, p) => s + Number(p.pool_usd || 0), 0) / donePools.length
         : 0;
-    const estPoolUsd = Math.max(revenueToday * payoutRatio, avgPoolUsd);
-    const estDailyUsd = share * estPoolUsd;
+    let estPoolUsd = Math.max(revenueToday * payoutRatio, 0);
+    if (avgPoolUsd > 0) {
+      // Same smoothing band the payout function applies.
+      estPoolUsd = Math.min(Math.max(estPoolUsd, avgPoolUsd * 0.7), avgPoolUsd * 1.3);
+    }
+
+    // Today's pool row (if the payout already ran) is the source of truth.
+    const todayPool = poolRows.find((p) => p.day === today);
+    let estDailyUsd: number;
+    if (todayPool) {
+      const totalHash = Number(todayPool.total_hashrate || 0);
+      const realShare = totalHash > 0 ? Math.min(myHashrate / totalHash, 1) : 0;
+      estPoolUsd = Number(todayPool.pool_usd || 0);
+      estDailyUsd = realShare * estPoolUsd;
+    } else {
+      estDailyUsd = share * estPoolUsd;
+    }
+
+    // If a payout entry already exists for today, that IS the real amount.
+    const todayEntry = myEntries.find((e) => e.day === today);
 
     const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
     const gramPrice = await fetchTonPriceUsdt().catch(() => 0);
-    const estDailyGram = gramPrice > 0 ? estDailyUsd / gramPrice : 0;
+    if (todayEntry) {
+      estDailyUsd = Number(todayEntry.amount_usd || 0);
+    }
+    const estDailyGram = todayEntry
+      ? Number(todayEntry.amount_gram || 0)
+      : gramPrice > 0
+        ? estDailyUsd / gramPrice
+        : 0;
+
 
     return {
       enabled: Boolean(
