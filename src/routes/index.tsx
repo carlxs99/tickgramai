@@ -1228,7 +1228,13 @@ function TasksTab() {
   const inviteUrl = `https://t.me/Tickgramaibot/app?startapp=${code}`;
   const mut = useMutation({
     mutationFn: (taskId: string) => doFn({ data: { taskId } }),
-    onSuccess: (r: any) => { toast.success(`+${formatReward(Number(r.rewardGram ?? r.reward ?? 0))} GRAM/día en minería`); getTelegram()?.HapticFeedback?.impactOccurred("light"); qc.invalidateQueries(); },
+    onSuccess: (r: any) => {
+      const gram = Number(r.rewardGram ?? r.reward ?? 0);
+      const pts = pointsForGram(gram, taskPrice);
+      toast.success(pts > 0 ? `+${formatPoints(pts)} pts mining power ⛏️` : `+${formatReward(gram)} GRAM ⛏️`);
+      getTelegram()?.HapticFeedback?.impactOccurred("light");
+      qc.invalidateQueries();
+    },
     onError: (e: any) => toast.error(e?.message ?? tr("common.failed")),
   });
   const isShareTask = (t: any) => {
