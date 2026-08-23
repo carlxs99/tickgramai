@@ -3493,7 +3493,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
             <AdminField label={tr("admin.reward_ph")}>
               <input
                 className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
-                type="number" step="0.0001"
+                type="number" step="any" min="0"
                 placeholder={tr("admin.reward_ph")}
                 value={form.reward}
                 onChange={(e) => {
