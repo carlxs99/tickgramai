@@ -206,7 +206,9 @@ export const authWithTelegram = createServerFn({ method: "POST" })
                 _user_id: referrer.user_id,
                 _points: signupPoints,
                 _source: "referral_signup",
-                _source_ref_id: null,
+                // Idempotent: one signup grant per referral row.
+                _source_ref_id: (refRow as any)?.id ?? null,
+
                 _days: 180,
               } as never);
 
