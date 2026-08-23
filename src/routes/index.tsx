@@ -104,7 +104,6 @@ function MinerAppInner() {
       statsStore.start();
       await Promise.all([
         qc.prefetchQuery({ queryKey: ["me"], queryFn: () => meFn() }),
-        qc.prefetchQuery({ queryKey: ["me-header"], queryFn: () => meFn() }),
         qc.prefetchQuery({ queryKey: ["tasks"], queryFn: () => tasksFn() }),
         qc.prefetchQuery({ queryKey: ["partner-tasks"], queryFn: () => partnersFn() }),
         qc.prefetchQuery({ queryKey: ["my-partner-tasks"], queryFn: () => myPartnersFn() }),
@@ -217,30 +216,29 @@ function MinerAppInner() {
 
 
 
-        <AnimatePresence mode="wait">
-          <motion.main
-            key={tab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            onAnimationStart={() => { try { window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } catch { window.scrollTo(0, 0); } }}
-            className="px-4 pt-4"
-          >
-            <Suspense fallback={<div className="min-h-[50vh]" aria-hidden />}>
-              {tab === "mine" && <MineTab setTab={setTab} />}
-              {tab === "wheel" && <WheelTab onBack={() => setTab("mine")} />}
-              {tab === "mining" && <MiningTab onBack={() => setTab("mine")} />}
-              {tab === "tasks" && <TasksTab />}
-              {tab === "top" && <LeaderboardTab />}
-              {tab === "friends" && <FriendsTab />}
-              {tab === "deposit" && <DepositTab />}
-              {tab === "withdraw" && <WithdrawTab />}
-              {tab === "stats" && <StatsTab />}
-              {tab === "admin" && <AdminTab />}
-            </Suspense>
-          </motion.main>
-        </AnimatePresence>
+        <motion.main
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="px-4 pt-4"
+        >
+          <Suspense fallback={<div className="min-h-[50vh]" aria-hidden />}>
+            {tab === "mine" && <MineTab setTab={setTab} />}
+            {tab === "wheel" && <WheelTab onBack={() => setTab("mine")} />}
+            <div className={tab === "mining" ? "block" : "hidden"} aria-hidden={tab !== "mining"}>
+              <MiningTab onBack={() => setTab("mine")} />
+            </div>
+            {tab === "tasks" && <TasksTab />}
+            <div className={tab === "top" ? "block" : "hidden"} aria-hidden={tab !== "top"}>
+              <LeaderboardTab />
+            </div>
+            {tab === "friends" && <FriendsTab />}
+            {tab === "deposit" && <DepositTab />}
+            {tab === "withdraw" && <WithdrawTab />}
+            {tab === "stats" && <StatsTab />}
+            {tab === "admin" && <AdminTab />}
+          </Suspense>
+        </motion.main>
         <BottomNav tab={tab} setTab={setTab} />
       </div>
     </TonConnectUIProvider>
@@ -324,7 +322,7 @@ function usdt(gram: number, price: number) {
 function Header({ onAdminClick, setTab }: { onAdminClick: () => void; setTab: (t: Tab) => void }) {
   const { t } = useT();
   const meFn = useServerFn(getMe);
-  const { data } = useQuery({ queryKey: ["me-header"], queryFn: () => meFn(), refetchInterval: 15000 });
+  const { data } = useQuery(meQO(() => meFn()));
   const price = useTonPrice();
   const name = data?.profile.first_name ?? data?.profile.username ?? "Miner";
   const initial = name.slice(0, 1).toUpperCase();
