@@ -12,7 +12,7 @@ import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWith
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { PrizeWheelCard, WheelTeaserCard } from "@/components/PrizeWheel";
 import { NetworkMiningCard } from "@/components/NetworkMiningCard";
-import { useEconomy, pointsForGram, formatPoints } from "@/lib/useEconomy";
+import { useEconomy, pointsForGram, formatPoints, POINTS_PER_USD } from "@/lib/useEconomy";
 import { AdminEconomySection } from "@/components/AdminEconomy";
 import { getActivePromotion } from "@/lib/promotions.functions";
 import { claimPayouts } from "@/lib/economy.functions";
@@ -3357,7 +3357,10 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
   const listFn = useServerFn(adminListTasks);
   const saveFn = useServerFn(adminSaveTask);
   const delFn = useServerFn(adminDeleteTask);
+  const adminPrice = useTonPrice();
+  const [rewardPoints, setRewardPoints] = useState("");
   const qc = useQueryClient();
+
 
   const { data: tasks } = useQuery({ queryKey: ["admin-tasks"], queryFn: () => listFn() });
 
@@ -3393,7 +3396,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
     }),
     onSuccess: () => {
       toast.success(editing ? tr("admin.task_updated") : tr("admin.task_created"));
-      setForm(empty);
+      setForm(empty); setRewardPoints("");
       qc.invalidateQueries({ queryKey: ["admin-tasks"] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
@@ -3426,7 +3429,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
             {editing ? tr("admin.edit_task") : tr("admin.new_task")}
           </p>
           {editing && (
-            <button onClick={() => setForm(empty)} className="text-[10px] text-muted-foreground hover:text-foreground">
+            <button onClick={() => { setForm(empty); setRewardPoints(""); }} className="text-[10px] text-muted-foreground hover:text-foreground">
               {tr("common.cancel")}
             </button>
           )}
@@ -3463,15 +3466,38 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                 <option value="group">{tr("admin.kind.group")}</option>
               </select>
             </AdminField>
+            <AdminField label="Mining points (pts)">
+              <input
+                className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
+                type="number" step="1" min="0"
+                placeholder="pts"
+                value={rewardPoints}
+                onChange={(e) => {
+                  const pts = Number(e.target.value) || 0;
+                  setRewardPoints(e.target.value);
+                  const p = adminPrice > 0 ? adminPrice : 0;
+                  setForm((f) => ({ ...f, reward: p > 0 ? pts / (p * POINTS_PER_USD) : f.reward }));
+                }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                ≈ {formatReward(Number(form.reward) || 0)} GRAM
+                {adminPrice > 0 ? ` · $${((Number(form.reward) || 0) * adminPrice).toFixed(4)}` : " · precio no disponible"}
+              </p>
+            </AdminField>
             <AdminField label={tr("admin.reward_ph")}>
               <input
                 className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
                 type="number" step="0.0001"
                 placeholder={tr("admin.reward_ph")}
                 value={form.reward}
-                onChange={(e) => setForm({ ...form, reward: Number(e.target.value) })}
+                onChange={(e) => {
+                  const gram = Number(e.target.value) || 0;
+                  setForm({ ...form, reward: gram });
+                  setRewardPoints(String(Math.round(pointsForGram(gram, adminPrice))));
+                }}
               />
             </AdminField>
+
             <AdminField label={tr("admin.min_deposit_ph")}>
               <input
                 className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
@@ -3564,18 +3590,23 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                   )}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                  <span className="font-mono">{t.code}</span> · ${Number(t.reward).toFixed(4)} → +${(Number(t.reward) * 0.033).toFixed(6)} USDT/d
+                  <span className="font-mono">{t.code}</span> · {formatPoints(pointsForGram(Number(t.reward), adminPrice))} pts · {formatReward(Number(t.reward))} GRAM
                   {t.target_chat ? ` · ${t.target_chat}` : ""}
                 </p>
+
               </div>
               <div className="flex gap-1 shrink-0">
                 <button
                   className="p-1.5 rounded-lg bg-background/60 border border-white/5 hover:border-primary/40 transition"
-                  onClick={() => setForm({
-                    id: t.id, code: t.code, title: t.title, description: t.description ?? "",
-                    reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),
-                    link: t.link ?? "", target_chat: t.target_chat ?? "", is_active: !!t.is_active,
-                  })}
+                  onClick={() => {
+                    setRewardPoints(String(Math.round(pointsForGram(Number(t.reward), adminPrice))));
+                    setForm({
+                      id: t.id, code: t.code, title: t.title, description: t.description ?? "",
+                      reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),
+                      link: t.link ?? "", target_chat: t.target_chat ?? "", is_active: !!t.is_active,
+                    });
+                  }}
+
                   aria-label="Edit"
                 >
                   <Pencil className="w-3 h-3" />
