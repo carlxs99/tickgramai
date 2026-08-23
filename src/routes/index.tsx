@@ -1262,9 +1262,9 @@ function TasksTab() {
               <p className="font-semibold">{t.title}</p>
               {t.description && <p className="text-xs text-muted-foreground">{t.description}</p>}
               <p className="text-xs mt-1 text-[color:var(--success)]">
-                {ecoTasks.enabled
+                {ecoTasks.enabled && pointsForGram(Number(t.reward), taskPrice) > 0
                   ? `+${formatPoints(pointsForGram(Number(t.reward), taskPrice))} pts mining power ⛏️`
-                  : `+${formatReward(Number(t.reward) * 0.033)} GRAM/día ⛏️`}
+                  : `+${formatReward(Number(t.reward))} GRAM ⛏️`}
               </p>
             </div>
             {t.completed ? (
