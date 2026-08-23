@@ -385,10 +385,12 @@ export const getTopMiners = createServerFn({ method: "GET" })
     );
 
     if (await isEconomyV2()) {
-      const miners = await topMinersByHashrate(100);
-      const pool = await estimatedPoolToday().catch(() => ({ poolUsd: 0, netHashrate: 0 }));
       const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
-      const price = await fetchTonPriceUsdt().catch(() => 0);
+      const [miners, pool, price] = await Promise.all([
+        topMinersByHashrate(100),
+        estimatedPoolToday().catch(() => ({ poolUsd: 0, netHashrate: 0 })),
+        fetchTonPriceUsdt().catch(() => 5.3),
+      ]);
       return miners.map((m) => {
         const share = pool.netHashrate > 0 ? m.hashrate / pool.netHashrate : 0;
         const estUsd = share * pool.poolUsd;
