@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792681857544,
+      "tag": "0000_restore_economy_v1",
+      "breakpoints": true
+    }
+  ]
+}
