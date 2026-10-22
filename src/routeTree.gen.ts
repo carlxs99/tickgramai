@@ -17,7 +17,6 @@ import { Route as ApiPublicMexcPricesRouteImport } from './routes/api/public/mex
 import { Route as ApiPublicAvatarRouteImport } from './routes/api/public/avatar'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicHooksWeeklyPromoBroadcastRouteImport } from './routes/api/public/hooks/weekly-promo-broadcast'
-import { Route as ApiPublicHooksDailyPayoutRouteImport } from './routes/api/public/hooks/daily-payout'
 import { Route as ApiPublicHooksDailyGiftBroadcastRouteImport } from './routes/api/public/hooks/daily-gift-broadcast'
 import { Route as ApiPublicHooksDailyCheckinBroadcastRouteImport } from './routes/api/public/hooks/daily-checkin-broadcast'
 import { Route as ApiPublicHooksCustomBroadcastRouteImport } from './routes/api/public/hooks/custom-broadcast'
@@ -67,12 +66,6 @@ const ApiPublicHooksWeeklyPromoBroadcastRoute =
     path: '/api/public/hooks/weekly-promo-broadcast',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksDailyPayoutRoute =
-  ApiPublicHooksDailyPayoutRouteImport.update({
-    id: '/api/public/hooks/daily-payout',
-    path: '/api/public/hooks/daily-payout',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksDailyGiftBroadcastRoute =
   ApiPublicHooksDailyGiftBroadcastRouteImport.update({
     id: '/api/public/hooks/daily-gift-broadcast',
@@ -109,7 +102,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/custom-broadcast': typeof ApiPublicHooksCustomBroadcastRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
-  '/api/public/hooks/daily-payout': typeof ApiPublicHooksDailyPayoutRoute
   '/api/public/hooks/weekly-promo-broadcast': typeof ApiPublicHooksWeeklyPromoBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -124,7 +116,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/custom-broadcast': typeof ApiPublicHooksCustomBroadcastRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
-  '/api/public/hooks/daily-payout': typeof ApiPublicHooksDailyPayoutRoute
   '/api/public/hooks/weekly-promo-broadcast': typeof ApiPublicHooksWeeklyPromoBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -140,7 +131,6 @@ export interface FileRoutesById {
   '/api/public/hooks/custom-broadcast': typeof ApiPublicHooksCustomBroadcastRoute
   '/api/public/hooks/daily-checkin-broadcast': typeof ApiPublicHooksDailyCheckinBroadcastRoute
   '/api/public/hooks/daily-gift-broadcast': typeof ApiPublicHooksDailyGiftBroadcastRoute
-  '/api/public/hooks/daily-payout': typeof ApiPublicHooksDailyPayoutRoute
   '/api/public/hooks/weekly-promo-broadcast': typeof ApiPublicHooksWeeklyPromoBroadcastRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -157,7 +147,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/custom-broadcast'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
-    | '/api/public/hooks/daily-payout'
     | '/api/public/hooks/weekly-promo-broadcast'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -172,7 +161,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/custom-broadcast'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
-    | '/api/public/hooks/daily-payout'
     | '/api/public/hooks/weekly-promo-broadcast'
     | '/api/public/telegram/webhook'
   id:
@@ -187,7 +175,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/custom-broadcast'
     | '/api/public/hooks/daily-checkin-broadcast'
     | '/api/public/hooks/daily-gift-broadcast'
-    | '/api/public/hooks/daily-payout'
     | '/api/public/hooks/weekly-promo-broadcast'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
@@ -203,7 +190,6 @@ export interface RootRouteChildren {
   ApiPublicHooksCustomBroadcastRoute: typeof ApiPublicHooksCustomBroadcastRoute
   ApiPublicHooksDailyCheckinBroadcastRoute: typeof ApiPublicHooksDailyCheckinBroadcastRoute
   ApiPublicHooksDailyGiftBroadcastRoute: typeof ApiPublicHooksDailyGiftBroadcastRoute
-  ApiPublicHooksDailyPayoutRoute: typeof ApiPublicHooksDailyPayoutRoute
   ApiPublicHooksWeeklyPromoBroadcastRoute: typeof ApiPublicHooksWeeklyPromoBroadcastRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
@@ -266,13 +252,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWeeklyPromoBroadcastRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/daily-payout': {
-      id: '/api/public/hooks/daily-payout'
-      path: '/api/public/hooks/daily-payout'
-      fullPath: '/api/public/hooks/daily-payout'
-      preLoaderRoute: typeof ApiPublicHooksDailyPayoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/daily-gift-broadcast': {
       id: '/api/public/hooks/daily-gift-broadcast'
       path: '/api/public/hooks/daily-gift-broadcast'
@@ -317,7 +296,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksDailyCheckinBroadcastRoute:
     ApiPublicHooksDailyCheckinBroadcastRoute,
   ApiPublicHooksDailyGiftBroadcastRoute: ApiPublicHooksDailyGiftBroadcastRoute,
-  ApiPublicHooksDailyPayoutRoute: ApiPublicHooksDailyPayoutRoute,
   ApiPublicHooksWeeklyPromoBroadcastRoute:
     ApiPublicHooksWeeklyPromoBroadcastRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
