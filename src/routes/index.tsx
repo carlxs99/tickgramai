@@ -3,7 +3,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send, Activity, LayoutDashboard, ChevronRight, ChevronLeft, TrendingUp, Circle, ShieldAlert, Ban, Fingerprint, AlertTriangle, Clock } from "lucide-react";
+import { Pickaxe, ListChecks, Users, ArrowDownToLine, ArrowUpFromLine, Sparkles, Copy, CheckCircle2, Coins, Trophy, Loader2, Wallet, Shield, Plus, Trash2, Pencil, ExternalLink, X, HelpCircle, Megaphone, ArrowLeft, Search, UserCircle2, Gift, Lock, Send, Activity, LayoutDashboard, ChevronRight, ChevronLeft, TrendingUp, Circle, ShieldAlert, Ban, Fingerprint, AlertTriangle } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 
@@ -12,11 +12,7 @@ import { getMe, collectIncome, listTasks, completeTask, listDeposits, submitWith
 import { listGiftBoxes, openGiftBox, claimDailyGiftBox } from "@/lib/gift-boxes.functions";
 import { listWheelSpins } from "@/lib/wheel.functions";
 import { PrizeWheelCard, WheelTeaserCard } from "@/components/PrizeWheel";
-import { NetworkMiningCard } from "@/components/NetworkMiningCard";
-import { useEconomy, pointsForGram, formatPoints, POINTS_PER_USD } from "@/lib/useEconomy";
-import { AdminEconomySection } from "@/components/AdminEconomy";
 import { getActivePromotion } from "@/lib/promotions.functions";
-import { claimPayouts, getNetworkMining } from "@/lib/economy.functions";
 
 import { adminStats, adminListTasks, adminSaveTask, adminDeleteTask, adminListUsers, adminUserDetails, adminSuspiciousAccounts, adminListBanned, adminSetBan, adminCreateBroadcast, adminListBroadcasts, adminCancelBroadcast, adminTestBroadcast, adminResendBroadcast } from "@/lib/admin.functions";
 import { getTonPrice } from "@/lib/prices.functions";
@@ -59,7 +55,7 @@ export const Route = createFileRoute("/")({
   component: MinerApp,
 });
 
-type Tab = "mine" | "wheel" | "mining" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "stats" | "admin";
+type Tab = "mine" | "wheel" | "tasks" | "top" | "friends" | "deposit" | "withdraw" | "stats" | "admin";
 
 function MinerApp() {
   return (
@@ -80,7 +76,6 @@ function MinerAppInner() {
   const partnersFn = useServerFn(listPartnerTasks);
   const giftFn = useServerFn(listGiftBoxes);
   const priceFn = useServerFn(getTonPrice);
-  const networkFn = useServerFn(getNetworkMining);
   const wheelFn = useServerFn(listWheelSpins);
   const topFn = useServerFn(getTopMiners);
   const rankFn = useServerFn(getMyRank);
@@ -109,7 +104,6 @@ function MinerAppInner() {
         qc.prefetchQuery({ queryKey: ["my-partner-tasks"], queryFn: () => myPartnersFn() }),
         qc.prefetchQuery({ queryKey: ["gift-boxes"], queryFn: () => giftFn() }),
         qc.prefetchQuery({ queryKey: ["wheel-spins"], queryFn: () => wheelFn() }),
-        qc.prefetchQuery({ queryKey: ["network-mining"], queryFn: () => networkFn() }),
         qc.prefetchQuery({ queryKey: ["top"], queryFn: () => topFn() }),
         qc.prefetchQuery({ queryKey: ["myRank"], queryFn: () => rankFn() }),
         qc.prefetchQuery({ queryKey: ["friends"], queryFn: () => friendsFn() }),
@@ -173,7 +167,7 @@ function MinerAppInner() {
         markAppReady();
       }
     })();
-  }, [authFn, t, qc, meFn, tasksFn, partnersFn, myPartnersFn, giftFn, wheelFn, networkFn, topFn, rankFn, friendsFn, referralStatsFn, milestonesFn, depositsFn, withdrawalsFn, promotionFn, priceFn]);
+  }, [authFn, t, qc, meFn, tasksFn, partnersFn, myPartnersFn, giftFn, wheelFn, topFn, rankFn, friendsFn, referralStatsFn, milestonesFn, depositsFn, withdrawalsFn, promotionFn, priceFn]);
 
   if (error) {
     return (
@@ -225,9 +219,6 @@ function MinerAppInner() {
           <Suspense fallback={<div className="min-h-[50vh]" aria-hidden />}>
             {tab === "mine" && <MineTab setTab={setTab} />}
             {tab === "wheel" && <WheelTab onBack={() => setTab("mine")} />}
-            <div className={tab === "mining" ? "block" : "hidden"} aria-hidden={tab !== "mining"}>
-              <MiningTab onBack={() => setTab("mine")} />
-            </div>
             {tab === "tasks" && <TasksTab />}
             <div className={tab === "top" ? "block" : "hidden"} aria-hidden={tab !== "top"}>
               <LeaderboardTab />
@@ -404,76 +395,6 @@ const meQO = (fn: () => Promise<any>) => queryOptions({
   refetchOnWindowFocus: false,
 });
 
-/** Collect button for the daily pool payout, with a countdown while it is not ready. */
-function PayoutCollect() {
-  const { t } = useT();
-  const qc = useQueryClient();
-  const eco = useEconomy();
-  const claimFn = useServerFn(claimPayouts);
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const i = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(i);
-  }, []);
-
-  const claim = useMutation({
-    mutationFn: () => claimFn(),
-    onSuccess: (r: any) => {
-      getTelegram()?.HapticFeedback?.impactOccurred?.("medium");
-      toast.success(`+${formatGram(Number(r.gained), 6)} GRAM ${t("mine.collected_toast")}`);
-      qc.invalidateQueries();
-    },
-    onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
-  });
-
-  const ready = eco.pendingGram > 0;
-
-  if (ready) {
-    return (
-      <div className="space-y-1.5">
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={() => claim.mutate()}
-          disabled={claim.isPending}
-          className="flex items-center gap-1.5 pl-3 pr-4 py-2.5 rounded-full bg-white text-emerald-700 font-bold text-[13px] shadow-lg disabled:opacity-60 whitespace-nowrap"
-        >
-          <span className="w-5 h-5 rounded-full bg-emerald-600 text-white grid place-items-center shrink-0">
-            <Plus className="w-3.5 h-3.5" strokeWidth={3} />
-          </span>
-          {claim.isPending
-            ? t("mine.collecting")
-            : `${t("mine.collect")} · ${formatGram(eco.pendingGram, 6)}`}
-        </motion.button>
-        <p className="text-[11px] text-white/75 leading-snug">{t("mine.claim_ready")}</p>
-      </div>
-    );
-  }
-
-  // Countdown to the next daily payout (00:00 UTC).
-  const next = Date.UTC(
-    new Date(now).getUTCFullYear(),
-    new Date(now).getUTCMonth(),
-    new Date(now).getUTCDate() + 1,
-    0,
-    0,
-    0,
-  );
-  const left = Math.max(0, Math.floor((next - now) / 1000));
-  const hh = String(Math.floor(left / 3600)).padStart(2, "0");
-  const mm = String(Math.floor((left % 3600) / 60)).padStart(2, "0");
-  const ss = String(left % 60).padStart(2, "0");
-
-  return (
-    <div className="space-y-1.5">
-      <div className="inline-flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-white font-bold text-[13px] tabular-nums">
-        <Clock className="w-4 h-4 text-amber-200" />
-        {hh}:{mm}:{ss}
-      </div>
-      <p className="text-[11px] text-white/75 leading-snug">{t("mine.claim_countdown")}</p>
-    </div>
-  );
-}
-
 function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
   const { t } = useT();
   const meFn = useServerFn(getMe);
@@ -484,7 +405,6 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
   useEffect(() => { const i = setInterval(() => setTick((tk) => tk + 1), 100); return () => clearInterval(i); }, []);
 
   const price = useTonPrice();
-  const eco = useEconomy();
   const rateUsd = Number((data.profile as any).mining_rate_usd ?? 0);
   const rate = price > 0 ? rateUsd / price : 0; // GRAM/day at current TON price
 
@@ -538,42 +458,14 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
 
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-white/90 eyebrow">
-            <Sparkles className="w-3.5 h-3.5" /> {eco.enabled ? t("mine.mining_power") : t("mine.uncollected")}
+            <Sparkles className="w-3.5 h-3.5" /> {t("mine.uncollected")}
           </div>
           <div className="mt-1 font-display text-4xl sm:text-5xl font-bold tabular-nums text-white leading-none text-glow-white">
-            {eco.enabled ? formatPoints(eco.myHashrate) : formatGram(live, 6)}
+            {formatGram(live, 6)}
           </div>
           <div className="mt-1 text-[11px] text-emerald-200 tabular-nums font-semibold">
-            {eco.enabled
-              ? t("mine.of_pool", { pct: (eco.share * 100).toFixed(eco.share < 0.001 ? 4 : 2) })
-              : `≈ $${usdt(live, price)} USDT`}
+            ≈ ${usdt(live, price)} USDT
           </div>
-
-          {eco.enabled && (
-            <button
-              onClick={() => {
-                getTelegram()?.HapticFeedback?.impactOccurred?.("light");
-                setTab("mining");
-              }}
-              className="mt-2 inline-flex items-center gap-1.5 pl-3 pr-2.5 py-1.5 rounded-full bg-white/95 border border-white/60 text-emerald-700 text-[12px] font-semibold shadow-sm active:scale-[0.97] transition-transform"
-            >
-              <Activity className="w-3.5 h-3.5" />
-              {t("mining.pill")}
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {eco.enabled ? (
-            <div className="mt-4 max-w-[78%] space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold tabular-nums">
-                <Coins className="w-3.5 h-3.5 text-amber-200" />
-                {eco.lastPayout
-                  ? t("mine.last_payout", { amount: formatGram(Number(eco.lastPayout.amount_gram), 6) })
-                  : t("mine.first_payout_pending")}
-              </div>
-              <PayoutCollect />
-            </div>
-          ) : (
 
           <div className="mt-4 flex items-center gap-2 max-w-[70%]">
             <motion.button
@@ -610,16 +502,11 @@ function MineTab({ setTab }: { setTab: (t: Tab) => void }) {
               </div>
             )}
           </div>
-          )}
 
           <div className="mt-3 text-[11px] text-white/70 max-w-[65%]">
-            {eco.enabled
-              ? eco.myHashrate > 0
-                ? t("mine.variable_rewards")
-                : t("mine.deposit_to_start")
-              : rateUsd > 0
-                ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
-                : t("mine.deposit_to_start")}
+            {rateUsd > 0
+              ? <>{formatGram(rate, 6)} GRAM/day · ${rateUsd.toFixed(5)}/day</>
+              : t("mine.deposit_to_start")}
           </div>
         </div>
       </motion.div>
@@ -649,22 +536,6 @@ function WheelTab({ onBack }: { onBack: () => void }) {
         <ChevronLeft className="w-4 h-4 shrink-0" /> {t("wheel.back")}
       </button>
       <PrizeWheelCard price={price} />
-    </div>
-  );
-}
-
-function MiningTab({ onBack }: { onBack: () => void }) {
-  const { t } = useT();
-  return (
-    <div className="w-full max-w-full overflow-x-hidden space-y-4">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-1.5 text-sm font-semibold text-white/80"
-      >
-        <ChevronLeft className="w-4 h-4 shrink-0" /> {t("wheel.back")}
-      </button>
-      <h2 className="text-lg font-display font-bold text-white text-glow-white">{t("mining.pill")}</h2>
-      <NetworkMiningCard />
     </div>
   );
 }
@@ -1017,7 +888,6 @@ function PromoBanner() {
 
 function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmount: number }; onClose: () => void }) {
   const { t } = useT();
-  const ecoGift = useEconomy();
   const isGram = prize.prizeType === "gram_mining";
   return (
     <motion.div
@@ -1046,9 +916,7 @@ function PrizeModal({ prize, onClose }: { prize: { prizeType: string; prizeAmoun
         <div className="mt-4 text-xs font-bold tracking-widest text-amber-200 uppercase">{t("gift.prize_title")}</div>
         <div className="mt-1 text-3xl font-extrabold text-white tabular-nums">
           {isGram
-            ? ecoGift.enabled
-              ? `+${formatPoints(prize.prizeAmount)} pts`
-              : `+${((prize.prizeAmount / 100) * 0.033 / 2.5).toFixed(8).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
+            ? `+${(prize.prizeAmount * 0.033).toFixed(10).replace(/0+$/, "").replace(/\.$/, "")} GRAM${t("gift.per_day")}`
             : `+${prize.prizeAmount.toFixed(2)}%`}
         </div>
 
@@ -1114,22 +982,10 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
   }[rank];
   const { t } = useT();
   const price = useTonPrice();
-  const eco = useEconomy();
   const name = miner ? (miner.first_name || miner.username || t("leaderboard.anon")) : "—";
-  const v2 = eco.enabled;
-  const rateUsd = miner ? Number((v2 ? miner.est_daily_usd : miner.mining_rate_usd) ?? 0) : 0;
-  const rateGram = miner
-    ? v2
-      ? Number(miner.est_daily_gram ?? 0)
-      : price > 0
-        ? rateUsd / price
-        : 0
-    : 0;
-  const rateLabel = miner
-    ? v2
-      ? formatPoints(Number(miner.hashrate ?? 0))
-      : `$${rateUsd.toFixed(5)}`
-    : "—";
+  const rateUsd = miner ? Number(miner.mining_rate_usd ?? 0) : 0;
+  const rateGram = price > 0 ? rateUsd / price : 0;
+  const rateLabel = miner ? `$${rateUsd.toFixed(5)}` : "—";
   return (
     <div className={`flex-1 basis-0 min-w-0 flex flex-col items-center ${styles.order}`}>
       <div className="relative shrink-0">
@@ -1152,7 +1008,7 @@ function PodiumSlot({ miner, rank }: { miner: any | undefined; rank: 1 | 2 | 3 }
       <div className={`mt-2 w-full ${styles.height} ${styles.bar} rounded-t-2xl relative overflow-hidden`}>
         <div className="absolute inset-x-0 top-2 text-center">
           <div className="text-base font-extrabold text-black/90 drop-shadow">{rateLabel}</div>
-          <div className="text-[9px] font-semibold text-black/70 tracking-wider">{v2 ? "PTS" : "USDT/d"}</div>
+          <div className="text-[9px] font-semibold text-black/70 tracking-wider">USDT/d</div>
         </div>
       </div>
     </div>
@@ -1164,7 +1020,6 @@ function LeaderboardTab() {
   const fn = useServerFn(getTopMiners);
   const rankFn = useServerFn(getMyRank);
   const price = useTonPrice();
-  const ecoLb = useEconomy();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["top"],
     queryFn: () => fn(),
@@ -1256,11 +1111,11 @@ function LeaderboardTab() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{name}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      ≈ {formatGram(ecoLb.enabled ? Number(m.est_daily_gram ?? 0) : price > 0 ? Number(m.mining_rate_usd ?? 0) / price : 0, 5)} GRAM/d
+                      ≈ {formatGram(price > 0 ? Number(m.mining_rate_usd ?? 0) / price : 0, 5)} GRAM/d
                     </p>
                   </div>
                   <span className="text-sm tabular-nums text-[color:var(--success)] font-semibold">
-                    {ecoLb.enabled ? `${formatPoints(Number(m.hashrate ?? 0))} pts` : `$${Number(m.mining_rate_usd ?? 0).toFixed(5)}/d`}
+                    ${Number(m.mining_rate_usd ?? 0).toFixed(5)}/d
                   </span>
                 </div>
               );
@@ -1275,8 +1130,6 @@ function LeaderboardTab() {
 
 function TasksTab() {
   const { t: tr } = useT();
-  const ecoTasks = useEconomy();
-  const taskPrice = useTonPrice();
   const listFn = useServerFn(listTasks);
   const doFn = useServerFn(completeTask);
   const meFn = useServerFn(getMe);
@@ -1289,9 +1142,7 @@ function TasksTab() {
   const mut = useMutation({
     mutationFn: (taskId: string) => doFn({ data: { taskId } }),
     onSuccess: (r: any) => {
-      const gram = Number(r.rewardGram ?? r.reward ?? 0);
-      const pts = pointsForGram(gram, taskPrice);
-      toast.success(pts > 0 ? `+${formatPoints(pts)} pts mining power ⛏️` : `+${formatReward(gram)} GRAM ⛏️`);
+      toast.success(`+${formatReward(Number(r.rewardGram ?? r.reward ?? 0))} GRAM/day mining ⛏️`);
       getTelegram()?.HapticFeedback?.impactOccurred("light");
       qc.invalidateQueries();
     },
@@ -1322,9 +1173,7 @@ function TasksTab() {
               <p className="font-semibold">{t.title}</p>
               {t.description && <p className="text-xs text-muted-foreground">{t.description}</p>}
               <p className="text-xs mt-1 text-[color:var(--success)]">
-                {ecoTasks.enabled && pointsForGram(Number(t.reward), taskPrice) > 0
-                  ? `+${formatPoints(pointsForGram(Number(t.reward), taskPrice))} pts mining power ⛏️`
-                  : `+${formatReward(Number(t.reward))} GRAM ⛏️`}
+                +{formatReward(Number(t.reward) * 0.033)} GRAM/day ⛏️
               </p>
             </div>
             {t.completed ? (
@@ -1957,11 +1806,7 @@ function DepositTab() {
   const reinvest = useMutation({
     mutationFn: (amt: number) => reinvestFn({ data: { amount: amt } }),
     onSuccess: (r: any) => {
-      toast.success(
-        ecoDep.enabled
-          ? `+${formatPoints((r.usdPerDay ?? 0) / 0.033 * 100)} pts mining power`
-          : `+$${(r.usdPerDay ?? 0).toFixed(4)} USDT/day`,
-      );
+      toast.success(`+$${(r.usdPerDay ?? 0).toFixed(4)} USDT/day`);
       getTelegram()?.HapticFeedback?.impactOccurred("medium");
       setReinvestAmount("");
       qc.invalidateQueries();
@@ -1969,7 +1814,6 @@ function DepositTab() {
     onError: (e: any) => toast.error(e?.message ?? t("common.failed")),
   });
 
-  const ecoDep = useEconomy();
   const amountNum = Math.max(0, Number(amount) || 0);
   const usdtValue = amountNum * price;
   const memoTag: string = (me.profile as any).memo_tag ?? "";
@@ -2020,11 +1864,9 @@ function DepositTab() {
           <span className="font-semibold tabular-nums">{formatGram(me.profile.balance, 6)} GRAM</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{ecoDep.enabled ? "Mining power" : t("deposit.current_rate")}</span>
+          <span className="text-muted-foreground">{t("deposit.current_rate")}</span>
           <span className="font-semibold tabular-nums">
-            {ecoDep.enabled
-              ? `${formatPoints(ecoDep.myHashrate)} pts`
-              : `${formatGram(Number((me.profile as any).mining_rate ?? 0), 6)} GRAM ${t("mine.per_day_suffix")}`}
+            {formatGram(price > 0 ? Number((me.profile as any).mining_rate_usd ?? 0) / price : Number((me.profile as any).mining_rate ?? 0), 6)} GRAM {t("mine.per_day_suffix")}
           </span>
         </div>
         <div className="flex justify-between text-sm items-center">
@@ -2081,9 +1923,7 @@ function DepositTab() {
         </div>
         {amountNum > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-            {ecoDep.enabled
-              ? `≈ $${usdtValue.toFixed(2)} · +${formatPoints(pointsForGram(amountNum, price))} pts mining power (180 days)`
-              : t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: formatReward(amountNum * 0.033) })}
+            {t("deposit.amount_helper", { usdt: usdtValue.toFixed(2), daily: formatReward(amountNum * 0.033) })}
           </p>
         )}
         {amountNum > 0 && bonusPct > 0 && (
@@ -2140,9 +1980,7 @@ function DepositTab() {
         </Field>
         <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
           <p className="text-sm font-semibold tabular-nums">
-            {ecoDep.enabled
-              ? `+ ${formatPoints(pointsForGram(reinvestNum, price))} pts mining power`
-              : `+ ${(reinvestNum * 0.033).toFixed(4)} GRAM ${t("mine.per_day")}`}
+            + {(reinvestNum * 0.033).toFixed(4)} GRAM {t("mine.per_day")}
           </p>
         </div>
         <motion.button
@@ -3048,7 +2886,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 
 
 
-type AdminSection = "overview" | "economy" | "tasks" | "users" | "broadcast" | "security";
+type AdminSection = "overview" | "tasks" | "users" | "broadcast" | "security";
 
 function AdminBroadcastSection() {
   const createFn = useServerFn(adminCreateBroadcast);
@@ -3285,10 +3123,9 @@ function AdminTab() {
         </div>
 
         {/* Segmented sub-nav */}
-        <div className="grid grid-cols-6 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
+        <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-background/60 border border-white/5">
           {([
             { id: "overview", label: "Home", icon: LayoutDashboard },
-            { id: "economy", label: "Econ", icon: TrendingUp },
             { id: "tasks", label: "Tasks", icon: ListChecks },
             { id: "users", label: "Users", icon: Users },
             { id: "broadcast", label: "Send", icon: Megaphone },
@@ -3315,7 +3152,6 @@ function AdminTab() {
       </div>
 
       {section === "overview" && <AdminOverview stats={stats} tr={tr} />}
-      {section === "economy" && <AdminEconomySection />}
       {section === "tasks" && <AdminTasksSection tr={tr} />}
       {section === "users" && <AdminUsersSection />}
       {section === "broadcast" && <AdminBroadcastSection />}
@@ -3436,8 +3272,6 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
   const listFn = useServerFn(adminListTasks);
   const saveFn = useServerFn(adminSaveTask);
   const delFn = useServerFn(adminDeleteTask);
-  const adminPrice = useTonPrice();
-  const [rewardPoints, setRewardPoints] = useState("");
   const qc = useQueryClient();
 
 
@@ -3475,7 +3309,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
     }),
     onSuccess: () => {
       toast.success(editing ? tr("admin.task_updated") : tr("admin.task_created"));
-      setForm(empty); setRewardPoints("");
+      setForm(empty);
       qc.invalidateQueries({ queryKey: ["admin-tasks"] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
@@ -3508,7 +3342,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
             {editing ? tr("admin.edit_task") : tr("admin.new_task")}
           </p>
           {editing && (
-            <button onClick={() => { setForm(empty); setRewardPoints(""); }} className="text-[10px] text-muted-foreground hover:text-foreground">
+            <button onClick={() => { setForm(empty); }} className="text-[10px] text-muted-foreground hover:text-foreground">
               {tr("common.cancel")}
             </button>
           )}
@@ -3545,35 +3379,13 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                 <option value="group">{tr("admin.kind.group")}</option>
               </select>
             </AdminField>
-            <AdminField label="Mining points (pts)">
-              <input
-                className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
-                type="number" step="any" min="0"
-                placeholder="pts"
-                value={rewardPoints}
-                onChange={(e) => {
-                  const pts = Number(e.target.value) || 0;
-                  setRewardPoints(e.target.value);
-                  const p = adminPrice > 0 ? adminPrice : 0;
-                  setForm((f) => ({ ...f, reward: p > 0 ? pts / (p * POINTS_PER_USD) : f.reward }));
-                }}
-              />
-              <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                ≈ {formatReward(Number(form.reward) || 0)} GRAM
-                {adminPrice > 0 ? ` · $${((Number(form.reward) || 0) * adminPrice).toFixed(4)}` : " · precio no disponible"}
-              </p>
-            </AdminField>
             <AdminField label={tr("admin.reward_ph")}>
               <input
                 className="w-full bg-background/60 rounded-lg px-3 py-2 text-sm border border-white/5 focus:border-primary/40 outline-none transition tabular-nums"
                 type="number" step="any" min="0"
                 placeholder={tr("admin.reward_ph")}
                 value={form.reward}
-                onChange={(e) => {
-                  const gram = Number(e.target.value) || 0;
-                  setForm({ ...form, reward: gram });
-                  setRewardPoints(adminPrice > 0 ? formatPoints(pointsForGram(gram, adminPrice)).replace(/,/g, "") : "");
-                }}
+                onChange={(e) => setForm({ ...form, reward: Number(e.target.value) || 0 })}
               />
             </AdminField>
 
@@ -3669,7 +3481,7 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                   )}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                  <span className="font-mono">{t.code}</span> · {formatPoints(pointsForGram(Number(t.reward), adminPrice))} pts · {formatReward(Number(t.reward))} GRAM
+                  <span className="font-mono">{t.code}</span> · {formatReward(Number(t.reward))} GRAM → +{formatReward(Number(t.reward) * 0.033)} GRAM/d
                   {t.target_chat ? ` · ${t.target_chat}` : ""}
                 </p>
 
@@ -3678,7 +3490,6 @@ function AdminTasksSection({ tr }: { tr: (k: string, p?: any) => string }) {
                 <button
                   className="p-1.5 rounded-lg bg-background/60 border border-white/5 hover:border-primary/40 transition"
                   onClick={() => {
-                    setRewardPoints(adminPrice > 0 ? formatPoints(pointsForGram(Number(t.reward), adminPrice)).replace(/,/g, "") : "");
                     setForm({
                       id: t.id, code: t.code, title: t.title, description: t.description ?? "",
                       reward: Number(t.reward), kind: t.kind, min_deposit: Number(t.min_deposit ?? 0),

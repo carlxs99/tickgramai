@@ -4,10 +4,10 @@ import { createClient } from "@supabase/supabase-js";
 const APP_URL = "https://t.me/Tickgramaibot/app";
 const JOB_NAME = "daily-checkin-broadcast";
 const BROADCAST_TEXT =
-  `⛏️ <b>Your daily mining payout is in!</b>\n\n` +
-  `The network pool was shared between all miners — your part is already in your balance.\n\n` +
-  `💎 Check in to see yesterday's payout, claim your free gift box and complete today's tasks to grow your hashrate.\n\n` +
-  `👉 More hashrate today = bigger payout tomorrow.`;
+  `⛏️ <b>Don't lose your GRAM rewards!</b>\n\n` +
+  `Time to check in and collect your mined GRAM.\n\n` +
+  `💎 Your miner keeps working 24/7 — but you must check in daily to secure your rewards.\n\n` +
+  `👉 Open the app now and claim what you've earned today!`;
 const REPLY_MARKUP = {
   inline_keyboard: [[{ text: "⛏️ Check In & Claim GRAM", url: APP_URL }]],
 };

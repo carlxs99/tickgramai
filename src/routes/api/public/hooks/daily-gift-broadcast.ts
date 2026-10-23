@@ -4,10 +4,10 @@ import { createClient } from "@supabase/supabase-js";
 const APP_URL = "https://t.me/Tickgramaibot/app";
 const JOB_NAME = "daily-gift-broadcast";
 const BROADCAST_TEXT =
-  `🎁 <b>Your FREE daily Gift Box is ready!</b>\n\n` +
-  `Open the app and claim it now.\n\n` +
-  `✨ Inside: <b>hashrate points</b>, deposit bonuses or free wheel spins — more hashrate means a bigger share of the daily network pool.\n\n` +
-  `⏰ Boxes don't stack: if you don't claim today's box, you lose it.`;
+  `🎁 <b>Your 3 FREE daily Gift Boxes are ready!</b>\n\n` +
+  `Open the app now and claim your 3 free daily gift boxes.\n\n` +
+  `✨ Every box boosts your GRAM mining rate — don't miss today's rewards!\n\n` +
+  `⏰ You can claim 3 new free boxes every 24 hours.`;
 const REPLY_MARKUP = {
   inline_keyboard: [[{ text: "🎁 Claim Free Gift Box", url: APP_URL }]],
 };

@@ -20,18 +20,18 @@ type Segment = {
 // Visual wheel layout (12 slices). The real prize is decided server-side;
 // the wheel just animates to the matching slice.
 const SEGMENTS: Segment[] = [
-  { key: "gram-0.1", label: "0.1", sub: "PTS", gramAmount: 0.1, tone: "gram" },
+  { key: "gram-0.1", label: "0.1", sub: "GRAM", gramAmount: 0.1, tone: "gram" },
   { key: "bonus-10", label: "+10%", sub: "bonus", tone: "bonus" },
-  { key: "gram-0.2", label: "0.2", sub: "PTS", gramAmount: 0.2, tone: "gram" },
+  { key: "gram-0.2", label: "0.2", sub: "GRAM", gramAmount: 0.2, tone: "gram" },
   { key: "box", label: "🎁", sub: "box", tone: "box" },
-  { key: "gram-0.3", label: "0.3", sub: "PTS", gramAmount: 0.3, tone: "gram" },
-  { key: "gram-1", label: "1", sub: "PTS", gramAmount: 1, tone: "gram" },
-  { key: "gram-0.1b", label: "0.1", sub: "PTS", gramAmount: 0.1, tone: "gram" },
+  { key: "gram-0.3", label: "0.3", sub: "GRAM", gramAmount: 0.3, tone: "gram" },
+  { key: "gram-1", label: "1", sub: "GRAM", gramAmount: 1, tone: "gram" },
+  { key: "gram-0.1b", label: "0.1", sub: "GRAM", gramAmount: 0.1, tone: "gram" },
   { key: "spin", label: "🎰", sub: "+1 spin", tone: "spin" },
-  { key: "gram-0.5", label: "0.5", sub: "PTS", gramAmount: 0.5, tone: "gram" },
-  { key: "gram-2", label: "2", sub: "PTS", gramAmount: 2, tone: "gram" },
+  { key: "gram-0.5", label: "0.5", sub: "GRAM", gramAmount: 0.5, tone: "gram" },
+  { key: "gram-2", label: "2", sub: "GRAM", gramAmount: 2, tone: "gram" },
   { key: "bonus-25", label: "+25%", sub: "bonus", tone: "bonus" },
-  { key: "gram-big", label: "5-10", sub: "PTS", gramAmount: 10, tone: "gram" },
+  { key: "gram-big", label: "5-10", sub: "GRAM", gramAmount: 10, tone: "gram" },
 ];
 
 const SLICE = 360 / SEGMENTS.length;
@@ -87,7 +87,6 @@ export function PrizeWheelCard({ price = 0 }: { price?: number }) {
   const [prize, setPrize] = useState<null | { prizeType: string; prizeAmount: number }>(null);
   const size = useWheelSize();
   const gramPer10 = price > 0 ? 10 / price : 0;
-  const pointsForPrize = (amount: number) => Math.max(1, Math.round(amount * (price > 0 ? price : 1) * 100));
 
   const { data } = useQuery({
     queryKey: ["wheel-spins"],
@@ -139,13 +138,11 @@ export function PrizeWheelCard({ price = 0 }: { price?: number }) {
 
   const prizeText = (() => {
     if (!prize) return null;
-    if (prize.prizeType === "gram_mining") {
-      const points = price > 0 ? Math.round(prize.prizeAmount * price * 100) : 0;
+    if (prize.prizeType === "gram_mining")
       return {
-        title: t("wheel.prize_gram", { points }),
-        sub: t("wheel.prize_gram_sub", { points }),
+        title: t("wheel.prize_gram", { amount: prize.prizeAmount }),
+        sub: t("wheel.prize_gram_sub", { rate: (prize.prizeAmount * 0.033).toFixed(4) }),
       };
-    }
     if (prize.prizeType === "deposit_bonus_pct")
       return {
         title: t("wheel.prize_bonus", { amount: prize.prizeAmount }),
@@ -185,11 +182,7 @@ export function PrizeWheelCard({ price = 0 }: { price?: number }) {
           >
             {SEGMENTS.map((s, i) => {
               const angle = i * SLICE + SLICE / 2;
-              const label = s.gramAmount
-                ? s.key === "gram-big"
-                  ? `${pointsForPrize(5)}-${pointsForPrize(10)}`
-                  : String(pointsForPrize(s.gramAmount))
-                : s.label;
+              const label = s.label;
               return (
                 <div
                   key={s.key}
@@ -258,7 +251,7 @@ export function PrizeWheelCard({ price = 0 }: { price?: number }) {
               <div key={h.id} className="flex items-center justify-between gap-2 text-[11px] font-semibold text-primary-foreground/90">
                 <span className="min-w-0 truncate">
                   {h.prize_type === "gram_mining"
-                    ? t("wheel.hist_gram", { points: pointsForPrize(h.prize_amount ?? 0) })
+                    ? t("wheel.hist_gram", { amount: h.prize_amount ?? 0 })
                     : h.prize_type === "deposit_bonus_pct"
                       ? t("wheel.hist_bonus", { amount: h.prize_amount ?? 0 })
                       : h.prize_type === "gift_box"

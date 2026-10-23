@@ -9,33 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TonconnectManifestDotjsonRouteImport } from './routes/tonconnect-manifest[.]json'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiPublicVerifyDepositsRouteImport } from './routes/api/public/verify-deposits'
-import { Route as ApiPublicProcessWithdrawalsRouteImport } from './routes/api/public/process-withdrawals'
-import { Route as ApiPublicMexcPricesRouteImport } from './routes/api/public/mexc-prices'
+import { Route as TonconnectManifestDotjsonRouteImport } from './routes/tonconnect-manifest[.]json'
 import { Route as ApiPublicAvatarRouteImport } from './routes/api/public/avatar'
-import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
-import { Route as ApiPublicHooksWeeklyPromoBroadcastRouteImport } from './routes/api/public/hooks/weekly-promo-broadcast'
-import { Route as ApiPublicHooksDailyGiftBroadcastRouteImport } from './routes/api/public/hooks/daily-gift-broadcast'
-import { Route as ApiPublicHooksDailyCheckinBroadcastRouteImport } from './routes/api/public/hooks/daily-checkin-broadcast'
-import { Route as ApiPublicHooksCustomBroadcastRouteImport } from './routes/api/public/hooks/custom-broadcast'
+import { Route as ApiPublicMexcPricesRouteImport } from './routes/api/public/mexc-prices'
+import { Route as ApiPublicProcessWithdrawalsRouteImport } from './routes/api/public/process-withdrawals'
+import { Route as ApiPublicVerifyDepositsRouteImport } from './routes/api/public/verify-deposits'
 import { Route as ApiPublicHooksBootstrapCronSecretRouteImport } from './routes/api/public/hooks/bootstrap-cron-secret'
+import { Route as ApiPublicHooksCustomBroadcastRouteImport } from './routes/api/public/hooks/custom-broadcast'
+import { Route as ApiPublicHooksDailyCheckinBroadcastRouteImport } from './routes/api/public/hooks/daily-checkin-broadcast'
+import { Route as ApiPublicHooksDailyGiftBroadcastRouteImport } from './routes/api/public/hooks/daily-gift-broadcast'
+import { Route as ApiPublicHooksWeeklyPromoBroadcastRouteImport } from './routes/api/public/hooks/weekly-promo-broadcast'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TonconnectManifestDotjsonRoute =
   TonconnectManifestDotjsonRouteImport.update({
     id: '/tonconnect-manifest.json',
     path: '/tonconnect-manifest.json',
     getParentRoute: () => rootRouteImport,
   } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ApiPublicAvatarRoute = ApiPublicAvatarRouteImport.update({
+  id: '/api/public/avatar',
+  path: '/api/public/avatar',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicVerifyDepositsRoute = ApiPublicVerifyDepositsRouteImport.update({
-  id: '/api/public/verify-deposits',
-  path: '/api/public/verify-deposits',
+const ApiPublicMexcPricesRoute = ApiPublicMexcPricesRouteImport.update({
+  id: '/api/public/mexc-prices',
+  path: '/api/public/mexc-prices',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicProcessWithdrawalsRoute =
@@ -44,38 +49,15 @@ const ApiPublicProcessWithdrawalsRoute =
     path: '/api/public/process-withdrawals',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicMexcPricesRoute = ApiPublicMexcPricesRouteImport.update({
-  id: '/api/public/mexc-prices',
-  path: '/api/public/mexc-prices',
+const ApiPublicVerifyDepositsRoute = ApiPublicVerifyDepositsRouteImport.update({
+  id: '/api/public/verify-deposits',
+  path: '/api/public/verify-deposits',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAvatarRoute = ApiPublicAvatarRouteImport.update({
-  id: '/api/public/avatar',
-  path: '/api/public/avatar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicTelegramWebhookRoute =
-  ApiPublicTelegramWebhookRouteImport.update({
-    id: '/api/public/telegram/webhook',
-    path: '/api/public/telegram/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksWeeklyPromoBroadcastRoute =
-  ApiPublicHooksWeeklyPromoBroadcastRouteImport.update({
-    id: '/api/public/hooks/weekly-promo-broadcast',
-    path: '/api/public/hooks/weekly-promo-broadcast',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksDailyGiftBroadcastRoute =
-  ApiPublicHooksDailyGiftBroadcastRouteImport.update({
-    id: '/api/public/hooks/daily-gift-broadcast',
-    path: '/api/public/hooks/daily-gift-broadcast',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksDailyCheckinBroadcastRoute =
-  ApiPublicHooksDailyCheckinBroadcastRouteImport.update({
-    id: '/api/public/hooks/daily-checkin-broadcast',
-    path: '/api/public/hooks/daily-checkin-broadcast',
+const ApiPublicHooksBootstrapCronSecretRoute =
+  ApiPublicHooksBootstrapCronSecretRouteImport.update({
+    id: '/api/public/hooks/bootstrap-cron-secret',
+    path: '/api/public/hooks/bootstrap-cron-secret',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksCustomBroadcastRoute =
@@ -84,10 +66,28 @@ const ApiPublicHooksCustomBroadcastRoute =
     path: '/api/public/hooks/custom-broadcast',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksBootstrapCronSecretRoute =
-  ApiPublicHooksBootstrapCronSecretRouteImport.update({
-    id: '/api/public/hooks/bootstrap-cron-secret',
-    path: '/api/public/hooks/bootstrap-cron-secret',
+const ApiPublicHooksDailyCheckinBroadcastRoute =
+  ApiPublicHooksDailyCheckinBroadcastRouteImport.update({
+    id: '/api/public/hooks/daily-checkin-broadcast',
+    path: '/api/public/hooks/daily-checkin-broadcast',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksDailyGiftBroadcastRoute =
+  ApiPublicHooksDailyGiftBroadcastRouteImport.update({
+    id: '/api/public/hooks/daily-gift-broadcast',
+    path: '/api/public/hooks/daily-gift-broadcast',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksWeeklyPromoBroadcastRoute =
+  ApiPublicHooksWeeklyPromoBroadcastRouteImport.update({
+    id: '/api/public/hooks/weekly-promo-broadcast',
+    path: '/api/public/hooks/weekly-promo-broadcast',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -196,13 +196,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tonconnect-manifest.json': {
-      id: '/tonconnect-manifest.json'
-      path: '/tonconnect-manifest.json'
-      fullPath: '/tonconnect-manifest.json'
-      preLoaderRoute: typeof TonconnectManifestDotjsonRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -210,25 +203,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/verify-deposits': {
-      id: '/api/public/verify-deposits'
-      path: '/api/public/verify-deposits'
-      fullPath: '/api/public/verify-deposits'
-      preLoaderRoute: typeof ApiPublicVerifyDepositsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/process-withdrawals': {
-      id: '/api/public/process-withdrawals'
-      path: '/api/public/process-withdrawals'
-      fullPath: '/api/public/process-withdrawals'
-      preLoaderRoute: typeof ApiPublicProcessWithdrawalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/mexc-prices': {
-      id: '/api/public/mexc-prices'
-      path: '/api/public/mexc-prices'
-      fullPath: '/api/public/mexc-prices'
-      preLoaderRoute: typeof ApiPublicMexcPricesRouteImport
+    '/tonconnect-manifest.json': {
+      id: '/tonconnect-manifest.json'
+      path: '/tonconnect-manifest.json'
+      fullPath: '/tonconnect-manifest.json'
+      preLoaderRoute: typeof TonconnectManifestDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/avatar': {
@@ -238,32 +217,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAvatarRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/telegram/webhook': {
-      id: '/api/public/telegram/webhook'
-      path: '/api/public/telegram/webhook'
-      fullPath: '/api/public/telegram/webhook'
-      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+    '/api/public/mexc-prices': {
+      id: '/api/public/mexc-prices'
+      path: '/api/public/mexc-prices'
+      fullPath: '/api/public/mexc-prices'
+      preLoaderRoute: typeof ApiPublicMexcPricesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/weekly-promo-broadcast': {
-      id: '/api/public/hooks/weekly-promo-broadcast'
-      path: '/api/public/hooks/weekly-promo-broadcast'
-      fullPath: '/api/public/hooks/weekly-promo-broadcast'
-      preLoaderRoute: typeof ApiPublicHooksWeeklyPromoBroadcastRouteImport
+    '/api/public/process-withdrawals': {
+      id: '/api/public/process-withdrawals'
+      path: '/api/public/process-withdrawals'
+      fullPath: '/api/public/process-withdrawals'
+      preLoaderRoute: typeof ApiPublicProcessWithdrawalsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/daily-gift-broadcast': {
-      id: '/api/public/hooks/daily-gift-broadcast'
-      path: '/api/public/hooks/daily-gift-broadcast'
-      fullPath: '/api/public/hooks/daily-gift-broadcast'
-      preLoaderRoute: typeof ApiPublicHooksDailyGiftBroadcastRouteImport
+    '/api/public/verify-deposits': {
+      id: '/api/public/verify-deposits'
+      path: '/api/public/verify-deposits'
+      fullPath: '/api/public/verify-deposits'
+      preLoaderRoute: typeof ApiPublicVerifyDepositsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/daily-checkin-broadcast': {
-      id: '/api/public/hooks/daily-checkin-broadcast'
-      path: '/api/public/hooks/daily-checkin-broadcast'
-      fullPath: '/api/public/hooks/daily-checkin-broadcast'
-      preLoaderRoute: typeof ApiPublicHooksDailyCheckinBroadcastRouteImport
+    '/api/public/hooks/bootstrap-cron-secret': {
+      id: '/api/public/hooks/bootstrap-cron-secret'
+      path: '/api/public/hooks/bootstrap-cron-secret'
+      fullPath: '/api/public/hooks/bootstrap-cron-secret'
+      preLoaderRoute: typeof ApiPublicHooksBootstrapCronSecretRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/custom-broadcast': {
@@ -273,11 +252,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksCustomBroadcastRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/bootstrap-cron-secret': {
-      id: '/api/public/hooks/bootstrap-cron-secret'
-      path: '/api/public/hooks/bootstrap-cron-secret'
-      fullPath: '/api/public/hooks/bootstrap-cron-secret'
-      preLoaderRoute: typeof ApiPublicHooksBootstrapCronSecretRouteImport
+    '/api/public/hooks/daily-checkin-broadcast': {
+      id: '/api/public/hooks/daily-checkin-broadcast'
+      path: '/api/public/hooks/daily-checkin-broadcast'
+      fullPath: '/api/public/hooks/daily-checkin-broadcast'
+      preLoaderRoute: typeof ApiPublicHooksDailyCheckinBroadcastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/daily-gift-broadcast': {
+      id: '/api/public/hooks/daily-gift-broadcast'
+      path: '/api/public/hooks/daily-gift-broadcast'
+      fullPath: '/api/public/hooks/daily-gift-broadcast'
+      preLoaderRoute: typeof ApiPublicHooksDailyGiftBroadcastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/weekly-promo-broadcast': {
+      id: '/api/public/hooks/weekly-promo-broadcast'
+      path: '/api/public/hooks/weekly-promo-broadcast'
+      fullPath: '/api/public/hooks/weekly-promo-broadcast'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyPromoBroadcastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

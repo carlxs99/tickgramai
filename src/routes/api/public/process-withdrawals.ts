@@ -212,25 +212,6 @@ async function processOne(row: any, supabaseAdmin: any) {
     return { id: row.id, awaiting_reconciliation: true, tx_hash: txHashHex };
   }
 
-  // Economy v2: the withdrawal fee is real revenue for the payout pool.
-  try {
-    const fee = Number(row.fee ?? 0);
-    if (fee > 0) {
-      const { fetchTonPriceUsdt } = await import("@/lib/prices.server");
-      const price = await fetchTonPriceUsdt().catch(() => 0);
-      if (price > 0) {
-        await supabaseAdmin.rpc("add_revenue_event", {
-          _source: "withdrawal_fee",
-          _amount_usd: fee * price,
-          _note: `withdrawal ${row.id}`,
-          _ref: String(row.id),
-          _created_by: null,
-        });
-      }
-    }
-  } catch (e) {
-    console.error("revenue_event withdrawal_fee failed", e);
-  }
 
 
   // Notify withdrawals group + DM the user
