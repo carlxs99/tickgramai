@@ -21,7 +21,7 @@ function buildText(percent: number, endsAt: string) {
   return (
     `🔥 <b>WEEKLY DEPOSIT BONUS: +${percent}%</b>\n\n` +
     `For the next 48 hours every deposit is credited with a <b>+${percent}%</b> bonus for ALL users.\n\n` +
-    `💎 Deposit 1 GRAM → get the hashrate of <b>${(1 + percent / 100).toFixed(2)} GRAM</b> (active 180 days)\n` +
+    `💎 Deposit 1 GRAM → mine as if you deposited <b>${(1 + percent / 100).toFixed(2)} GRAM</b>\n` +
     `⏰ Ends: <b>${endsStr}</b>\n\n` +
     `Already have a gift-box bonus? Don't worry — it stays saved for your next deposit.`
   );
