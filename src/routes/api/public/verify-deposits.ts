@@ -3,6 +3,7 @@ import { formatReward } from "@/lib/format";
 
 
 const RECEIVING_WALLET = "UQBqvqYaZBfeVvW9eFUUf4rrVF4Z71wJnxyDwyKdQLTKnIJn";
+const DAILY_ROI = 0.033;
 
 // Timing-safe comparison for shared-secret auth.
 function safeEqual(a: string, b: string) {
@@ -122,17 +123,6 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                 .from("partner_tasks")
                 .update({ status: "active", tx_hash: txHash })
                 .eq("id", ptask.id);
-              try {
-                await supabaseAdmin.rpc("add_revenue_event" as never, {
-                  _source: "partner_task",
-                  _amount_usd: amountTon * (tonPriceAtDeposit > 0 ? tonPriceAtDeposit : 1),
-                  _note: `partner task ${ptask.id}`,
-                  _ref: txHash,
-                  _created_by: null,
-                } as never);
-              } catch (e) {
-                console.error("revenue_event partner_task failed", e);
-              }
               credited += 1;
               results.push({ txHash, memo: comment, partnerTask: ptask.id, activated: true });
               continue;
@@ -177,11 +167,11 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
             const bonusAmountTon = effectiveAmountTon - amountTon;
 
 
-            // Economy v2: deposits no longer create a fixed daily ROI. They
-            // buy hashrate points that share the dynamic daily pool.
+            // Deterministic ROI: 3.3% daily denominated in USDT.
             const priceForCredit = tonPriceAtDeposit > 0 ? tonPriceAtDeposit : 1;
             const usdValue = effectiveAmountTon * priceForCredit;
-            const gramPerDay = 0;
+            const usdPerDay = usdValue * DAILY_ROI;
+            const gramPerDay = effectiveAmountTon * DAILY_ROI;
 
             const { error: iErr } = await supabaseAdmin.from("processed_tx").insert({
               tx_hash: txHash,
@@ -216,35 +206,14 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
               console.error("grant_wheel_spins failed", e);
             }
 
-            // Atomic increment of deposit_total only (no legacy ROI in v2).
+            // Atomic increment — prevents lost-updates with completeTask /
+            // reinvestBalance running concurrently for the same user.
             await supabaseAdmin.rpc("atomic_add_mining_rate" as never, {
               _user_id: profile.user_id,
-              _add_rate_usd: 0,
-              _add_rate_gram: 0,
+              _add_rate_usd: usdPerDay,
+              _add_rate_gram: gramPerDay,
               _add_deposit_ton: effectiveAmountTon,
             } as never);
-
-            // ---- Economy v2 -------------------------------------------------
-            // Mining power: 100 points per USD deposited, 180 days, linear decay.
-            try {
-              await supabaseAdmin.rpc("grant_hashrate" as never, {
-                _user_id: profile.user_id,
-                _points: usdValue * 100,
-                _source: "deposit",
-                _source_ref_id: (depositRow as any)?.id ?? null,
-                _days: 180,
-              } as never);
-              // Deposits are capital, not same-day profit: they are recognised
-              // as revenue gradually over 180 days (same window as the hashrate).
-              await supabaseAdmin.rpc("add_deferred_revenue" as never, {
-                _source: "deposit",
-                _amount_usd: amountTon * priceForCredit,
-                _ref: txHash,
-                _days: 180,
-              } as never);
-            } catch (e) {
-              console.error("economy v2 deposit hooks failed", e);
-            }
 
 
 
@@ -355,14 +324,14 @@ export const Route = createFileRoute("/api/public/verify-deposits")({
                   `✅ <b>Deposit confirmed!</b>\n\n` +
                     `Hi ${name}, we received your deposit of <b>${formatReward(amountTon)} GRAM</b>.\n\n` +
                     bonusLine +
-                    `⚡ Hashrate added: <b>+${Math.round(usdValue * 100).toLocaleString("en-US")} pts</b> (active 180 days)\n` +
-                    `🌐 You now earn a share of the daily network pool based on your hashrate\n` +
-                    `🕛 Rewards unlock every day (~00:00 UTC) — open the app and tap Collect\n` +
+                    `⚡ Mining rate added: <b>+$${formatReward(usdPerDay)} USDT/day</b>\n` +
+                    `🪙 GRAM per day: <b>+${formatReward(gramPerDay)} GRAM</b>\n` +
+                    `📈 Daily ROI: 3.3%\n` +
                     (spinsGranted > 0
                       ? `🎰 Prize wheel: <b>${spinsGranted} free spin${spinsGranted > 1 ? "s" : ""}</b> unlocked (valid 7 days)\n`
                       : "") +
                     `\n` +
-                    `Open TICK GRAM AI to check your mining power.`,
+                    `Open TICK GRAM AI to check your balance.`,
                 );
 
               }
